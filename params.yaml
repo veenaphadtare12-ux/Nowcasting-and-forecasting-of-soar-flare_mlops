@@ -9,8 +9,8 @@ paths:
 
 # Which days to process. Start with a subset, widen to the full range once every stage works.
 subset:
-  start: "2025-04-09"
-  end: "2025-09-30"
+  start: "2024-10-01"
+  end: "2026-09-13"
 
 solexs:
   detector: "SDD2"          # light curves exist only for SDD2

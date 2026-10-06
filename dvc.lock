@@ -14,14 +14,14 @@ stages:
     params:
       params.yaml:
         subset:
-          start: '2025-04-09'
-          end: '2025-09-30'
+          start: '2024-10-01'
+          end: '2026-09-13'
     outs:
     - path: data/external/goes_events
       hash: md5
-      md5: 4983f0dd3ef04f3f450f89971f75110d.dir
-      size: 556613
-      nfiles: 177
+      md5: 40f86fab55e62d09191354d6485ce59d.dir
+      size: 2286434
+      nfiles: 713
   solexs_clean:
     cmd: python -m src.pipeline solexs_clean
     deps:
@@ -41,26 +41,26 @@ stages:
           cadence_s: 1
           min_valid_fraction: 0.5
         subset:
-          start: '2025-04-09'
-          end: '2025-09-30'
+          start: '2024-10-01'
+          end: '2026-09-13'
     outs:
     - path: data/processed/solexs_clean
       hash: md5
-      md5: f9cdcae1cf5565c6f4a0719a9543473d.dir
-      size: 84730798
-      nfiles: 123
+      md5: c8207729a33ef8fa12c4bdcb89367c93.dir
+      size: 290559486
+      nfiles: 429
     - path: data/processed/solexs_qc.csv
       hash: md5
-      md5: ecd549e80472677c40f772c135367515
-      size: 9241
+      md5: 9524e6cffa3cc501cbadeaa09474ba79
+      size: 33118
   solexs_flares:
     cmd: python -m src.pipeline solexs_flares
     deps:
     - path: data/processed/solexs_clean
       hash: md5
-      md5: f9cdcae1cf5565c6f4a0719a9543473d.dir
-      size: 84730798
-      nfiles: 123
+      md5: c8207729a33ef8fa12c4bdcb89367c93.dir
+      size: 290559486
+      nfiles: 429
     - path: src/flares.py
       hash: md5
       md5: aa6b70fabe8f8ac12d017e0639a8b8cf
@@ -84,29 +84,29 @@ stages:
     outs:
     - path: data/processed/flares.parquet
       hash: md5
-      md5: a804419ad55a43bec3a4d98f75bb5fce
-      size: 67319
+      md5: 088d669147e28777691c0b5e6d90e465
+      size: 199977
   goes_match:
     cmd: python -m src.pipeline goes_match
     deps:
     - path: data/external/goes_events
       hash: md5
-      md5: 4983f0dd3ef04f3f450f89971f75110d.dir
-      size: 556613
-      nfiles: 177
+      md5: 40f86fab55e62d09191354d6485ce59d.dir
+      size: 2286434
+      nfiles: 713
     - path: data/processed/flares.parquet
       hash: md5
-      md5: a804419ad55a43bec3a4d98f75bb5fce
-      size: 67319
+      md5: 088d669147e28777691c0b5e6d90e465
+      size: 199977
     - path: data/processed/solexs_clean
       hash: md5
-      md5: f9cdcae1cf5565c6f4a0719a9543473d.dir
-      size: 84730798
-      nfiles: 123
+      md5: c8207729a33ef8fa12c4bdcb89367c93.dir
+      size: 290559486
+      nfiles: 429
     - path: data/processed/solexs_qc.csv
       hash: md5
-      md5: ecd549e80472677c40f772c135367515
-      size: 9241
+      md5: 9524e6cffa3cc501cbadeaa09474ba79
+      size: 33118
     - path: src/flares.py
       hash: md5
       md5: aa6b70fabe8f8ac12d017e0639a8b8cf
@@ -126,16 +126,16 @@ stages:
     outs:
     - path: data/processed/flares_matched.parquet
       hash: md5
-      md5: 0d28734f3ce68b9e23494b851a7511e1
-      size: 73601
+      md5: 3f9791dc69761488b8d27a4fbe4ebd9d
+      size: 215408
     - path: data/processed/goes_matched.parquet
       hash: md5
-      md5: 0f7c18003a8f0c333f0ae57d06776a2e
-      size: 45826
+      md5: 4e4a1b28b4c1e03ceb10ff96c84a7bd0
+      size: 177547
     - path: reports/metrics.json
       hash: md5
-      md5: 5f09e6e2f37ae0950d83b6d72a652719
-      size: 916
+      md5: 6ec607e5a1aabd47c7f2aaed91f346f5
+      size: 1402
   hel1os_index:
     cmd: python -m src.pipeline hel1os_index
     deps:
