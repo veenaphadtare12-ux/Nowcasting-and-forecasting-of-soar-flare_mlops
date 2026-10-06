@@ -1,0 +1,28 @@
+# All paths and tunable parameters live here. Code must read them via src/config.py,
+# never hard-code paths.
+paths:
+  data_root_solexs: "D:/MLOPS_CP/Data/SoLEXS"
+  data_root_hel1os: "D:/MLOPS_CP/Data/HELIOS"
+  processed_dir: "data/processed"
+  goes_flare_list: "data/external/goes_flares.csv"   # NOAA/GOES event list (see src/goes.py)
+  mlflow_tracking_uri: "mlruns"
+
+# Which days to process. Start with a subset, widen to the full range once every stage works.
+subset:
+  start: "2025-04-09"
+  end: "2025-09-30"
+
+solexs:
+  detector: "SDD2"          # light curves exist only for SDD2
+  cadence_s: 1
+  min_valid_fraction: 0.5   # a day needs at least this fraction of its seconds inside GTI with data
+
+flare_detection:
+  smooth_window_s: 60       # trailing rolling median of counts (causal)
+  background_window_s: 3600 # trailing rolling low-quantile background (causal)
+  background_quantile: 0.2
+  threshold_sigma: 5
+  min_duration_s: 120
+
+goes_match:
+  tolerance_s: 300          # SoLEXS peak must fall within GOES [start-tol, end+tol]
