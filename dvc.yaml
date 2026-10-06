@@ -1,0 +1,65 @@
+stages:
+  fetch_goes:
+    cmd: python -m src.pipeline fetch_goes
+    deps:
+      - src/goes.py
+      - src/pipeline.py
+    params:
+      - subset
+    outs:
+      - data/external/goes_events
+
+  solexs_clean:
+    cmd: python -m src.pipeline solexs_clean
+    deps:
+      - src/solexs.py
+      - src/pipeline.py
+    params:
+      - paths.data_root_solexs
+      - subset
+      - solexs
+    outs:
+      - data/processed/solexs_clean
+      - data/processed/solexs_qc.csv:
+          cache: false
+
+  solexs_flares:
+    cmd: python -m src.pipeline solexs_flares
+    deps:
+      - src/flares.py
+      - src/pipeline.py
+      - data/processed/solexs_clean
+    params:
+      - flare_detection
+    outs:
+      - data/processed/flares.parquet
+
+  goes_match:
+    cmd: python -m src.pipeline goes_match
+    deps:
+      - src/flares.py
+      - src/goes.py
+      - src/pipeline.py
+      - data/processed/flares.parquet
+      - data/processed/solexs_clean
+      - data/processed/solexs_qc.csv
+      - data/external/goes_events
+    params:
+      - goes_match
+    outs:
+      - data/processed/flares_matched.parquet
+      - data/processed/goes_matched.parquet
+    metrics:
+      - reports/metrics.json:
+          cache: false
+
+  # Optional: HEL1OS is not a dependency of any other stage.
+  hel1os_index:
+    cmd: python -m src.pipeline hel1os_index
+    deps:
+      - src/hel1os.py
+      - src/pipeline.py
+    params:
+      - paths.data_root_hel1os
+    outs:
+      - data/processed/hel1os

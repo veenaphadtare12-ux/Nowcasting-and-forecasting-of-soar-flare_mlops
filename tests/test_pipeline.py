@@ -1,0 +1,99 @@
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import pytest
+
+from src import flares, goes, hel1os, solexs
+
+SAMPLE_EVENTS = """\
+#Event    Begin    Max       End  Obs  Q  Type  Loc/Frq   Particulars       Reg#
+5580       0446   0450      0454  G18  5   XRA  1-8A      C2.3    1.1E-03   4060
+5590 +     0624   0628      0632  G19  5   XRA  1-8A      C3.2    7.6E-04   4055
+5590 +     0627   0627      0632  LEA  3   FLA  N07W26    SF                4055
+5640 +     2355   0002      0020  G19  5   XRA  1-8A      M1.5    2.3E-03
+5650       0900   ////      0910  G19  5   XRA  1-8A      B9.0    1.0E-04
+"""
+
+
+def test_time_conversion_is_utc_epoch():
+    t = pd.to_datetime(np.array([1744243200.0]), unit="s", utc=True)
+    assert t[0] == pd.Timestamp("2025-04-10 00:00:00", tz="UTC")
+
+
+def test_goes_parser_takes_only_xra_and_handles_midnight():
+    rows = goes.parse_events_text(SAMPLE_EVENTS, pd.Timestamp("2025-04-10"))
+    assert [r["goes_class"] for r in rows] == ["C2.3", "C3.2", "M1.5", "B9.0"]  # FLA/RSP lines ignored
+    m = rows[2]
+    assert m["end"] > m["begin"] and m["peak"] > m["begin"]  # wrapped past midnight
+    assert pd.isna(rows[3]["peak"])
+
+
+def test_gti_mask_is_unit_safe():
+    idx = pd.to_datetime(np.arange(1744243200, 1744243210, dtype="float64"), unit="s", utc=True)  # datetime64[s]
+    gti = pd.DataFrame(
+        {"start": pd.to_datetime([1744243202.0], unit="s", utc=True), "stop": pd.to_datetime([1744243205.0], unit="s", utc=True)}
+    )
+    mask = solexs.gti_mask(idx, gti)
+    assert mask.sum() == 4 and mask[2] and mask[5] and not mask[1] and not mask[6]
+
+
+def _synthetic_day(flare_start=40000, n=86400, seed=0):
+    rng = np.random.default_rng(seed)
+    t = pd.date_range("2025-04-10", periods=n, freq="s", tz="UTC")
+    rate = np.full(n, 20.0)
+    k = np.arange(600)
+    rate[flare_start : flare_start + 600] += 200 * np.exp(-k / 150.0) * (1 - np.exp(-k / 20.0))
+    return pd.Series(rng.poisson(rate).astype("float64"), index=t)
+
+
+def test_detector_finds_injected_flare():
+    ev = flares.detect_day(_synthetic_day())
+    assert len(ev) == 1
+    onset = ev.loc[0, "onset"]
+    truth = pd.Timestamp("2025-04-10", tz="UTC") + pd.Timedelta(seconds=40000)
+    assert abs((onset - truth).total_seconds()) < 120
+
+
+def test_detector_is_causal_onset_unchanged_by_future_data():
+    full = _synthetic_day()
+    cut = full.iloc[: 40000 + 400]  # drop everything after the flare is underway (still in progress)
+    onset_full = flares.detect_day(full).loc[0, "onset"]
+    onset_cut = flares.detect_day(cut).loc[0, "onset"]
+    assert onset_full == onset_cut
+
+
+def test_goes_class_only_from_goes_match():
+    t0 = pd.Timestamp("2025-04-10 05:00", tz="UTC")
+    fl = pd.DataFrame(
+        {
+            "onset": [t0, t0 + pd.Timedelta(hours=5)],
+            "peak": [t0 + pd.Timedelta(minutes=5), t0 + pd.Timedelta(hours=5, minutes=5)],
+            "end": [t0 + pd.Timedelta(minutes=20), t0 + pd.Timedelta(hours=5, minutes=20)],
+            "peak_counts_s": [500.0, 900.0],
+        }
+    )
+    g = pd.DataFrame(
+        {
+            "begin": [t0 + pd.Timedelta(minutes=2)], "peak": [t0 + pd.Timedelta(minutes=6)],
+            "end": [t0 + pd.Timedelta(minutes=12)], "goes_class": ["M2.0"], "class_letter": ["M"],
+        }
+    )
+    m, gm = flares.match_goes(fl, g, tolerance_s=60)
+    assert m.loc[0, "goes_class"] == "M2.0"
+    assert pd.isna(m.loc[1, "goes_class"])  # bigger counts, but no GOES event -> no class assigned
+    assert gm.loc[0, "n_solexs_matches"] == 1
+
+
+def test_hel1os_keeps_newest_version_per_session():
+    mk = lambda n, hms, dur, v: hel1os.Session(Path(n), pd.Timestamp(f"2024-08-12 {hms}", tz="UTC"), dur, v)
+    a = mk("v211", "00:00:06", 43181, 211)
+    b = mk("v311", "00:00:06", 43181, 311)
+    c = mk("other", "12:00:02", 43195, 211)
+    kept = hel1os.newest_per_session([a, b, c])
+    assert [s.name for s in kept] == ["v311", "other"]
+
+
+def test_hel1os_is_optional_downstream():
+    base = pd.DataFrame({"counts": [1.0, 2.0]}, index=pd.date_range("2025-01-01", periods=2, freq="s", tz="UTC"))
+    assert hel1os.attach_optional(base, None) is base

@@ -1,0 +1,158 @@
+schema: '2.0'
+stages:
+  fetch_goes:
+    cmd: python -m src.pipeline fetch_goes
+    deps:
+    - path: src/goes.py
+      hash: md5
+      md5: f29914dac4924d84754ebfcf49c27ac7
+      size: 4150
+    - path: src/pipeline.py
+      hash: md5
+      md5: e0b19a4a915772dee493fdde5ad62385
+      size: 6100
+    params:
+      params.yaml:
+        subset:
+          start: '2025-04-09'
+          end: '2025-09-30'
+    outs:
+    - path: data/external/goes_events
+      hash: md5
+      md5: 4983f0dd3ef04f3f450f89971f75110d.dir
+      size: 556613
+      nfiles: 177
+  solexs_clean:
+    cmd: python -m src.pipeline solexs_clean
+    deps:
+    - path: src/pipeline.py
+      hash: md5
+      md5: e0b19a4a915772dee493fdde5ad62385
+      size: 6100
+    - path: src/solexs.py
+      hash: md5
+      md5: 48363970f48c546cfff24587af97940e
+      size: 4276
+    params:
+      params.yaml:
+        paths.data_root_solexs: D:/MLOPS_CP/Data/SoLEXS
+        solexs:
+          detector: SDD2
+          cadence_s: 1
+          min_valid_fraction: 0.5
+        subset:
+          start: '2025-04-09'
+          end: '2025-09-30'
+    outs:
+    - path: data/processed/solexs_clean
+      hash: md5
+      md5: f9cdcae1cf5565c6f4a0719a9543473d.dir
+      size: 84730798
+      nfiles: 123
+    - path: data/processed/solexs_qc.csv
+      hash: md5
+      md5: ecd549e80472677c40f772c135367515
+      size: 9241
+  solexs_flares:
+    cmd: python -m src.pipeline solexs_flares
+    deps:
+    - path: data/processed/solexs_clean
+      hash: md5
+      md5: f9cdcae1cf5565c6f4a0719a9543473d.dir
+      size: 84730798
+      nfiles: 123
+    - path: src/flares.py
+      hash: md5
+      md5: aa6b70fabe8f8ac12d017e0639a8b8cf
+      size: 6887
+    - path: src/pipeline.py
+      hash: md5
+      md5: e0b19a4a915772dee493fdde5ad62385
+      size: 6100
+    params:
+      params.yaml:
+        flare_detection:
+          smooth_window_s: 60
+          background_window_s: 3600
+          background_quantile: 0.2
+          threshold_sigma: 5
+          min_excess_frac: 0.5
+          min_excess_abs: 5.0
+          end_frac: 0.1
+          merge_gap_s: 120
+          min_duration_s: 120
+    outs:
+    - path: data/processed/flares.parquet
+      hash: md5
+      md5: a804419ad55a43bec3a4d98f75bb5fce
+      size: 67319
+  goes_match:
+    cmd: python -m src.pipeline goes_match
+    deps:
+    - path: data/external/goes_events
+      hash: md5
+      md5: 4983f0dd3ef04f3f450f89971f75110d.dir
+      size: 556613
+      nfiles: 177
+    - path: data/processed/flares.parquet
+      hash: md5
+      md5: a804419ad55a43bec3a4d98f75bb5fce
+      size: 67319
+    - path: data/processed/solexs_clean
+      hash: md5
+      md5: f9cdcae1cf5565c6f4a0719a9543473d.dir
+      size: 84730798
+      nfiles: 123
+    - path: data/processed/solexs_qc.csv
+      hash: md5
+      md5: ecd549e80472677c40f772c135367515
+      size: 9241
+    - path: src/flares.py
+      hash: md5
+      md5: aa6b70fabe8f8ac12d017e0639a8b8cf
+      size: 6887
+    - path: src/goes.py
+      hash: md5
+      md5: f29914dac4924d84754ebfcf49c27ac7
+      size: 4150
+    - path: src/pipeline.py
+      hash: md5
+      md5: e0b19a4a915772dee493fdde5ad62385
+      size: 6100
+    params:
+      params.yaml:
+        goes_match:
+          tolerance_s: 300
+    outs:
+    - path: data/processed/flares_matched.parquet
+      hash: md5
+      md5: 0d28734f3ce68b9e23494b851a7511e1
+      size: 73601
+    - path: data/processed/goes_matched.parquet
+      hash: md5
+      md5: 0f7c18003a8f0c333f0ae57d06776a2e
+      size: 45826
+    - path: reports/metrics.json
+      hash: md5
+      md5: 5f09e6e2f37ae0950d83b6d72a652719
+      size: 916
+  hel1os_index:
+    cmd: python -m src.pipeline hel1os_index
+    deps:
+    - path: src/hel1os.py
+      hash: md5
+      md5: 7a36729533fcf107b312ba8d154ae3e0
+      size: 5906
+    - path: src/pipeline.py
+      hash: md5
+      md5: e0b19a4a915772dee493fdde5ad62385
+      size: 6100
+    params:
+      params.yaml:
+        paths.data_root_hel1os: D:/MLOPS_CP/Data/HELIOS
+    outs:
+    - path: data/processed/hel1os
+      hash: md5
+      md5: b8349c3141bf8a03a59c8db59623eb0a.dir
+      size: 7314961
+      nfiles: 2

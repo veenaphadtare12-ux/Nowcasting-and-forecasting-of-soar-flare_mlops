@@ -1,0 +1,48 @@
+{
+  "n_detected": 1449,
+  "n_detected_matched_goes": 689,
+  "goes_match_rate": 0.47550034506556244,
+  "n_goes_in_valid_time": 881,
+  "goes_recall": 0.9795686719636776,
+  "goes_recall_by_class": {
+    "B": {
+      "n": 68,
+      "recall": 0.9852941176470589
+    },
+    "C": {
+      "n": 712,
+      "recall": 0.9803370786516854
+    },
+    "M": {
+      "n": 98,
+      "recall": 0.9693877551020408
+    },
+    "X": {
+      "n": 3,
+      "recall": 1.0
+    }
+  },
+  "goes_class_balance_all": {
+    "B": 68,
+    "C": 712,
+    "M": 98,
+    "X": 3
+  },
+  "detected_class_balance_via_goes": {
+    "B": 53,
+    "C": 549,
+    "M": 84,
+    "X": 3
+  },
+  "n_detected_unmatched": 760,
+  "days_used": 123,
+  "days_in_range": 128,
+  "days_excluded": [
+    "2025-04-17",
+    "2025-05-17",
+    "2025-06-17",
+    "2025-08-17",
+    "2025-09-17"
+  ],
+  "detected_per_day": 11.78048780487805
+}
