@@ -1,32 +1,84 @@
 # All paths and tunable parameters live here. Code must read them via src/config.py,
-# never hard-code paths.
+# never hard-code paths or dates.
 paths:
   data_root_solexs: "D:/MLOPS_CP/Data/SoLEXS"
   data_root_hel1os: "D:/MLOPS_CP/Data/HELIOS"
   processed_dir: "data/processed"
-  goes_flare_list: "data/external/goes_flares.csv"   # NOAA/GOES event list (see src/goes.py)
-  mlflow_tracking_uri: "mlruns"
+  mlflow_tracking_uri: "sqlite:///mlflow.db"   # relative path = relative to the project root
 
-# Which days to process. Start with a subset, widen to the full range once every stage works.
-subset:
-  start: "2024-10-01"
-  end: "2026-09-13"
+# Chronological data periods (inclusive, UTC days). Use these everywhere.
+#   tune  : detector thresholds are tuned ONLY here (and models are trained here)
+#   val   : model selection / honest detector check; nothing is tuned on it
+#   test  : final, untouched. Never used for tuning, never inspected during development.
+periods:
+  tune: {start: "2025-04-09", end: "2026-01-31"}
+  val:  {start: "2026-02-01", end: "2026-05-31"}
+  test: {start: "2026-06-01", end: "2026-09-12"}
 
 solexs:
   detector: "SDD2"          # light curves exist only for SDD2
   cadence_s: 1
   min_valid_fraction: 0.5   # a day needs at least this fraction of its seconds inside GTI with data
 
+# --- detector (src/detection/detector.py) -----------------------------------------------------------
+# Works on 1-minute mean counts. Background is a trailing quantile and is frozen while an event is active.
 flare_detection:
-  smooth_window_s: 60       # trailing rolling mean of counts (causal)
-  background_window_s: 3600 # trailing rolling low-quantile background (causal)
+  bg_window_min: 60         # trailing background window (minutes)
+  bg_quantile: 0.2
+  min_valid_s_per_min: 30   # a minute needs this many valid seconds, else it is NaN
+  threshold_sigma: 5        # trigger: minute mean - bg > max(sigma*sqrt(bg/60), frac*bg, abs)
+  min_excess_frac: 1.0      # TUNED on tune period only (reports/tuning_best.json, 300-trial grid)
+  min_excess_abs: 12.0      # TUNED
+  # GOES-style onset: first point of a sustained strictly increasing run of 1-min means
+  rise_steps: 3             # TUNED. >= this many consecutive increases (GOES uses 4 minutes = 3 steps)
+  min_rise_ratio: 1.4       # last/first minute of the run (GOES: 1.4)
+  impulsive_factor: 0       # TUNED. >0: a single-minute jump of this many thresholds also counts as a rise
+  max_lookback_min: 30
+  # GOES-style end: decay to halfway between peak and pre-flare background, or below threshold
+  end_halfway_frac: 0.5
+  end_confirm_min: 2
+  # merged-event splitting: dip between two peaks, as a fraction of (lower peak - background)
+  dip_frac: 0.3             # TUNED
+  min_duration_s: 120
+  max_duration_s: 10800     # 3 h cap; events hitting the cap are flagged and counted
+  gap_end_min: 10           # data gap this long ends an active event
+
+# Legacy detector, kept only to produce "before" numbers/plots (frozen, do not tune).
+flare_detection_legacy:
+  smooth_window_s: 60
+  background_window_s: 3600
   background_quantile: 0.2
   threshold_sigma: 5
-  min_excess_frac: 0.5      # excess must also exceed this fraction of the background
-  min_excess_abs: 5.0       # ...and this many counts/s
+  min_excess_frac: 0.5
+  min_excess_abs: 5.0
   end_frac: 0.1
   merge_gap_s: 120
   min_duration_s: 120
 
 goes_match:
   tolerance_s: 300          # SoLEXS [onset,end] must overlap GOES [begin-tol, end+tol]
+
+evaluation:
+  size_cut_counts_s: 50     # "large detection" cut for precision-vs-GOES (fixed, not tuned)
+  long_event_s: 7200
+  duration_bins_min: [0, 5, 15, 30, 60, 120, 180]
+
+tuning:
+  grid:
+    min_excess_frac: [0.3, 0.5, 0.8, 1.0, 1.5]
+    min_excess_abs: [3.0, 5.0, 8.0, 12.0, 16.0]
+    rise_steps: [2, 3, 4]
+    dip_frac: [0.3, 0.5]
+    impulsive_factor: [0, 4]
+  penalty_long_event: 0.5     # score -= this * (fraction of events > long_event_s)
+  penalty_onset_per_min: 0.01 # score -= this * median |onset error| (minutes)
+
+labels:
+  horizons_min: [30, 60, 120]
+  min_class_c: "C1.0"
+  min_class_m: "M1.0"
+
+features:
+  cadence_s: 10
+  windows_min: [1, 5, 15, 60]   # trailing windows
+  min_valid_frac_5m: 0.8        # drop feature rows with less than this fraction of valid data in the last 5 min

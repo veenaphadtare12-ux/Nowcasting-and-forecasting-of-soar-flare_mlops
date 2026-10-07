@@ -1,0 +1,17 @@
+{
+  "min_excess_frac": 1.0,
+  "min_excess_abs": 12.0,
+  "rise_steps": 3.0,
+  "dip_frac": 0.3,
+  "impulsive_factor": 0.0,
+  "score": 0.7986400934687564,
+  "n_events": 1829.0,
+  "match_rate_all": 0.7616183706943686,
+  "precision_above_cut": 0.8326959847036329,
+  "recall_C_plus": 0.8649613325401546,
+  "recall_all": 0.8194444444444444,
+  "n_gt_2h": 5.0,
+  "frac_gt_2h": 0.002733734281027884,
+  "onset_med_abs_min": 1.0,
+  "onset_p90_abs_min": 10.0
+}

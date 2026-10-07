@@ -1,0 +1,91 @@
+{
+  "cadence_s": 10,
+  "periods": {
+    "tune": {
+      "rows": 1936953,
+      "first": "2025-04-09 00:04:00+00:00",
+      "last": "2026-01-31 23:59:50+00:00",
+      "file_mb": 118.5,
+      "n_features": 27,
+      "nowcast_pos_rate": 0.08431000792402889,
+      "30m": {
+        "ok_rows": 1919000,
+        "pos_rate_C": 0.12297238144867119,
+        "pos_rate_M": 0.015814486711829077
+      },
+      "60m": {
+        "ok_rows": 1909406,
+        "pos_rate_C": 0.22553087190466564,
+        "pos_rate_M": 0.02987944942039566
+      },
+      "120m": {
+        "ok_rows": 1890395,
+        "pos_rate_C": 0.3786377979205404,
+        "pos_rate_M": 0.05626231554780879
+      }
+    },
+    "val": {
+      "rows": 816920,
+      "first": "2026-02-01 00:00:00+00:00",
+      "last": "2026-05-31 23:59:50+00:00",
+      "file_mb": 49.3,
+      "n_features": 27,
+      "nowcast_pos_rate": 0.06974122313078392,
+      "30m": {
+        "ok_rows": 812424,
+        "pos_rate_C": 0.10435930006991423,
+        "pos_rate_M": 0.013353864484554863
+      },
+      "60m": {
+        "ok_rows": 807883,
+        "pos_rate_C": 0.1924820797070863,
+        "pos_rate_M": 0.023389525463464386
+      },
+      "120m": {
+        "ok_rows": 800036,
+        "pos_rate_C": 0.32383167757450915,
+        "pos_rate_M": 0.041276892539835706
+      }
+    },
+    "test": {
+      "rows": 792482,
+      "first": "2026-06-01 00:00:00+00:00",
+      "last": "2026-09-12 23:59:50+00:00",
+      "file_mb": 47.1,
+      "n_features": 27
+    }
+  },
+  "goes_missing_days": [
+    "2025-12-30",
+    "2025-12-31"
+  ],
+  "feature_columns": [
+    "rate",
+    "log_rate",
+    "mean_1m",
+    "max_1m",
+    "valid_frac_1m",
+    "mean_5m",
+    "max_5m",
+    "std_5m",
+    "slope_5m",
+    "valid_frac_5m",
+    "mean_15m",
+    "max_15m",
+    "std_15m",
+    "slope_15m",
+    "valid_frac_15m",
+    "mean_60m",
+    "max_60m",
+    "std_60m",
+    "slope_60m",
+    "valid_frac_60m",
+    "bg_60m",
+    "excess_1m",
+    "ratio_1m_bg",
+    "ratio_1m_60m",
+    "ratio_5m_60m",
+    "d_mean_1m_5m",
+    "accel_5m"
+  ]
+}

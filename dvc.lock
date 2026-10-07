@@ -5,54 +5,77 @@ stages:
     deps:
     - path: src/goes.py
       hash: md5
-      md5: f29914dac4924d84754ebfcf49c27ac7
-      size: 4150
+      md5: 69bf6fb385033c53c993fa2c6e3f32fc
+      size: 5522
     - path: src/pipeline.py
       hash: md5
-      md5: e0b19a4a915772dee493fdde5ad62385
-      size: 6100
+      md5: 757a565a82fba9e2a2d03c96248a8ed9
+      size: 9606
     params:
       params.yaml:
-        subset:
-          start: '2024-10-01'
-          end: '2026-09-13'
+        periods:
+          tune:
+            start: '2025-04-09'
+            end: '2026-01-31'
+          val:
+            start: '2026-02-01'
+            end: '2026-05-31'
+          test:
+            start: '2026-06-01'
+            end: '2026-09-12'
     outs:
     - path: data/external/goes_events
       hash: md5
-      md5: 40f86fab55e62d09191354d6485ce59d.dir
-      size: 2286434
-      nfiles: 713
+      md5: ac6abf0151d4ebf0d2e54717f0e82cd5.dir
+      size: 1550929
+      nfiles: 523
   solexs_clean:
     cmd: python -m src.pipeline solexs_clean
     deps:
+    - path: src/detection/detector.py
+      hash: md5
+      md5: 6d5eef5dee88322a972a1c295e9019bb
+      size: 8543
     - path: src/pipeline.py
       hash: md5
-      md5: e0b19a4a915772dee493fdde5ad62385
-      size: 6100
+      md5: 757a565a82fba9e2a2d03c96248a8ed9
+      size: 9606
     - path: src/solexs.py
       hash: md5
       md5: 48363970f48c546cfff24587af97940e
       size: 4276
     params:
       params.yaml:
+        flare_detection.min_valid_s_per_min: 30
         paths.data_root_solexs: D:/MLOPS_CP/Data/SoLEXS
+        periods:
+          tune:
+            start: '2025-04-09'
+            end: '2026-01-31'
+          val:
+            start: '2026-02-01'
+            end: '2026-05-31'
+          test:
+            start: '2026-06-01'
+            end: '2026-09-12'
         solexs:
           detector: SDD2
           cadence_s: 1
           min_valid_fraction: 0.5
-        subset:
-          start: '2024-10-01'
-          end: '2026-09-13'
     outs:
     - path: data/processed/solexs_clean
       hash: md5
-      md5: c8207729a33ef8fa12c4bdcb89367c93.dir
-      size: 290559486
-      nfiles: 429
+      md5: e1d8926c1ef03298ee12765f28f68eb7.dir
+      size: 286974268
+      nfiles: 424
+    - path: data/processed/solexs_minute.parquet
+      hash: md5
+      md5: 909cdc962a62700281ad3b2c4ae51543
+      size: 6050846
     - path: data/processed/solexs_qc.csv
       hash: md5
-      md5: 9524e6cffa3cc501cbadeaa09474ba79
-      size: 33118
+      md5: dbe8aa70360169fd6c4a4736857c7b45
+      size: 32688
   solexs_flares:
     cmd: python -m src.pipeline solexs_flares
     deps:
@@ -145,8 +168,8 @@ stages:
       size: 5906
     - path: src/pipeline.py
       hash: md5
-      md5: e0b19a4a915772dee493fdde5ad62385
-      size: 6100
+      md5: 757a565a82fba9e2a2d03c96248a8ed9
+      size: 9606
     params:
       params.yaml:
         paths.data_root_hel1os: D:/MLOPS_CP/Data/HELIOS
@@ -156,3 +179,304 @@ stages:
       md5: b8349c3141bf8a03a59c8db59623eb0a.dir
       size: 7314961
       nfiles: 2
+  detect_events:
+    cmd: python -m src.pipeline detect_events
+    deps:
+    - path: data/processed/solexs_minute.parquet
+      hash: md5
+      md5: 909cdc962a62700281ad3b2c4ae51543
+      size: 6050846
+    - path: src/detection/detector.py
+      hash: md5
+      md5: 6d5eef5dee88322a972a1c295e9019bb
+      size: 8543
+    - path: src/pipeline.py
+      hash: md5
+      md5: 757a565a82fba9e2a2d03c96248a8ed9
+      size: 9606
+    params:
+      params.yaml:
+        flare_detection:
+          bg_window_min: 60
+          bg_quantile: 0.2
+          min_valid_s_per_min: 30
+          threshold_sigma: 5
+          min_excess_frac: 1.0
+          min_excess_abs: 12.0
+          rise_steps: 3
+          min_rise_ratio: 1.4
+          impulsive_factor: 0
+          max_lookback_min: 30
+          end_halfway_frac: 0.5
+          end_confirm_min: 2
+          dip_frac: 0.3
+          min_duration_s: 120
+          max_duration_s: 10800
+          gap_end_min: 10
+        periods:
+          tune:
+            start: '2025-04-09'
+            end: '2026-01-31'
+          val:
+            start: '2026-02-01'
+            end: '2026-05-31'
+          test:
+            start: '2026-06-01'
+            end: '2026-09-12'
+    outs:
+    - path: data/processed/events_raw.parquet
+      hash: md5
+      md5: f1f4e2cfd01e93dfe6c828d2d2e76b83
+      size: 175965
+  legacy_events:
+    cmd: python -m src.pipeline legacy_events
+    deps:
+    - path: data/processed/solexs_clean
+      hash: md5
+      md5: e1d8926c1ef03298ee12765f28f68eb7.dir
+      size: 286974268
+      nfiles: 424
+    - path: src/detection/legacy.py
+      hash: md5
+      md5: 74e05c1479d46273fd84f19e3b9a792e
+      size: 3652
+    - path: src/pipeline.py
+      hash: md5
+      md5: 757a565a82fba9e2a2d03c96248a8ed9
+      size: 9606
+    params:
+      params.yaml:
+        flare_detection_legacy:
+          smooth_window_s: 60
+          background_window_s: 3600
+          background_quantile: 0.2
+          threshold_sigma: 5
+          min_excess_frac: 0.5
+          min_excess_abs: 5.0
+          end_frac: 0.1
+          merge_gap_s: 120
+          min_duration_s: 120
+        periods:
+          tune:
+            start: '2025-04-09'
+            end: '2026-01-31'
+          val:
+            start: '2026-02-01'
+            end: '2026-05-31'
+          test:
+            start: '2026-06-01'
+            end: '2026-09-12'
+    outs:
+    - path: data/processed/legacy_events_raw.parquet
+      hash: md5
+      md5: d37339b0678312847271983bcb001a7a
+      size: 160784
+  match_goes:
+    cmd: python -m src.pipeline match_goes
+    deps:
+    - path: data/external/goes_events
+      hash: md5
+      md5: ac6abf0151d4ebf0d2e54717f0e82cd5.dir
+      size: 1550929
+      nfiles: 523
+    - path: data/processed/events_raw.parquet
+      hash: md5
+      md5: f1f4e2cfd01e93dfe6c828d2d2e76b83
+      size: 175965
+    - path: data/processed/legacy_events_raw.parquet
+      hash: md5
+      md5: d37339b0678312847271983bcb001a7a
+      size: 160784
+    - path: src/detection/matching.py
+      hash: md5
+      md5: d0b54b878bff723ccd24db8af020746b
+      size: 5860
+    - path: src/goes.py
+      hash: md5
+      md5: 69bf6fb385033c53c993fa2c6e3f32fc
+      size: 5522
+    - path: src/pipeline.py
+      hash: md5
+      md5: 757a565a82fba9e2a2d03c96248a8ed9
+      size: 9606
+    params:
+      params.yaml:
+        goes_match:
+          tolerance_s: 300
+        periods:
+          tune:
+            start: '2025-04-09'
+            end: '2026-01-31'
+          val:
+            start: '2026-02-01'
+            end: '2026-05-31'
+          test:
+            start: '2026-06-01'
+            end: '2026-09-12'
+    outs:
+    - path: data/processed/events.parquet
+      hash: md5
+      md5: 3f988b232e058661f3285af5e85dbe94
+      size: 188968
+    - path: data/processed/events_pairs.parquet
+      hash: md5
+      md5: 91a562c07296b1f834221604fae2f803
+      size: 30212
+    - path: data/processed/goes_matched.parquet
+      hash: md5
+      md5: 65777224953fa21434a59e5a9ffe10b0
+      size: 128267
+    - path: data/processed/legacy_events.parquet
+      hash: md5
+      md5: bf2c9c8ec71453ca38f5afe443152da9
+      size: 174523
+    - path: data/processed/legacy_events_pairs.parquet
+      hash: md5
+      md5: 0d2563146dc30df82abcc40466d1d062
+      size: 27078
+  evaluate_detector:
+    cmd: python -m src.pipeline evaluate_detector
+    deps:
+    - path: data/processed/events.parquet
+      hash: md5
+      md5: 3f988b232e058661f3285af5e85dbe94
+      size: 188968
+    - path: data/processed/events_pairs.parquet
+      hash: md5
+      md5: 91a562c07296b1f834221604fae2f803
+      size: 30212
+    - path: data/processed/goes_matched.parquet
+      hash: md5
+      md5: 65777224953fa21434a59e5a9ffe10b0
+      size: 128267
+    - path: data/processed/legacy_events.parquet
+      hash: md5
+      md5: bf2c9c8ec71453ca38f5afe443152da9
+      size: 174523
+    - path: data/processed/legacy_events_pairs.parquet
+      hash: md5
+      md5: 0d2563146dc30df82abcc40466d1d062
+      size: 27078
+    - path: data/processed/solexs_minute.parquet
+      hash: md5
+      md5: 909cdc962a62700281ad3b2c4ae51543
+      size: 6050846
+    - path: src/detection/matching.py
+      hash: md5
+      md5: d0b54b878bff723ccd24db8af020746b
+      size: 5860
+    - path: src/detection/plots.py
+      hash: md5
+      md5: c9cc9798cb97128329f3880341d3c080
+      size: 8280
+    - path: src/pipeline.py
+      hash: md5
+      md5: 757a565a82fba9e2a2d03c96248a8ed9
+      size: 9606
+    params:
+      params.yaml:
+        evaluation:
+          size_cut_counts_s: 50
+          long_event_s: 7200
+          duration_bins_min:
+          - 0
+          - 5
+          - 15
+          - 30
+          - 60
+          - 120
+          - 180
+        periods:
+          tune:
+            start: '2025-04-09'
+            end: '2026-01-31'
+          val:
+            start: '2026-02-01'
+            end: '2026-05-31'
+          test:
+            start: '2026-06-01'
+            end: '2026-09-12'
+    outs:
+    - path: docs/figures
+      hash: md5
+      md5: 2068d591c32ae7f3ce8935869f2c0688.dir
+      size: 573840
+      nfiles: 9
+    - path: reports/detection_metrics.json
+      hash: md5
+      md5: c23919806a3f0f5be1f38d72b90a421f
+      size: 6707
+  build_dataset:
+    cmd: python -m src.pipeline build_dataset
+    deps:
+    - path: data/external/goes_events
+      hash: md5
+      md5: ac6abf0151d4ebf0d2e54717f0e82cd5.dir
+      size: 1550929
+      nfiles: 523
+    - path: data/processed/events.parquet
+      hash: md5
+      md5: 3f988b232e058661f3285af5e85dbe94
+      size: 188968
+    - path: data/processed/solexs_clean
+      hash: md5
+      md5: e1d8926c1ef03298ee12765f28f68eb7.dir
+      size: 286974268
+      nfiles: 424
+    - path: data/processed/solexs_minute.parquet
+      hash: md5
+      md5: 909cdc962a62700281ad3b2c4ae51543
+      size: 6050846
+    - path: src/dataset.py
+      hash: md5
+      md5: c7fe74fe0af83983bd7c71257d98bb8f
+      size: 4098
+    - path: src/features.py
+      hash: md5
+      md5: 9bd0c201c266ba7a7cc7a59b9e8b8101
+      size: 3677
+    - path: src/labels.py
+      hash: md5
+      md5: 59ba704b5bbd1e14040772d4561ded7c
+      size: 3924
+    - path: src/pipeline.py
+      hash: md5
+      md5: 757a565a82fba9e2a2d03c96248a8ed9
+      size: 9606
+    params:
+      params.yaml:
+        features:
+          cadence_s: 10
+          windows_min:
+          - 1
+          - 5
+          - 15
+          - 60
+          min_valid_frac_5m: 0.8
+        labels:
+          horizons_min:
+          - 30
+          - 60
+          - 120
+          min_class_c: C1.0
+          min_class_m: M1.0
+        periods:
+          tune:
+            start: '2025-04-09'
+            end: '2026-01-31'
+          val:
+            start: '2026-02-01'
+            end: '2026-05-31'
+          test:
+            start: '2026-06-01'
+            end: '2026-09-12'
+    outs:
+    - path: data/processed/dataset
+      hash: md5
+      md5: ac7011684f05ab50a8b9b5501e7a4924.dir
+      size: 214925776
+      nfiles: 3
+    - path: reports/dataset_summary.json
+      hash: md5
+      md5: fd9df5e8b96b69912dd8a06f5b7b02cd
+      size: 2122

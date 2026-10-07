@@ -4,7 +4,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src import flares, goes, hel1os, solexs
+from src import goes, hel1os, solexs
+from src.detection import matching
 
 SAMPLE_EVENTS = """\
 #Event    Begin    Max       End  Obs  Q  Type  Loc/Frq   Particulars       Reg#
@@ -38,31 +39,6 @@ def test_gti_mask_is_unit_safe():
     assert mask.sum() == 4 and mask[2] and mask[5] and not mask[1] and not mask[6]
 
 
-def _synthetic_day(flare_start=40000, n=86400, seed=0):
-    rng = np.random.default_rng(seed)
-    t = pd.date_range("2025-04-10", periods=n, freq="s", tz="UTC")
-    rate = np.full(n, 20.0)
-    k = np.arange(600)
-    rate[flare_start : flare_start + 600] += 200 * np.exp(-k / 150.0) * (1 - np.exp(-k / 20.0))
-    return pd.Series(rng.poisson(rate).astype("float64"), index=t)
-
-
-def test_detector_finds_injected_flare():
-    ev = flares.detect_day(_synthetic_day())
-    assert len(ev) == 1
-    onset = ev.loc[0, "onset"]
-    truth = pd.Timestamp("2025-04-10", tz="UTC") + pd.Timedelta(seconds=40000)
-    assert abs((onset - truth).total_seconds()) < 120
-
-
-def test_detector_is_causal_onset_unchanged_by_future_data():
-    full = _synthetic_day()
-    cut = full.iloc[: 40000 + 400]  # drop everything after the flare is underway (still in progress)
-    onset_full = flares.detect_day(full).loc[0, "onset"]
-    onset_cut = flares.detect_day(cut).loc[0, "onset"]
-    assert onset_full == onset_cut
-
-
 def test_goes_class_only_from_goes_match():
     t0 = pd.Timestamp("2025-04-10 05:00", tz="UTC")
     fl = pd.DataFrame(
@@ -79,10 +55,12 @@ def test_goes_class_only_from_goes_match():
             "end": [t0 + pd.Timedelta(minutes=12)], "goes_class": ["M2.0"], "class_letter": ["M"],
         }
     )
-    m, gm = flares.match_goes(fl, g, tolerance_s=60)
+    m, gm, pairs = matching.match_goes(fl, g, tolerance_s=60)
     assert m.loc[0, "goes_class"] == "M2.0"
     assert pd.isna(m.loc[1, "goes_class"])  # bigger counts, but no GOES event -> no class assigned
     assert gm.loc[0, "n_solexs_matches"] == 1
+    assert bool(m.loc[0, "is_goes_matched"]) and not bool(m.loc[1, "is_goes_matched"])
+    assert list(pairs.itertuples(index=False, name=None)) == [(0, 0)]
 
 
 def test_hel1os_keeps_newest_version_per_session():

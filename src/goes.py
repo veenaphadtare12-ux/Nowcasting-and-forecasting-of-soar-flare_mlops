@@ -8,6 +8,7 @@ SoLEXS counts.
 from __future__ import annotations
 
 import re
+import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -42,14 +43,26 @@ def download_day(day: pd.Timestamp, out_dir: Path | None = None, timeout: int = 
     if dest.exists() and dest.stat().st_size > 0:
         return dest
     url = BASE_URL.format(y=day.strftime("%Y"), m=day.strftime("%m"), ymd=ymd)
-    r = requests.get(url, timeout=timeout)
-    if r.status_code != 200:
-        return None
-    dest.write_bytes(r.content)
-    return dest
+    last_err = None
+    for attempt in range(5):
+        try:
+            r = requests.get(url, timeout=timeout)
+        except requests.RequestException as e:  # timeout / connection reset: retry with backoff
+            last_err = e
+            time.sleep(2 ** attempt)
+            continue
+        if r.status_code == 404:
+            return None  # NOAA has no report for this day: genuinely missing GOES truth
+        if r.status_code == 200:
+            dest.write_bytes(r.content)
+            return dest
+        last_err = RuntimeError(f"HTTP {r.status_code} for {url}")
+        time.sleep(2 ** attempt)
+    # never silently treat a transient failure as "no GOES data for this day"
+    raise RuntimeError(f"could not download {url} after retries") from last_err
 
 
-def download_range(start: str, end: str, workers: int = 8) -> dict:
+def download_range(start: str, end: str, workers: int = 4) -> dict:
     days = pd.date_range(start, end, freq="D")
     with ThreadPoolExecutor(workers) as ex:
         res = list(ex.map(download_day, days))
@@ -84,6 +97,15 @@ def parse_events_text(text: str, day: pd.Timestamp) -> list[dict]:
             }
         )
     return rows
+
+
+def missing_days(start: pd.Timestamp, end: pd.Timestamp, events_path: Path | None = None) -> list[pd.Timestamp]:
+    """UTC days in [start, end) with no downloaded NOAA event report (no GOES truth for those days)."""
+    events_path = events_path or events_dir()
+    have = {f.name[:8] for f in events_path.glob("*events.txt")}
+    days = pd.date_range(start.tz_localize(None) if start.tzinfo else start, end.tz_localize(None) if end.tzinfo else end,
+                         freq="D", inclusive="left")
+    return [pd.Timestamp(d, tz="UTC") for d in days if d.strftime("%Y%m%d") not in have]
 
 
 def load_flare_list(start: str | None = None, end: str | None = None, events_path: Path | None = None) -> pd.DataFrame:

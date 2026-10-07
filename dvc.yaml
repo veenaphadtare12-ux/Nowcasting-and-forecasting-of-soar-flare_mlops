@@ -1,3 +1,6 @@
+# Run with the venv on PATH:  .venv\Scripts\activate  then  dvc repro
+# Detector tuning (python -m src.detection.tune) is deliberately NOT a stage: it reads the tune period only and
+# its chosen values are copied into params.yaml by hand (see reports/tuning_best.json).
 stages:
   fetch_goes:
     cmd: python -m src.pipeline fetch_goes
@@ -5,7 +8,7 @@ stages:
       - src/goes.py
       - src/pipeline.py
     params:
-      - subset
+      - periods
     outs:
       - data/external/goes_events
 
@@ -13,44 +16,104 @@ stages:
     cmd: python -m src.pipeline solexs_clean
     deps:
       - src/solexs.py
+      - src/detection/detector.py
       - src/pipeline.py
     params:
       - paths.data_root_solexs
-      - subset
+      - periods
       - solexs
+      - flare_detection.min_valid_s_per_min
     outs:
       - data/processed/solexs_clean
+      - data/processed/solexs_minute.parquet
       - data/processed/solexs_qc.csv:
           cache: false
 
-  solexs_flares:
-    cmd: python -m src.pipeline solexs_flares
+  detect_events:
+    cmd: python -m src.pipeline detect_events
     deps:
-      - src/flares.py
+      - src/detection/detector.py
+      - src/pipeline.py
+      - data/processed/solexs_minute.parquet
+    params:
+      - flare_detection
+      - periods
+    outs:
+      - data/processed/events_raw.parquet
+
+  legacy_events:
+    cmd: python -m src.pipeline legacy_events
+    deps:
+      - src/detection/legacy.py
       - src/pipeline.py
       - data/processed/solexs_clean
     params:
-      - flare_detection
+      - flare_detection_legacy
+      - periods
     outs:
-      - data/processed/flares.parquet
+      - data/processed/legacy_events_raw.parquet
 
-  goes_match:
-    cmd: python -m src.pipeline goes_match
+  match_goes:
+    cmd: python -m src.pipeline match_goes
     deps:
-      - src/flares.py
+      - src/detection/matching.py
       - src/goes.py
       - src/pipeline.py
-      - data/processed/flares.parquet
-      - data/processed/solexs_clean
-      - data/processed/solexs_qc.csv
+      - data/processed/events_raw.parquet
+      - data/processed/legacy_events_raw.parquet
       - data/external/goes_events
     params:
       - goes_match
+      - periods
     outs:
-      - data/processed/flares_matched.parquet
+      - data/processed/events.parquet
+      - data/processed/events_pairs.parquet
+      - data/processed/legacy_events.parquet
+      - data/processed/legacy_events_pairs.parquet
       - data/processed/goes_matched.parquet
+
+  evaluate_detector:   # tune + val only; the test period is never evaluated here
+    cmd: python -m src.pipeline evaluate_detector
+    deps:
+      - src/detection/matching.py
+      - src/detection/plots.py
+      - src/pipeline.py
+      - data/processed/solexs_minute.parquet
+      - data/processed/events.parquet
+      - data/processed/events_pairs.parquet
+      - data/processed/legacy_events.parquet
+      - data/processed/legacy_events_pairs.parquet
+      - data/processed/goes_matched.parquet
+    params:
+      - evaluation
+      - periods
     metrics:
-      - reports/metrics.json:
+      - reports/detection_metrics.json:
+          cache: false
+    outs:
+      - docs/figures:
+          cache: false
+
+  build_dataset:
+    cmd: python -m src.pipeline build_dataset
+    deps:
+      - src/features.py
+      - src/labels.py
+      - src/dataset.py
+      - src/pipeline.py
+      - data/processed/solexs_clean
+      - data/processed/solexs_minute.parquet
+      - data/processed/events.parquet
+      - data/external/goes_events
+    # HEL1OS (data/processed/hel1os) is read if present but is deliberately not a dependency: it is optional.
+    params:
+      - features
+      - labels
+      - periods
+    outs:
+      - data/processed/dataset
+    metrics:
+      - reports/dataset_summary.json:
           cache: false
 
   # Optional: HEL1OS is not a dependency of any other stage.

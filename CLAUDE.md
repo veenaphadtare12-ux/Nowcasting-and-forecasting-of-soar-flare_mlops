@@ -14,6 +14,24 @@ and HEL1OS (hard X-ray) Level-1 data. These rules are permanent; follow them in 
 6. **Every training run is logged to MLflow.**
 7. **Code layout:** code in `src/`, exploration in `notebooks/`, tests in `tests/`.
 
+## Periods, tuning and labels (params.yaml `periods`)
+
+- tune 2025-04-09..2026-01-31, val 2026-02-01..2026-05-31, test 2026-06-01..2026-09-12. Use these everywhere.
+- Detector thresholds are tuned ONLY on the tune period (`python -m src.detection.tune`, logged to MLflow); chosen
+  values are copied into params.yaml by hand. Nothing is tuned on val. The test period is never evaluated,
+  inspected or tuned on (its dataset summary deliberately has no label statistics).
+- Detector event catalogue fields (onset, peak, end, class, match) are label-side only, never features.
+- Positives come only from GOES-matched events; GOES class only from the match. Days with no NOAA report
+  (2025-12-30, 2025-12-31) have no GOES truth: excluded from evaluation, labels marked not ok.
+- Training code must filter forecast rows on `ok_<h>m` (and nowcast rows on `ok_now`).
+
+## Pipeline notes
+
+- Run DVC with the venv on PATH (`.venv\Scripts\activate`, then `dvc repro`); `dvc.yaml` uses plain `python`.
+- DVC outputs are read-only hardlinks into `D:/dvc-cache`: never write into an existing output in place.
+  Pipeline code unlinks a file before writing it (`_fresh`); do the same in any new stage.
+- MLflow tracking: `sqlite:///mlflow.db` at the project root (the file store is deprecated in MLflow 3).
+
 ## Environment
 
 - Windows. Project lives at `D:\projects\solar-flare-project`. Virtual env: `.venv` on Python 3.12 (`py -3.12`). Use `.venv\Scripts\python.exe`.

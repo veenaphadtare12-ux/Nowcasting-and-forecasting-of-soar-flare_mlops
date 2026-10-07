@@ -1,0 +1,282 @@
+{
+  "legacy": {
+    "tune": {
+      "goes_missing_days_excluded": [
+        "2025-12-30",
+        "2025-12-31"
+      ],
+      "period": [
+        "2025-04-09",
+        "2026-01-31"
+      ],
+      "n_events": 2725,
+      "n_events_matched": 1398,
+      "match_rate_all": 0.5130275229357798,
+      "size_cut_counts_s": 50,
+      "n_events_above_cut": 981,
+      "precision_above_cut": 0.8042813455657493,
+      "n_goes_flares": 1800,
+      "goes_recall": 0.9816666666666667,
+      "goes_recall_by_class": {
+        "B": {
+          "n": 119,
+          "recall": 0.9915966386554622
+        },
+        "C": {
+          "n": 1509,
+          "recall": 0.9847581179589132
+        },
+        "M": {
+          "n": 163,
+          "recall": 0.9447852760736196
+        },
+        "X": {
+          "n": 9,
+          "recall": 1.0
+        }
+      },
+      "goes_recall_C_and_above": 0.9809637120761452,
+      "onset_error_min": {
+        "n": 1767,
+        "median_signed": 3.1666666666666665,
+        "median_abs": 5.833333333333333,
+        "p90_abs": 75.83333333333333
+      },
+      "duration_hist_min": {
+        "0-5": 243,
+        "5-15": 877,
+        "15-30": 570,
+        "30-60": 523,
+        "60-120": 293,
+        "120-180": 112,
+        "180-inf": 107
+      },
+      "duration_median_min": 19.666666666666668,
+      "n_events_gt_long": 218,
+      "long_event_s": 7200,
+      "n_hit_cap": 0,
+      "n_was_split": 0,
+      "detected_class_balance_via_goes": {
+        "B": 99,
+        "C": 1143,
+        "M": 146,
+        "X": 10
+      },
+      "goes_class_balance": {
+        "B": 119,
+        "C": 1509,
+        "M": 163,
+        "X": 9
+      }
+    },
+    "val": {
+      "goes_missing_days_excluded": [
+        "2025-12-30",
+        "2025-12-31"
+      ],
+      "period": [
+        "2026-02-01",
+        "2026-05-31"
+      ],
+      "n_events": 1022,
+      "n_events_matched": 550,
+      "match_rate_all": 0.538160469667319,
+      "size_cut_counts_s": 50,
+      "n_events_above_cut": 282,
+      "precision_above_cut": 0.8581560283687943,
+      "n_goes_flares": 707,
+      "goes_recall": 0.9321074964639321,
+      "goes_recall_by_class": {
+        "B": {
+          "n": 133,
+          "recall": 0.7218045112781954
+        },
+        "C": {
+          "n": 509,
+          "recall": 0.9842829076620825
+        },
+        "M": {
+          "n": 59,
+          "recall": 0.9661016949152542
+        },
+        "X": {
+          "n": 6,
+          "recall": 0.8333333333333334
+        }
+      },
+      "goes_recall_C_and_above": 0.980836236933798,
+      "onset_error_min": {
+        "n": 659,
+        "median_signed": 3.6666666666666665,
+        "median_abs": 6.166666666666667,
+        "p90_abs": 52.300000000000026
+      },
+      "duration_hist_min": {
+        "0-5": 97,
+        "5-15": 307,
+        "15-30": 241,
+        "30-60": 186,
+        "60-120": 127,
+        "120-180": 35,
+        "180-inf": 29
+      },
+      "duration_median_min": 20.75,
+      "n_events_gt_long": 64,
+      "long_event_s": 7200,
+      "n_hit_cap": 0,
+      "n_was_split": 0,
+      "detected_class_balance_via_goes": {
+        "B": 77,
+        "C": 420,
+        "M": 48,
+        "X": 5
+      },
+      "goes_class_balance": {
+        "B": 133,
+        "C": 509,
+        "M": 59,
+        "X": 6
+      }
+    }
+  },
+  "new": {
+    "tune": {
+      "goes_missing_days_excluded": [
+        "2025-12-30",
+        "2025-12-31"
+      ],
+      "period": [
+        "2025-04-09",
+        "2026-01-31"
+      ],
+      "n_events": 1830,
+      "n_events_matched": 1393,
+      "match_rate_all": 0.7612021857923498,
+      "size_cut_counts_s": 50,
+      "n_events_above_cut": 1047,
+      "precision_above_cut": 0.8319006685768864,
+      "n_goes_flares": 1800,
+      "goes_recall": 0.8194444444444444,
+      "goes_recall_by_class": {
+        "B": {
+          "n": 119,
+          "recall": 0.17647058823529413
+        },
+        "C": {
+          "n": 1509,
+          "recall": 0.8535453943008615
+        },
+        "M": {
+          "n": 163,
+          "recall": 0.9631901840490797
+        },
+        "X": {
+          "n": 9,
+          "recall": 1.0
+        }
+      },
+      "goes_recall_C_and_above": 0.8649613325401546,
+      "onset_error_min": {
+        "n": 1475,
+        "median_signed": 0.0,
+        "median_abs": 1.0,
+        "p90_abs": 10.0
+      },
+      "duration_hist_min": {
+        "0-5": 36,
+        "5-15": 915,
+        "15-30": 551,
+        "30-60": 262,
+        "60-120": 60,
+        "120-180": 5,
+        "180-inf": 1
+      },
+      "duration_median_min": 14.0,
+      "n_events_gt_long": 5,
+      "long_event_s": 7200,
+      "n_hit_cap": 1,
+      "n_was_split": 35,
+      "detected_class_balance_via_goes": {
+        "B": 17,
+        "C": 1199,
+        "M": 168,
+        "X": 9
+      },
+      "goes_class_balance": {
+        "B": 119,
+        "C": 1509,
+        "M": 163,
+        "X": 9
+      }
+    },
+    "val": {
+      "goes_missing_days_excluded": [
+        "2025-12-30",
+        "2025-12-31"
+      ],
+      "period": [
+        "2026-02-01",
+        "2026-05-31"
+      ],
+      "n_events": 676,
+      "n_events_matched": 513,
+      "match_rate_all": 0.7588757396449705,
+      "size_cut_counts_s": 50,
+      "n_events_above_cut": 312,
+      "precision_above_cut": 0.8717948717948718,
+      "n_goes_flares": 707,
+      "goes_recall": 0.7538896746817539,
+      "goes_recall_by_class": {
+        "B": {
+          "n": 133,
+          "recall": 0.18045112781954886
+        },
+        "C": {
+          "n": 509,
+          "recall": 0.8801571709233792
+        },
+        "M": {
+          "n": 59,
+          "recall": 0.9322033898305084
+        },
+        "X": {
+          "n": 6,
+          "recall": 1.0
+        }
+      },
+      "goes_recall_C_and_above": 0.8867595818815331,
+      "onset_error_min": {
+        "n": 533,
+        "median_signed": 0.0,
+        "median_abs": 1.0,
+        "p90_abs": 9.0
+      },
+      "duration_hist_min": {
+        "0-5": 6,
+        "5-15": 344,
+        "15-30": 228,
+        "30-60": 78,
+        "60-120": 18,
+        "120-180": 1,
+        "180-inf": 1
+      },
+      "duration_median_min": 14.0,
+      "n_events_gt_long": 2,
+      "long_event_s": 7200,
+      "n_hit_cap": 1,
+      "n_was_split": 32,
+      "detected_class_balance_via_goes": {
+        "B": 18,
+        "C": 427,
+        "M": 61,
+        "X": 7
+      },
+      "goes_class_balance": {
+        "B": 133,
+        "C": 509,
+        "M": 59,
+        "X": 6
+      }
+    }
+  }
+}
