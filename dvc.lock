@@ -435,10 +435,14 @@ stages:
       hash: md5
       md5: 909cdc962a62700281ad3b2c4ae51543
       size: 6050846
+    - path: src/activity.py
+      hash: md5
+      md5: c7f0292940d7f7ec30667d636c02b08b
+      size: 2010
     - path: src/dataset.py
       hash: md5
-      md5: f94f81e467ade04354b9d722a09cc0a8
-      size: 5381
+      md5: a8669e8f679fbe298b24191b013fed53
+      size: 5707
     - path: src/features.py
       hash: md5
       md5: 9bd0c201c266ba7a7cc7a59b9e8b8101
@@ -461,6 +465,8 @@ stages:
           - 15
           - 60
           min_valid_frac_5m: 0.8
+        flare_detection.end_confirm_min: 2
+        flare_detection.gap_end_min: 10
         labels:
           horizons_min:
           - 30
@@ -481,13 +487,13 @@ stages:
     outs:
     - path: data/processed/dataset
       hash: md5
-      md5: 066ee9131cf985846560a5de8e5375de.dir
-      size: 214928201
+      md5: c03b0810ad66cee339c3e5ec63c327ad.dir
+      size: 214957477
       nfiles: 3
     - path: reports/dataset_summary.json
       hash: md5
-      md5: 36598831e359c2452d5c6b474f495562
-      size: 2032
+      md5: ac1a8c1cd182546e21ad61493fa9757d
+      size: 2138
     - path: reports/label_comparison.json
       hash: md5
       md5: 98c8ee865edd71e183afd200b0ae4511
@@ -497,13 +503,13 @@ stages:
     deps:
     - path: data/processed/dataset
       hash: md5
-      md5: 066ee9131cf985846560a5de8e5375de.dir
-      size: 214928201
+      md5: c03b0810ad66cee339c3e5ec63c327ad.dir
+      size: 214957477
       nfiles: 3
     - path: src/dataset.py
       hash: md5
-      md5: f94f81e467ade04354b9d722a09cc0a8
-      size: 5381
+      md5: a8669e8f679fbe298b24191b013fed53
+      size: 5707
     - path: src/models/metrics.py
       hash: md5
       md5: 532d36eb8253b50e12babf0037e4b52e
@@ -570,5 +576,5 @@ stages:
       nfiles: 15
     - path: reports/model_metrics.json
       hash: md5
-      md5: d2d798b8f344a99ed399e9a9492f9a09
-      size: 36020
+      md5: 6320cf7c633243602d55f38df9106f60
+      size: 36027

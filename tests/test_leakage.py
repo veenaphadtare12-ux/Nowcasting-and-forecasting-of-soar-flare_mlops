@@ -172,3 +172,38 @@ def test_goes_onset_uses_primary_solexs_onset_and_keeps_merged_flares():
     # primary (closest begin) takes the SoLEXS onset; the merged second flare keeps its own GOES start
     assert list(on) == [T0 + pd.Timedelta(hours=6, minutes=20), T0 + pd.Timedelta(hours=6, minutes=38)]
     assert len(labels.goes_onsets(g, ev, pairs, "M1.0")) == 0
+
+
+# ---------------------------------------------------------------- causal "flare in progress" flag
+@pytest.mark.parametrize("cut_min", [598, 605, 612, 640, 700])
+def test_flare_in_progress_flag_is_causal(cut_min):
+    """The flag up to time T must not change when everything after T is removed."""
+    from src import activity
+    from src.detection import detector
+
+    rng = np.random.default_rng(1)
+    rate = np.full(1440, 20.0)
+    k = np.arange(1440 - 600)
+    rate[600:] += 300 * np.where(k < 6, (k + 1) / 6, np.exp(-(k - 5) / 20.0))   # flare starting at minute 600
+    m = pd.Series(rng.poisson(np.repeat(rate, 60)).reshape(-1, 60).mean(axis=1),
+                  index=pd.date_range(T0 + pd.Timedelta(minutes=1), periods=1440, freq="min"))
+    s = detector.DetectorSettings()
+    grid = pd.date_range(T0, periods=1440 * 6, freq="10s")
+    full = activity.flare_in_progress(grid, detector.detect_series(m, s), s.end_confirm_min, s.gap_end_min)
+    t_cut = T0 + pd.Timedelta(minutes=cut_min)
+    cut = activity.flare_in_progress(grid, detector.detect_series(m[m.index <= t_cut], s), s.end_confirm_min, s.gap_end_min)
+    keep = grid <= t_cut
+    assert np.array_equal(full[keep], cut[keep])
+    assert full.sum() > 0  # the flare is flagged at some point
+
+
+def test_flare_in_progress_starts_at_trigger_not_onset():
+    from src import activity
+
+    on = T0 + pd.Timedelta(minutes=10)
+    ev = pd.DataFrame({"onset": [on], "trigger_time": [on + pd.Timedelta(minutes=4)], "end": [on + pd.Timedelta(minutes=20)],
+                       "hit_cap": [False], "ended_by_gap": [False]})
+    t = pd.date_range(T0, periods=40, freq="min")
+    f = activity.flare_in_progress(t, ev, end_confirm_min=2, gap_end_min=10)
+    assert f[13] == 0 and f[14] == 1          # active from the trigger (minute 14), not the onset (minute 10)
+    assert f[31] == 1 and f[32] == 0          # ends when the end is confirmed: end (30) + 2 minutes

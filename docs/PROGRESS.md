@@ -126,3 +126,28 @@ Cleaner labels help the C forecasts most.
 **Decision.** One lesson (07) covers tasks 3.1–3.2 (label noise, quiet-start) and one lesson (08) covers tasks
 3.3–3.5 (baselines, CV, operating points, bootstrap), instead of five small lessons. The topics are tightly
 linked and the user asked for one explanatory lesson covering them.
+
+## 2026-10-21 — Task 3.2: causal activity flag and quiet-start split
+
+**Done.** New `src/activity.py` adds a meta column `flare_in_progress_at_t`, based on the detector's real-time decisions:
+- *Start:* the event becomes active at `trigger_time`, not at the catalogue onset.
+- *End:* it stays active until the end is *confirmed*. That's end + `end_confirm_min` (2 min); the cap time for
+  capped events; or end + `gap_end_min` (10 min) for events ended by a data gap.
+- *All detections count:* matched or not, because the GOES list isn't available in real time.
+
+The column is excluded from model features (`META_COLUMNS`) and is used for the persistence baseline and the
+quiet-start evaluation split.
+
+**Tests:** 7 new tests. One checks that the flag up to time T never changes when everything after T is removed (5 cut
+points around a synthetic flare); one checks that it starts at the trigger, not the onset, and ends at confirmation.
+43 tests pass.
+
+**Key numbers**
+- Flag on: 8.8% of tune rows, 7.3% of val rows.
+- Val, `y_now` given the flag: flag=1 → 65.7% in a GOES-matched flare; flag=0 → 2.4% (mostly unmatched
+  detections and onset-to-trigger lag).
+- Val base rates by flag: ≥C in 60 min 21.3% (flag 0) vs 24.5% (flag 1); ≥M in 60 min 2.2% vs 5.3%.
+  So an ongoing flare more than doubles the chance of an M flare starting soon (flares cluster).
+
+**Decision.** The all-rows vs quiet-start metrics are reported by the rewritten training stage (tasks 3.3–3.5), so
+every number comes from the final models and is reported once.

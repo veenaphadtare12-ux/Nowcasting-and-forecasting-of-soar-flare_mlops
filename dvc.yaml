@@ -100,6 +100,7 @@ stages:
       - src/features.py
       - src/labels.py
       - src/dataset.py
+      - src/activity.py
       - src/pipeline.py
       - data/processed/solexs_clean
       - data/processed/solexs_minute.parquet
@@ -112,6 +113,8 @@ stages:
       - features
       - labels
       - periods
+      - flare_detection.end_confirm_min
+      - flare_detection.gap_end_min
     outs:
       - data/processed/dataset
     metrics:

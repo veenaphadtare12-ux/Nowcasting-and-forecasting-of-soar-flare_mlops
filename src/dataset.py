@@ -11,10 +11,10 @@ import json
 import numpy as np
 import pandas as pd
 
-from src import config, features, goes, hel1os, labels
+from src import activity, config, features, goes, hel1os, labels
 
 LABEL_PREFIXES = ("y_", "ok_")
-META_COLUMNS = ("period",)
+META_COLUMNS = ("period", "flare_in_progress_at_t")  # meta: used for baselines/splits, not a feature
 
 
 def feature_columns(df: pd.DataFrame) -> list[str]:
@@ -91,6 +91,8 @@ def build_all() -> dict:
         if p != "test":  # how many forecast positives the GOES-direct labels changed (never computed for test)
             comparison[p] = label_changes(lab, labels.make_labels(*label_args), lp["horizons_min"])
         df = df.join(lab)
+        fd = P["flare_detection"]
+        df["flare_in_progress_at_t"] = activity.flare_in_progress(df.index, events, fd["end_confirm_min"], fd["gap_end_min"])
         df["period"] = p
         path = _fresh(out_dir / f"{p}.parquet")
         df.to_parquet(path, compression="zstd")
@@ -102,6 +104,7 @@ def build_all() -> dict:
         if p == "test":  # the test period stays unexamined: sizes only, no label statistics
             continue
         s["nowcast_pos_rate"] = float(df.loc[df["ok_now"], "y_now"].mean())
+        s["flare_in_progress_frac"] = float(df["flare_in_progress_at_t"].mean())
         for h in lp["horizons_min"]:
             ok = df[f"ok_{h}m"]
             s[f"{h}m"] = {"ok_rows": int(ok.sum()), "pos_rate_C": float(df.loc[ok, f"y_c_{h}m"].mean()),
