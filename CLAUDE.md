@@ -13,6 +13,8 @@ and HEL1OS (hard X-ray) Level-1 data. These rules are permanent; follow them in 
 5. **Raw data is never modified.** Processed data goes to `data/processed/`.
 6. **Every training run is logged to MLflow.**
 7. **Code layout:** code in `src/`, exploration in `notebooks/`, tests in `tests/`.
+8. **Never delete or move any data folder or archive without asking the user first.** Before any cleanup, list and
+   check the folder's contents (file counts, sizes, date ranges) and show them to the user. Keep all original archives.
 
 ## Periods, tuning and labels (params.yaml `periods`)
 
