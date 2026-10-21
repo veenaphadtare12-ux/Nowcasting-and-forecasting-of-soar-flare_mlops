@@ -1,0 +1,8 @@
+# Keep LF line endings in the working copy on every OS. DVC hashes raw bytes, so a CRLF rewrite by git
+# (core.autocrlf) would make DVC think code or params changed and rerun stages for nothing.
+* text=auto eol=lf
+*.png binary
+*.parquet binary
+*.db binary
+*.gz binary
+*.fits binary
