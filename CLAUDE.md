@@ -57,22 +57,23 @@ Raw data lives outside the repo on D: (about 9.5 GB). Roots are set in `params.y
 - SoLEXS (2024-10-01 .. 2026-09-13) and HEL1OS (2024-07-01 .. 2024-12-22) have **no overlapping dates** in
   the data currently held. The pipeline must work with SoLEXS alone and accept HEL1OS when available.
 
-## TEACHING MODE (the user is a 3rd-year student learning MLOps through this project)
+## AUTONOMOUS BUILD MODE (replaces the earlier teaching mode; the user studies the lessons afterwards)
 
-1. Work one task at a time. After each task, write a lesson file `docs/learn/NN-short-name.md`
-   (NN = 01, 02, ...) and then STOP. Wait until the user types "continue" before starting the next task.
-2. Every lesson file has these sections, in simple language:
-   - What we built (2-3 sentences, plain words)
-   - Why it matters (the problem it solves, with an everyday analogy)
-   - Concepts (each new idea explained from zero, no undefined jargon)
-   - Tools used (what each tool is, what it did here, the 3-5 most useful commands)
-   - Walkthrough of the code (the key files, with the 10-20 most important lines quoted and explained line by line)
-   - Hands-on (3-6 exercises the user does themselves in the terminal or a notebook, with the exact commands,
-     the expected output, and how to tell if it worked)
-   - Break it on purpose (one safe experiment: change something, see what fails, undo it)
-   - Check yourself (5 quiz questions; answers at the bottom under a spoiler line)
-   - Questions to discuss with my tutor (3 deeper questions)
-   - Key numbers (results from this task to remember for the review)
-3. Never do the hands-on exercises for the user. If they ask for help, give hints first.
-4. Keep `docs/learn/INDEX.md` updated: one line per lesson with its status.
-5. Commit after each task, including the lesson file.
+1. Work through the tasks the user gives, in order, without stopping between tasks. Do not wait for "continue".
+2. Only stop and ask the user if: (a) a package cannot be installed, (b) something needs the user personally
+   (installing Docker Desktop, GitHub login, a password), (c) free disk space on C: or D: drops below 10 GB,
+   (d) a result looks scientifically wrong and the cause cannot be found after investigating, (e) one task would
+   take more than ~2 hours of compute. Otherwise make the sensible choice and record the decision and the reason
+   in `docs/PROGRESS.md`.
+3. After EACH task: run pytest, run `dvc repro` if stages changed, commit with a clear message, and append a short
+   entry to `docs/PROGRESS.md` (what was done, key numbers, decisions, problems).
+4. After EACH task also write a lesson file `docs/learn/NN-short-name.md` in simple language, with these sections:
+   What we built; Why it matters (with an everyday analogy); Concepts (each new idea explained from zero);
+   Tools used (what each is, what it did here, the most useful commands); Code walkthrough (key files, the most
+   important lines explained); Hands-on (3-6 exercises with exact commands and expected output); Break it on
+   purpose (one safe experiment and how to undo it); Check yourself (5 quiz questions, answers at the bottom);
+   Questions to discuss with my tutor; Key numbers to remember. Keep `docs/learn/INDEX.md` updated.
+   Never do the hands-on exercises for the user; if they ask for help, give hints first.
+5. Never use the test period for tuning or model selection. Never modify raw data. Keep HEL1OS optional everywhere.
+6. When all tasks in a message are done, print a final summary (what was built, key numbers, open problems) and
+   say clearly "PROMPT COMPLETE".
