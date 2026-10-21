@@ -93,3 +93,36 @@ The one-feature rule baseline scores TSS 0.02–0.14 on the forecasts, so the mo
 
 **Checks:** 35 tests pass. `dvc repro` (full rerun, about 15 min) reproduced identical model scores, and
 `dvc status` is clean. Free disk: C: 18 GB, D: 27 GB.
+
+## 2026-10-21 — Task 3.1: forecast labels taken directly from GOES
+
+**Done.** Forecast labels (`y_c_*`, `y_m_*`) are now positive when any GOES flare of class ≥C (≥M) starts in
+`(t, t+h]`. A GOES flare's onset is the SoLEXS onset of the detection it is the *primary* match of (the
+overlapping GOES flare whose begin is closest to that detection's onset), otherwise its GOES begin time. `ok`
+flags and nowcast labels are unchanged. `reports/label_comparison.json` (tune and val only) compares new and old
+labels. Two new tests: a GOES flare the detector missed gives a positive; a second flare merged into one
+detection keeps its own GOES start.
+
+**Positives on ok rows, old → new (gained / lost)**
+
+| Label | tune | val |
+|---|---|---|
+| ≥C 30 min | 235,984 → 281,541 (+49,649 / −4,092) | 84,784 → 97,164 (+13,862 / −1,482) |
+| ≥C 60 min | 430,630 → 502,306 (+74,994 / −3,318) | 155,503 → 174,227 (+20,404 / −1,680) |
+| ≥C 120 min | 715,775 → 809,914 (+95,831 / −1,692) | 259,077 → 281,172 (+23,301 / −1,206) |
+| ≥M 30 min | 30,348 → 30,270 (+2,508 / −2,586) | 10,849 → 10,927 (+918 / −840) |
+| ≥M 60 min | 57,052 → 57,826 (+3,474 / −2,700) | 18,896 → 19,420 (+1,328 / −804) |
+| ≥M 120 min | 106,358 → 108,388 (+4,704 / −2,674) | 33,023 → 33,371 (+1,152 / −804) |
+
+**Interpretation**
+- *C gains:* GOES C flares the tuned detector missed (it catches about 86% of C+). These were label noise before.
+- *M lost and gained together:* onset shifts. The old method put a merged detection's *strongest* GOES class on the
+  detection's onset, which could be much earlier than the M flare's own start. The new method uses the M flare's own start.
+
+**Old models re-run on the new labels (validation TSS):** ≥C 30/60/120 min 0.199 / 0.193 / 0.279
+(was 0.181 / 0.177 / 0.233); ≥M 0.479 / 0.455 / 0.382 (was 0.477 / 0.426 / 0.378). Nowcast unchanged (0.722).
+Cleaner labels help the C forecasts most.
+
+**Decision.** One lesson (07) covers tasks 3.1–3.2 (label noise, quiet-start) and one lesson (08) covers tasks
+3.3–3.5 (baselines, CV, operating points, bootstrap), instead of five small lessons. The topics are tightly
+linked and the user asked for one explanatory lesson covering them.

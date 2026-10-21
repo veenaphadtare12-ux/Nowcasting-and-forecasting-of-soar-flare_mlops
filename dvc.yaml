@@ -104,6 +104,8 @@ stages:
       - data/processed/solexs_clean
       - data/processed/solexs_minute.parquet
       - data/processed/events.parquet
+      - data/processed/events_pairs.parquet
+      - data/processed/goes_matched.parquet
       - data/external/goes_events
     # HEL1OS (data/processed/hel1os) is read if present but is deliberately not a dependency: it is optional.
     params:
@@ -114,6 +116,8 @@ stages:
       - data/processed/dataset
     metrics:
       - reports/dataset_summary.json:
+          cache: false
+      - reports/label_comparison.json:
           cache: false
 
   train:   # fit on tune (inner time split), select on val; the test file is never opened

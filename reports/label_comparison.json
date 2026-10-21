@@ -1,0 +1,102 @@
+{
+  "tune": {
+    "y_c_30m": {
+      "ok_rows": 1919000,
+      "old_pos": 235984,
+      "new_pos": 281541,
+      "gained": 49649,
+      "lost": 4092,
+      "changed_frac_of_old": 0.22773154112143196
+    },
+    "y_m_30m": {
+      "ok_rows": 1919000,
+      "old_pos": 30348,
+      "new_pos": 30270,
+      "gained": 2508,
+      "lost": 2586,
+      "changed_frac_of_old": 0.16785290628706998
+    },
+    "y_c_60m": {
+      "ok_rows": 1909406,
+      "old_pos": 430630,
+      "new_pos": 502306,
+      "gained": 74994,
+      "lost": 3318,
+      "changed_frac_of_old": 0.1818544922555326
+    },
+    "y_m_60m": {
+      "ok_rows": 1909406,
+      "old_pos": 57052,
+      "new_pos": 57826,
+      "gained": 3474,
+      "lost": 2700,
+      "changed_frac_of_old": 0.10821706513356237
+    },
+    "y_c_120m": {
+      "ok_rows": 1890395,
+      "old_pos": 715775,
+      "new_pos": 809914,
+      "gained": 95831,
+      "lost": 1692,
+      "changed_frac_of_old": 0.13624812266424505
+    },
+    "y_m_120m": {
+      "ok_rows": 1890395,
+      "old_pos": 106358,
+      "new_pos": 108388,
+      "gained": 4704,
+      "lost": 2674,
+      "changed_frac_of_old": 0.06936948795577201
+    }
+  },
+  "val": {
+    "y_c_30m": {
+      "ok_rows": 812424,
+      "old_pos": 84784,
+      "new_pos": 97164,
+      "gained": 13862,
+      "lost": 1482,
+      "changed_frac_of_old": 0.1809775429326288
+    },
+    "y_m_30m": {
+      "ok_rows": 812424,
+      "old_pos": 10849,
+      "new_pos": 10927,
+      "gained": 918,
+      "lost": 840,
+      "changed_frac_of_old": 0.16204258457000645
+    },
+    "y_c_60m": {
+      "ok_rows": 807883,
+      "old_pos": 155503,
+      "new_pos": 174227,
+      "gained": 20404,
+      "lost": 1680,
+      "changed_frac_of_old": 0.142016552735317
+    },
+    "y_m_60m": {
+      "ok_rows": 807883,
+      "old_pos": 18896,
+      "new_pos": 19420,
+      "gained": 1328,
+      "lost": 804,
+      "changed_frac_of_old": 0.11282811176968671
+    },
+    "y_c_120m": {
+      "ok_rows": 800036,
+      "old_pos": 259077,
+      "new_pos": 281172,
+      "gained": 23301,
+      "lost": 1206,
+      "changed_frac_of_old": 0.09459349922995866
+    },
+    "y_m_120m": {
+      "ok_rows": 800036,
+      "old_pos": 33023,
+      "new_pos": 33371,
+      "gained": 1152,
+      "lost": 804,
+      "changed_frac_of_old": 0.05923144475062835
+    }
+  }
+}

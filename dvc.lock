@@ -418,6 +418,14 @@ stages:
       hash: md5
       md5: 3f988b232e058661f3285af5e85dbe94
       size: 188968
+    - path: data/processed/events_pairs.parquet
+      hash: md5
+      md5: 91a562c07296b1f834221604fae2f803
+      size: 30212
+    - path: data/processed/goes_matched.parquet
+      hash: md5
+      md5: 65777224953fa21434a59e5a9ffe10b0
+      size: 128267
     - path: data/processed/solexs_clean
       hash: md5
       md5: e1d8926c1ef03298ee12765f28f68eb7.dir
@@ -429,16 +437,16 @@ stages:
       size: 6050846
     - path: src/dataset.py
       hash: md5
-      md5: 394a6ae19da3be77f882d80c61172525
-      size: 4112
+      md5: f94f81e467ade04354b9d722a09cc0a8
+      size: 5381
     - path: src/features.py
       hash: md5
       md5: 9bd0c201c266ba7a7cc7a59b9e8b8101
       size: 3677
     - path: src/labels.py
       hash: md5
-      md5: 59ba704b5bbd1e14040772d4561ded7c
-      size: 3924
+      md5: 7d775979e4ae20a2f1d4ee3b9d38848b
+      size: 6063
     - path: src/pipeline.py
       hash: md5
       md5: 4c1c59d16eae54bf8deda3792986f844
@@ -473,25 +481,29 @@ stages:
     outs:
     - path: data/processed/dataset
       hash: md5
-      md5: ac7011684f05ab50a8b9b5501e7a4924.dir
-      size: 214925776
+      md5: 066ee9131cf985846560a5de8e5375de.dir
+      size: 214928201
       nfiles: 3
     - path: reports/dataset_summary.json
       hash: md5
-      md5: c8486c3f2db444964c5f9e38051d0430
+      md5: 36598831e359c2452d5c6b474f495562
       size: 2032
+    - path: reports/label_comparison.json
+      hash: md5
+      md5: 98c8ee865edd71e183afd200b0ae4511
+      size: 2309
   train:
     cmd: python -m src.pipeline train
     deps:
     - path: data/processed/dataset
       hash: md5
-      md5: ac7011684f05ab50a8b9b5501e7a4924.dir
-      size: 214925776
+      md5: 066ee9131cf985846560a5de8e5375de.dir
+      size: 214928201
       nfiles: 3
     - path: src/dataset.py
       hash: md5
-      md5: 394a6ae19da3be77f882d80c61172525
-      size: 4112
+      md5: f94f81e467ade04354b9d722a09cc0a8
+      size: 5381
     - path: src/models/metrics.py
       hash: md5
       md5: 532d36eb8253b50e12babf0037e4b52e
@@ -548,15 +560,15 @@ stages:
     outs:
     - path: docs/model_figures
       hash: md5
-      md5: e0d26472ba994473a56a50046fdfe0b1.dir
-      size: 52578
+      md5: 029944c7a0091b63d3c59f23c9e7afef.dir
+      size: 52565
       nfiles: 1
     - path: models
       hash: md5
-      md5: 7147ee1d0a732335f0cabd741fa5b615.dir
-      size: 7736614
+      md5: 7ae925f758eb1bb90b190855a3277048.dir
+      size: 7375767
       nfiles: 15
     - path: reports/model_metrics.json
       hash: md5
-      md5: 1e0dfd397ddb896dab1a2f71641d86a4
-      size: 35995
+      md5: d2d798b8f344a99ed399e9a9492f9a09
+      size: 36020

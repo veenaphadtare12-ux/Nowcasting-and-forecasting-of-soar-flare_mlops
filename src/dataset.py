@@ -28,6 +28,20 @@ def _fresh(path):
     return path
 
 
+def label_changes(new: pd.DataFrame, old: pd.DataFrame, horizons: list[int]) -> dict:
+    """Forecast positives under the new (GOES-direct) vs old (matched-detection) labels, on ok rows."""
+    out = {}
+    for h in horizons:
+        ok = new[f"ok_{h}m"].astype(bool)
+        for cls in ("c", "m"):
+            col = f"y_{cls}_{h}m"
+            n, o = new.loc[ok, col].astype(bool), old.loc[ok, col].astype(bool)
+            out[col] = {"ok_rows": int(ok.sum()), "old_pos": int(o.sum()), "new_pos": int(n.sum()),
+                        "gained": int((n & ~o).sum()), "lost": int((o & ~n).sum()),
+                        "changed_frac_of_old": float(((n != o).sum()) / max(int(o.sum()), 1))}
+    return out
+
+
 def build_all() -> dict:
     P = config.load_params()
     fp, lp = P["features"], P["labels"]
@@ -35,6 +49,8 @@ def build_all() -> dict:
     proc = config.processed_dir()
     clean_dir = proc / "solexs_clean"
     events = pd.read_parquet(proc / "events.parquet")
+    goes_list = pd.read_parquet(proc / "goes_matched.parquet")
+    pairs = pd.read_parquet(proc / "events_pairs.parquet")
     valid_minutes = pd.read_parquet(proc / "solexs_minute.parquet")["m"].notna()
     gaps = goes.missing_days(*config.data_range())
     hel = hel1os.load_optional()
@@ -65,13 +81,15 @@ def build_all() -> dict:
     out_dir = proc / "dataset"
     out_dir.mkdir(parents=True, exist_ok=True)
     summary: dict = {"cadence_s": cad, "periods": {}, "goes_missing_days": [str(d.date()) for d in gaps]}
+    comparison: dict = {}
     for p in config.PERIOD_NAMES:
         df = pd.concat(parts[p]).astype("float32")
         lo, hi = config.period_bounds(p)
-        lab = labels.make_labels(
-            df.index, events, lp["horizons_min"], lp["min_class_c"], lp["min_class_m"], valid_minutes,
-            pd.Series(hi, index=df.index), gaps,
-        )
+        label_args = (df.index, events, lp["horizons_min"], lp["min_class_c"], lp["min_class_m"], valid_minutes,
+                      pd.Series(hi, index=df.index), gaps)
+        lab = labels.make_labels(*label_args, goes=goes_list, pairs=pairs)
+        if p != "test":  # how many forecast positives the GOES-direct labels changed (never computed for test)
+            comparison[p] = label_changes(lab, labels.make_labels(*label_args), lp["horizons_min"])
         df = df.join(lab)
         df["period"] = p
         path = _fresh(out_dir / f"{p}.parquet")
@@ -92,5 +110,7 @@ def build_all() -> dict:
     reports = config.PROJECT_ROOT / "reports"
     reports.mkdir(exist_ok=True)
     _fresh(reports / "dataset_summary.json").write_text(json.dumps(summary, indent=2), newline="\n")
+    _fresh(reports / "label_comparison.json").write_text(json.dumps(comparison, indent=2), newline="\n")
+    print(json.dumps(comparison, indent=2))
     print(json.dumps({k: v for k, v in summary.items() if k != "feature_columns"}, indent=2))
     return summary

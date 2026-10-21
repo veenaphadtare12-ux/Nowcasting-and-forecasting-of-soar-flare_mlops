@@ -144,3 +144,31 @@ def test_built_dataset_files_are_chronological():
         assert idx.min() >= lo and idx.max() < hi + pd.Timedelta(seconds=10)
         spans[p] = (idx.min(), idx.max())
     assert spans["tune"][1] < spans["val"][0] and spans["val"][1] < spans["test"][0]
+
+
+# ---------------------------------------------------------------- GOES-direct forecast labels
+def _goes(begins, classes):
+    b = pd.DatetimeIndex(begins)
+    return pd.DataFrame({"begin": b, "peak": b + pd.Timedelta(minutes=5), "end": b + pd.Timedelta(minutes=15),
+                         "goes_class": classes})
+
+
+def test_goes_flare_missed_by_detector_still_gives_positive_forecast():
+    t = pd.date_range(T0, periods=4, freq="10min")
+    goes_list = _goes([t[2]], ["C2.0"])                    # GOES flare at t2; the detector found nothing
+    no_events = _events([], [], [], [])
+    no_pairs = pd.DataFrame(columns=["event", "goes"])
+    on = labels.goes_onsets(goes_list, no_events, no_pairs, "C1.0")
+    assert list(labels.forecast_label(t, on, 30)) == [1, 1, 0, 0]  # t0, t1 see the t2 start; t2 itself does not
+    assert len(labels.qualifying_onsets(no_events, "C1.0")) == 0    # the old method had no positive at all
+
+
+def test_goes_onset_uses_primary_solexs_onset_and_keeps_merged_flares():
+    # one detection (onset 06:20) overlaps two GOES flares (06:24 C3.2 and 06:38 C3.1)
+    ev = _events([T0 + pd.Timedelta(hours=6, minutes=20)], [T0 + pd.Timedelta(hours=7)], ["C3.2"], [True])
+    g = _goes([T0 + pd.Timedelta(hours=6, minutes=24), T0 + pd.Timedelta(hours=6, minutes=38)], ["C3.2", "C3.1"])
+    pairs = pd.DataFrame({"event": [0, 0], "goes": [0, 1]})
+    on = pd.to_datetime(labels.goes_onsets(g, ev, pairs, "C1.0"), utc=True)
+    # primary (closest begin) takes the SoLEXS onset; the merged second flare keeps its own GOES start
+    assert list(on) == [T0 + pd.Timedelta(hours=6, minutes=20), T0 + pd.Timedelta(hours=6, minutes=38)]
+    assert len(labels.goes_onsets(g, ev, pairs, "M1.0")) == 0
