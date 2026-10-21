@@ -90,8 +90,24 @@ stages:
     metrics:
       - reports/detection_metrics.json:
           cache: false
-    outs:
-      - docs/figures:
+    outs:   # listed file by file so the stage does not own docs/figures/ (docs/figures/eda/ belongs to the EDA notebook)
+      - docs/figures/before_after_examples.png:
+          cache: false
+      - docs/figures/duration_histogram.png:
+          cache: false
+      - docs/figures/example_1.png:
+          cache: false
+      - docs/figures/example_2.png:
+          cache: false
+      - docs/figures/example_3.png:
+          cache: false
+      - docs/figures/example_4.png:
+          cache: false
+      - docs/figures/example_5.png:
+          cache: false
+      - docs/figures/example_6.png:
+          cache: false
+      - docs/figures/examples.json:
           cache: false
 
   build_dataset:

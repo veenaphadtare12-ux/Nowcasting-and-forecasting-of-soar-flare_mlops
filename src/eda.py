@@ -192,7 +192,7 @@ def activity_trend(m: pd.Series, g: pd.DataFrame) -> dict:
     axes[1].set_xticks(x, [str(p) for p in counts.index], rotation=45, ha="right")
     p = save(fig, "03_activity_trend")
     plt.close(fig)
-    return {"fig": p, "monthly_counts": counts.astype(int).to_dict(orient="index"),
+    return {"fig": p, "monthly_counts": {str(k): v for k, v in counts.astype(int).to_dict(orient="index").items()},
             "bg_first_last": [float(bgv.iloc[0]), float(bgv.iloc[-1])], "bg_min_max": [float(bgv.min()), float(bgv.max())],
             "flares_per_month_range": [int(counts.sum(axis=1).min()), int(counts.sum(axis=1).max())]}
 

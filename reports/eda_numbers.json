@@ -1,0 +1,347 @@
+{
+  "coverage": {
+    "fig_calendar": "docs/figures/eda/01_coverage_calendar.png",
+    "fig_gaps": "docs/figures/eda/01_gap_lengths.png",
+    "days": 418,
+    "days_with_folder": 355,
+    "days_usable": 331,
+    "mean_valid_fraction": 0.7809832978911926,
+    "valid_frac_17th": 0.10809275793650792,
+    "valid_frac_other": 0.8028161847315493,
+    "n_gaps": 140,
+    "gaps_le_5min": 50,
+    "gaps_ge_1day": 56,
+    "longest_gap_days": 8.0,
+    "missing_minute_fraction": 0.23663649095642436
+  },
+  "long_term": {
+    "fig": "docs/figures/eda/02_long_term_lightcurve.png",
+    "median_range": [
+      3.5216666666666665,
+      90.52833333333324
+    ],
+    "max_daily_peak": 34637.04761904762,
+    "n_M": 326,
+    "n_X": 21
+  },
+  "activity": {
+    "fig": "docs/figures/eda/03_activity_trend.png",
+    "monthly_counts": {
+      "2025-04": {
+        "B": 0,
+        "C": 135,
+        "M": 31,
+        "X": 0
+      },
+      "2025-05": {
+        "B": 41,
+        "C": 211,
+        "M": 21,
+        "X": 3
+      },
+      "2025-06": {
+        "B": 28,
+        "C": 182,
+        "M": 13,
+        "X": 2
+      },
+      "2025-07": {
+        "B": 8,
+        "C": 166,
+        "M": 5,
+        "X": 0
+      },
+      "2025-08": {
+        "B": 7,
+        "C": 235,
+        "M": 41,
+        "X": 0
+      },
+      "2025-09": {
+        "B": 2,
+        "C": 184,
+        "M": 18,
+        "X": 0
+      },
+      "2025-10": {
+        "B": 15,
+        "C": 174,
+        "M": 26,
+        "X": 0
+      },
+      "2025-11": {
+        "B": 25,
+        "C": 313,
+        "M": 24,
+        "X": 6
+      },
+      "2025-12": {
+        "B": 15,
+        "C": 237,
+        "M": 29,
+        "X": 1
+      },
+      "2026-01": {
+        "B": 5,
+        "C": 201,
+        "M": 4,
+        "X": 0
+      },
+      "2026-02": {
+        "B": 23,
+        "C": 139,
+        "M": 73,
+        "X": 6
+      },
+      "2026-03": {
+        "B": 44,
+        "C": 104,
+        "M": 6,
+        "X": 1
+      },
+      "2026-04": {
+        "B": 97,
+        "C": 197,
+        "M": 27,
+        "X": 2
+      },
+      "2026-05": {
+        "B": 29,
+        "C": 195,
+        "M": 8,
+        "X": 0
+      }
+    },
+    "bg_first_last": [
+      12.766666666666667,
+      5.233333333333333
+    ],
+    "bg_min_max": [
+      2.4833333333333334,
+      13.283333333333333
+    ],
+    "flares_per_month_range": [
+      155,
+      368
+    ]
+  },
+  "profiles": {
+    "C": 1596,
+    "C_median_peak_min": 7,
+    "C_median_half_decay_min": 7,
+    "M": 218,
+    "M_median_peak_min": 12,
+    "M_median_half_decay_min": 8,
+    "X": 16,
+    "X_median_peak_min": 15,
+    "X_median_half_decay_min": 3,
+    "fig": "docs/figures/eda/04_superposed_epoch.png"
+  },
+  "stats": {
+    "fig_dist": "docs/figures/eda/05_flare_distributions.png",
+    "fig_scatter": "docs/figures/eda/05_peak_vs_goes.png",
+    "n_events": 2516,
+    "median_duration_min": 14.0,
+    "median_rise_min": 8.5,
+    "median_decay_min": 4.5,
+    "decay_over_rise_median": 0.5432406519654842,
+    "fit_slope": 1.3383411558281506,
+    "fit_r": 0.947379714931001,
+    "n_matched_fit": 1905
+  },
+  "detector": {
+    "fig": "docs/figures/eda/06_detector_vs_goes.png",
+    "fig_missed": "docs/figures/eda/06_missed_examples.png",
+    "onset_err_median": 0.0,
+    "onset_abs_p90": 9.0,
+    "recall_tune": {
+      "B": 0.176,
+      "C": 0.854,
+      "M": 0.963,
+      "X": 1.0
+    },
+    "recall_val": {
+      "B": 0.18,
+      "C": 0.88,
+      "M": 0.932,
+      "X": 1.0
+    },
+    "missed_observed_C_M": 292,
+    "missed_examples": [
+      "M1.0 2025-04-13 01:21:00+00:00",
+      "C4.1 2025-04-11 13:35:00+00:00",
+      "C5.6 2025-04-12 00:36:00+00:00"
+    ]
+  },
+  "features": {
+    "fig_dist": "docs/figures/eda/07_feature_distributions.png",
+    "fig_corr": "docs/figures/eda/07_feature_correlation.png",
+    "n_quiet_rows_used": 498350,
+    "pos_share": 0.2466078057590047,
+    "standardised_median_shift": {
+      "mean_1m": 0.017,
+      "ratio_1m_bg": -0.0,
+      "bg_60m": 0.042,
+      "max_60m": 0.002,
+      "slope_15m": -0.001,
+      "std_15m": 0.001
+    },
+    "high_corr_pairs": [
+      [
+        "rate",
+        "max_1m",
+        0.999
+      ],
+      [
+        "mean_1m",
+        "max_1m",
+        0.999
+      ],
+      [
+        "rate",
+        "mean_1m",
+        0.999
+      ],
+      [
+        "max_15m",
+        "std_15m",
+        0.995
+      ],
+      [
+        "max_1m",
+        "max_5m",
+        0.988
+      ],
+      [
+        "mean_1m",
+        "max_5m",
+        0.986
+      ],
+      [
+        "rate",
+        "max_5m",
+        0.983
+      ],
+      [
+        "mean_5m",
+        "max_5m",
+        0.979
+      ],
+      [
+        "max_60m",
+        "std_60m",
+        0.979
+      ],
+      [
+        "mean_1m",
+        "mean_5m",
+        0.975
+      ],
+      [
+        "max_1m",
+        "mean_5m",
+        0.97
+      ],
+      [
+        "rate",
+        "mean_5m",
+        0.965
+      ],
+      [
+        "slope_5m",
+        "d_mean_1m_5m",
+        0.964
+      ],
+      [
+        "max_1m",
+        "excess_1m",
+        0.916
+      ],
+      [
+        "rate",
+        "excess_1m",
+        0.915
+      ],
+      [
+        "mean_1m",
+        "excess_1m",
+        0.914
+      ],
+      [
+        "mean_5m",
+        "mean_15m",
+        0.912
+      ],
+      [
+        "max_5m",
+        "excess_1m",
+        0.902
+      ]
+    ]
+  },
+  "base_rates": {
+    "fig": "docs/figures/eda/08_label_base_rates.png",
+    "rates": {
+      "nowcast": 0.08,
+      "\u2265C 30m": 0.1386,
+      "\u2265C 60m": 0.249,
+      "\u2265C 120m": 0.4055,
+      "\u2265M 30m": 0.0151,
+      "\u2265M 60m": 0.0284,
+      "\u2265M 120m": 0.0527
+    },
+    "month_c60_range": [
+      0.13901670621432693,
+      0.3723818909872235
+    ],
+    "month_m60_range": [
+      0.005798688852020682,
+      0.05879327295574553
+    ],
+    "hour_c60_range": [
+      0.21553497942386832,
+      0.30226008589734565
+    ]
+  },
+  "hel1os": {
+    "available": true,
+    "per_period": {
+      "tune": {
+        "overlap_days": 13,
+        "overlap_hours": 215.6,
+        "goes_in_hel1os_time": {
+          "C": 75,
+          "M": 27,
+          "X": 0
+        }
+      },
+      "val": {
+        "overlap_days": 8,
+        "overlap_hours": 143.5,
+        "goes_in_hel1os_time": {
+          "C": 70,
+          "M": 14,
+          "X": 2
+        }
+      }
+    },
+    "fig_neupert": "docs/figures/eda/09_neupert_lag.png",
+    "neupert": {
+      "n": 71,
+      "median_lag_s": 0.0,
+      "iqr_s": [
+        -10.0,
+        20.0
+      ]
+    },
+    "fig_hardness": "docs/figures/eda/09_hardness.png",
+    "hardness": {
+      "n": 151,
+      "median_before": 0.6831296682357788,
+      "median_during": 0.6281652450561523,
+      "share_harder_during": 0.17218543046357615
+    },
+    "fig_example": "docs/figures/eda/09_stacked_example.png",
+    "example": "X2.5 2026-04-24 08:01:00+00:00"
+  }
+}

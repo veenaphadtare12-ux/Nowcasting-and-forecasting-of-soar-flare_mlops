@@ -327,3 +327,110 @@ cut points; NaN outside sessions; no columns when HEL1OS is absent). `build_data
   Counted from nominal session times; EDA section 9 gives the exact numbers on dataset rows.
 - *Note on the hardware:* most HEL1OS hours are in Apr 2025, Nov 2025 (tune) and Apr 2026 (val). No session falls in
   Dec–Jan, the usual threshold-calibration block (this matters for the ablation, Task 4.5).
+
+## 2026-10-22 — Task 4.4: EDA notebook (tune + val only)
+
+**Done.**
+- `notebooks/01_eda.ipynb` is built by `notebooks/build_eda_notebook.py` and executed with nbconvert: 30 cells,
+  15 figures, 0 errors.
+- Analysis code lives in `src/eda.py`. Every loader cuts data at the end of validation; the first notebook cell
+  asserts this, and `check_no_test` re-checks every table.
+- Figures are in `docs/figures/eda/`, numbers in `reports/eda_numbers.json`, the 10 findings in
+  `docs/EDA_SUMMARY.md`, and the takeaway texts in `notebooks/eda_takeaways.json`.
+- Lessons: `10-hel1os-hard-xray-features.md` (task 4.3) and `11-eda.md` (task 4.4).
+
+**Key numbers (tune + val)**
+- *Coverage:* 418 days, 331 usable, 23.7% of minutes missing. The 17th of each month is about 11% valid (others
+  about 80%). 140 gaps, 56 of them a day or longer.
+- *GOES flares:* 3,359 (326 M, 21 X). Monthly counts 155–368.
+- *Drift:* background about 12.8 → 5.2 counts/s.
+- *Flare shape:* median profile peaks 7 / 12 / 15 min after onset (C / M / X). Median event 14 min long (rise 8.5,
+  decay-to-half 4.5).
+- *SoLEXS peak vs GOES flux:* power law, slope 1.34, r = 0.95, 1,905 flares.
+- *Detector:* onset error median 0 min, |p90| 9 min. 292 GOES C/M flares were missed while SoLEXS was observing.
+- *Features:* on quiet-start rows, single-feature separation for ≥C in 60 min is ≤ 0.04 standardised median shift.
+  18 feature pairs have |r| > 0.9.
+- *Base rates:* nowcast 8%; ≥C 30/60/120 min 14/25/41%; ≥M 1.5/2.8/5.3%. Monthly ≥M 60 min swings 0.6–5.9%.
+- *HEL1OS overlap:*
+  - tune: 13 days / 215.6 h, GOES flares in HEL1OS time C 75, M 27, X 0
+  - val: 8 days / 143.5 h, C 70, M 14, X 2
+  - Neupert lag median 0 s (IQR −10 to +20 s, n = 71)
+  - CZT hardness ratio falls during flares (0.68 → 0.63)
+
+**Decisions**
+- The requested "lesson 07-eda" is numbered **11** because 07 already exists (label noise).
+- An EDA exercise that would have opened the test file was replaced by one using a fake future row.
+- Day counts differ slightly between sections: "days with a session start on a usable SoLEXS day" (11 tune /
+  6 val) vs "days with any HEL1OS-available dataset row" (13 / 8). Both definitions are stated where used.
+
+## 2026-10-22 — Task 4.5: full retraining with HEL1OS features + soft/hard ablation
+
+**Done.** `dvc repro` re-ran `evaluate_detector` (results identical) and `train`. Setup: all 7 targets, 5 models,
+3 seeds, rolling-origin CV for XGBoost, 95% day-bootstrap intervals, quiet-start split. Features are now 44
+(27 SoLEXS + 17 HEL1OS). Logistic regression uses median imputation + missing indicators fitted on training rows.
+New `src/models/ablation.py` runs on rows with `hel1os_available == 1` only.
+
+**Validation TSS, operating point A (mean ± std [95%]), all rows**
+
+| Target | Persistence | Rule | LogReg | XGBoost | Selected | Previous run (no HEL1OS) |
+|---|---|---|---|---|---|---|
+| nowcast | 0.657 | 0.634 | 0.677 | **0.727 ± 0.001 [0.71, 0.74]** | XGBoost | 0.726 |
+| ≥C 30 min | 0.016 | 0.034 | **0.208 ± 0.000 [0.15, 0.26]** | 0.161 | LogReg | 0.196 |
+| ≥C 60 min | 0.013 | 0.031 | **0.208 ± 0.001 [0.14, 0.27]** | 0.192 | LogReg | 0.194 |
+| ≥C 120 min | 0.026 | 0.032 | 0.268 | **0.270 ± 0.003 [0.20, 0.34]** | XGBoost | 0.263 |
+| ≥M 30 min | 0.108 | 0.050 | **0.468 ± 0.001 [0.33, 0.57]** | 0.388 | LogReg | 0.478 |
+| ≥M 60 min | 0.089 | 0.139 | **0.468 ± 0.000 [0.30, 0.61]** | 0.418 | LogReg | 0.454 |
+| ≥M 120 min | 0.076 | 0.113 | **0.388 ± 0.001 [0.21, 0.56]** | 0.348 | LogReg | 0.382 |
+
+Quiet-start rows: nowcast XGBoost 0.446 [0.43, 0.47]; ≥C 0.21 / 0.21 / 0.27; ≥M 0.465 / 0.456 / 0.381, almost
+identical to all rows. All changes from the previous run are well inside the intervals: adding HEL1OS features (present
+on about 6% of rows) neither helps nor hurts the main models measurably. Full tables, including operating point B:
+`reports/validation_table.md`.
+
+**Ablation (rows with HEL1OS available; same rows, models, thresholds procedure, 3 seeds, bootstrap)**
+- *Rows:* fit 51,753 / calibration 25,870 (Nov 2025, because no HEL1OS session falls in Dec–Jan) / validation
+  51,667 (8 days).
+- *Validation positive episodes:* now 69, ≥C 30 min 60, ≥C 60 min 44, ≥C 120 min 17, ≥M 30/60/120 min 15/13/12.
+
+| Target (TSS at A, all rows) | LogReg soft / hard / combined | XGBoost soft / hard / combined |
+|---|---|---|
+| nowcast | 0.68 / 0.66 / 0.67 | 0.63 / 0.64 / 0.65 |
+| nowcast, quiet-start | **0.37 [0.31, 0.43] / 0.34 / 0.45 [0.42, 0.48]** | 0.31 / 0.37 / 0.32 |
+| ≥C 30 min | 0.14 / 0.00 / 0.15 | 0.10 / 0.02 / 0.09 |
+| ≥C 60 min | 0.21 / 0.02 / 0.16 | 0.12 / 0.05 / 0.10 |
+| ≥C 120 min ⚠ too few | 0.32 / 0.10 / 0.31 | 0.18 / 0.17 / 0.16 |
+| ≥M 30 / 60 / 120 min ⚠ too few | 0.16–0.28 / 0.18–0.22 / 0.16–0.23 | 0.16–0.27 / 0.11–0.13 / 0.18–0.23 |
+
+**Plain conclusion:**
+- Hard X-rays alone carry about no skill for ≥C forecasts, and adding them doesn't beat SoLEXS alone.
+- The only visible gain is the quiet-start nowcast with logistic regression (0.45 vs 0.37, intervals nearly
+  separate): hard X-rays help recognise a flare that has just begun. That's one target, one model and 8 days, so a
+  hint, not a result.
+- **All M targets (and ≥C 120 min) have fewer than 30 validation episodes: too few to conclude anything.**
+
+**Problem found and fixed: DVC deleted the EDA figures.** `docs/figures` was a whole-directory output of
+`evaluate_detector`, so re-running that stage removed `docs/figures/eda/`. `dvc.yaml` now lists the stage's 9 files
+individually (recorded with `dvc commit`, content unchanged), and the EDA figures were regenerated by re-executing the
+notebook.
+
+**Run note:** training took about 22 min (01:21–01:43). It was started in the previous prompt and allowed to finish;
+nothing else was retrained.
+
+## 2026-10-22 — Presentation pack (collect and export only)
+
+**Done.**
+- `src/presentation_facts.py` exports `reports/base_rates.json`: base rates per target for tune and val, all rows and
+  quiet-start. These were the only numbers not yet in an output file; computed from tune/val dataset rows only.
+- It also generates `docs/PRESENTATION_FACTS.md` (sections A–I), where every number is read from an output file and
+  its source path is written next to it.
+- `src/presentation_figures.py` exports `docs/presentation_figures/01_coverage_heatmap.png` and
+  `02_longterm_lightcurve.png`: 1920×1080, axis labels 22 pt, no titles, SoLEXS orange #E07A1F, GOES markers in grey
+  and near-black, tune + val only.
+- Nothing was retrained and nothing was computed on the test period (test appears only as row/day/session counts).
+
+**Notes**
+- The request listed only two figures (the message appears cut off after `02_longterm_lightcurve.png`). Only those
+  two were made.
+- An observation worth stating in the review: for the nowcast, persistence has a higher HSS (0.645) than XGBoost
+  (0.520) at the max-TSS threshold, because XGBoost raises more false alarms. TSS, the main metric, favours XGBoost
+  (0.727 vs 0.657).

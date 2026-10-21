@@ -12,4 +12,8 @@ Study these in order. Each lesson ends with exercises to do yourself, a safe "br
 | 06 | [Model training](06-model-training.md) | time split + purge, rule / logistic regression / XGBoost, class imbalance, early stopping, thresholds, TSS/HSS/POD/FAR, MLflow, DVC train stage | ✅ written — numbers superseded by 08 |
 | 07 | [Label noise & quiet-start](07-label-noise-and-quiet-start.md) | GOES-direct forecast labels, primary-match onset rule, label comparison, causal activity flag, quiet-start evaluation | ✅ written — to study |
 | 08 | [Baselines, CV, operating points, bootstrap](08-baselines-cv-operating-points-bootstrap.md) | climatology/persistence baselines, rolling-origin CV, seeds, operating points A/B, day-bootstrap intervals, validation re-use | ✅ written — to study |
-| 09 | [Data inventory](09-data-inventory.md) | archives vs extracted data, zip listings, truncated zips and local headers, duplicates/versions, disk budget | ✅ written — to study |
+| 09 | [Data inventory](09-data-inventory.md) | archives vs extracted data, zip listings, truncated zips and local headers, duplicates/versions, disk budget; part 2: safe selective extraction | ✅ written — to study |
+| 10 | [HEL1OS hard X-ray features](10-hel1os-hard-xray-features.md) | sub-second offset bug, hard X-ray channels, hardness ratio, lags, Neupert effect, missing-by-design, imputer + indicator | ✅ written — to study |
+| 11 | [EDA](11-eda.md) | why EDA comes first, reading each plot type, test-period guard, takeaways, correlation vs causation | ✅ written — to study |
+| 12 | [Ablation](12-ablation.md) | retraining with HEL1OS features, fair ablation (same rows/model/thresholds), positive episodes, statistical power, saying "too few to conclude" | ✅ written — to study |
+| 13 | [Presentation pack](13-presentation-pack.md) | facts sheet with sources, provenance, honest framing, slide-ready figures | ✅ written — to study |
