@@ -81,7 +81,9 @@ def read_lightcurve_file(path: Path) -> pd.DataFrame:
             d = ext.data
             # MJD -> UTC; MJD 40587 == 1970-01-01. ISOT is also present; MJD is the numeric source of truth.
             secs = (np.asarray(d["MJD"], dtype="float64") - 40587.0) * 86400.0
-            t = pd.to_datetime(np.round(secs, 3), unit="s", utc=True).as_unit("ms")
+            # Round EACH band to whole seconds before bands are combined: bands of one file start at different
+            # sub-second offsets (e.g. .793 s vs .858 s), so joining on raw stamps would misalign them.
+            t = pd.to_datetime(np.round(secs), unit="s", utc=True).as_unit("s")
             s = pd.Series(np.asarray(d["CTR"], dtype="float64"), index=t)
             e = pd.Series(np.asarray(d["STAT_ERR"], dtype="float64"), index=t)
             cols[f"{det}_{band}"] = s[~s.index.duplicated()]
@@ -100,9 +102,8 @@ def read_session(session: Session) -> pd.DataFrame:
             frames.append(read_lightcurve_file(f))
     if not frames:
         return pd.DataFrame()
-    out = pd.concat(frames, axis=1)
-    out.index = out.index.round("1s")  # native stamps are ~1 s apart with sub-second offsets
-    out = out[~out.index.duplicated(keep="first")]
+    out = pd.concat(frames, axis=1).sort_index()  # every band is already on whole seconds (read_lightcurve_file)
+    out.index.name = "time"
     return out
 
 

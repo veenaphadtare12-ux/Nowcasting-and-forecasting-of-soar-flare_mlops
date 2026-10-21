@@ -110,3 +110,19 @@ def test_climatology_and_persistence_baselines():
     pers = train._score_block(y_cal, np.zeros(4), y_val, flag, quiet, days, 1, ops, fixed_threshold=0.5)
     assert pers["A"]["all"]["tp"] == 1 and pers["A"]["all"]["fp"] == 1        # alerts exactly where the flag is on
     assert pers["A"]["quiet"]["tp"] + pers["A"]["quiet"]["fp"] == 0          # no alerts on quiet-start rows
+
+
+def test_ablation_feature_sets_and_positive_episodes():
+    from src.models import ablation
+
+    feats = ["rate", "mean_5m", "hel1os_available", "hx_czt_lo_max_5m", "hx_hr_cdte"]
+    s = ablation.feature_sets(feats)
+    assert s["soft"] == ["rate", "mean_5m"]
+    assert s["hard"] == ["hx_czt_lo_max_5m", "hx_hr_cdte"]
+    assert s["combined"] == s["soft"] + s["hard"]
+    assert "hel1os_available" not in s["combined"]        # constant (=1) on the ablation rows
+    t0 = pd.Timestamp("2026-04-01", tz="UTC")
+    t = pd.DatetimeIndex([t0 + pd.Timedelta(seconds=x) for x in (0, 10, 20, 30, 40, 400, 410)])
+    d = pd.DataFrame({"y": [1, 1, 0, 1, 1, 1, 1]}, index=t)
+    # a short negative blip (<= 60 s) does not split an episode (conservative count); a 6-minute gap does
+    assert ablation.positive_episodes(d, "y") == 2

@@ -54,6 +54,7 @@ def build_all() -> dict:
     valid_minutes = pd.read_parquet(proc / "solexs_minute.parquet")["m"].notna()
     gaps = goes.missing_days(*config.data_range())
     hel = hel1os.load_optional()
+    chan = features.hel1os_channels(hel) if hel is not None and not hel.empty else None  # optional input
     warm = pd.Timedelta(minutes=max(windows) + 70)
 
     parts: dict[str, list[pd.DataFrame]] = {p: [] for p in config.PERIOD_NAMES}
@@ -67,7 +68,7 @@ def build_all() -> dict:
         loaded = {date: cur}  # keep only yesterday in memory
         binned = features.bin_counts(series, cad)
         feat = features.solexs_features(binned, windows, cad)
-        hf = features.hel1os_features(hel, feat.index, cad)
+        hf = features.hel1os_features(chan, feat.index, cad, sxr_rate=binned["rate"])
         if hf.shape[1]:
             feat = feat.join(hf)
         feat = feat[(feat.index > date) & (feat.index <= date + pd.Timedelta(days=1))]

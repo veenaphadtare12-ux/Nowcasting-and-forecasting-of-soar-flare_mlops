@@ -108,7 +108,7 @@ stages:
       - data/processed/events_pairs.parquet
       - data/processed/goes_matched.parquet
       - data/external/goes_events
-    # HEL1OS (data/processed/hel1os) is read if present but is deliberately not a dependency: it is optional.
+      - data/processed/hel1os   # optional in code (no HEL1OS -> no hx_* columns); declared so DVC reruns on new sessions
     params:
       - features
       - labels
@@ -130,6 +130,7 @@ stages:
       - src/models/metrics.py
       - src/models/plots.py
       - src/models/report.py
+      - src/models/ablation.py
       - src/dataset.py
       - src/pipeline.py
       - data/processed/dataset

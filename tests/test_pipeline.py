@@ -89,3 +89,23 @@ def test_tracked_text_files_use_lf_line_endings():
     crlf = [f for f in files if not f.endswith(binary) and f not in skip and (root / f).exists()
             and b"\r\n" in (root / f).read_bytes()]
     assert not crlf, f"CRLF line endings in: {crlf}"
+
+
+def test_hel1os_bands_with_different_subsecond_offsets_are_not_lost(tmp_path):
+    """Regression: bands of one file start at different sub-second offsets; none may be dropped when combined."""
+    from astropy.io import fits
+
+    t0 = 60775.0  # MJD
+    n = 100
+    hdus = [fits.PrimaryHDU()]
+    for k, (lo, hi, off) in enumerate([(5, 20, 0.793), (20, 30, 0.858)]):
+        mjd = t0 + (np.arange(n) + off) / 86400.0
+        cols = [fits.Column("MJD", "D", array=mjd), fits.Column("ISOT", "30A", array=np.array(["x"] * n)),
+                fits.Column("CTR", "D", array=np.full(n, k + 1.0)), fits.Column("STAT_ERR", "D", array=np.ones(n))]
+        hdus.append(fits.BinTableHDU.from_columns(cols, name=f"CDTE1_LC_BAND_{lo:.2f}KEV_TO_{hi:.2f}KEV"))
+    f = tmp_path / "lightcurve_cdte1.fits"
+    fits.HDUList(hdus).writeto(f)
+    df = hel1os.read_lightcurve_file(f)
+    assert df["cdte1_5-20keV"].notna().sum() == n
+    assert df["cdte1_20-30keV"].notna().sum() == n
+    assert len(df) <= n + 1  # both bands share (almost) the same whole-second grid

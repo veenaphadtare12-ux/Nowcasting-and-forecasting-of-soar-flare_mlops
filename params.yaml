@@ -108,3 +108,8 @@ models:
     A: tss                    # main metric
     B: hss                    # fewer false alarms
   bootstrap: {n: 1000, seed: 0, level: 0.95}   # resample validation DAYS with replacement
+  ablation:                   # soft vs hard vs combined, on rows where HEL1OS is available (src/models/ablation.py)
+    cal_start: "2025-11-01"   # no HEL1OS session falls in Dec-Jan, so the held-out threshold block is Nov 2025
+    cal_end: "2025-11-30"
+    train_stride: 1           # HEL1OS rows are few: use every row
+    min_positive_episodes: 30 # below this, results are flagged 'too few positives'

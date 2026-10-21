@@ -207,3 +207,47 @@ def test_flare_in_progress_starts_at_trigger_not_onset():
     f = activity.flare_in_progress(t, ev, end_confirm_min=2, gap_end_min=10)
     assert f[13] == 0 and f[14] == 1          # active from the trigger (minute 14), not the onset (minute 10)
     assert f[31] == 1 and f[32] == 0          # ends when the end is confirmed: end (30) + 2 minutes
+
+
+# ---------------------------------------------------------------- HEL1OS (hard X-ray) features
+def _hel_session(seed=0, start_h=2, hours=3):
+    rng = np.random.default_rng(seed)
+    t = pd.date_range(T0 + pd.Timedelta(hours=start_h), periods=hours * 3600, freq="s")
+    base = np.full(len(t), 5.0)
+    base[3600:3900] += 80 * np.exp(-np.arange(300) / 60)            # a hard X-ray burst one hour in
+    cols = {}
+    for fam, bands in (("cdte", ["5-20keV", "20-30keV", "30-40keV"]), ("czt", ["20-40keV", "40-60keV", "60-80keV", "80-150keV"])):
+        for d in (1, 2):
+            for b in bands:
+                cols[f"{fam}{d}_{b}"] = rng.poisson(base).astype(float)
+    return pd.DataFrame(cols, index=t)
+
+
+@pytest.mark.parametrize("cut_h", [2.5, 3.02, 3.1])
+def test_hel1os_features_unchanged_when_future_is_altered(cut_h):
+    hel = _hel_session()
+    counts = _counts()
+    grid = features.bin_counts(counts, 10).index
+    sxr = features.bin_counts(counts, 10)["rate"]
+    t_cut = T0 + pd.Timedelta(hours=cut_h)
+    altered = hel.copy()
+    altered[altered.index > t_cut] = altered[altered.index > t_cut] * 9 + 500
+    a = features.hel1os_features(features.hel1os_channels(hel), grid, 10, sxr)
+    b = features.hel1os_features(features.hel1os_channels(altered), grid, 10, sxr)
+    rows = a.index <= t_cut
+    pd.testing.assert_frame_equal(a[rows], b[rows])
+    assert not a[~rows].equals(b[~rows])
+
+
+def test_hel1os_features_missing_outside_sessions_and_optional():
+    hel = _hel_session(start_h=2, hours=3)                 # HEL1OS observes 02:00-05:00 only
+    counts = _counts()
+    grid = features.bin_counts(counts, 10).index
+    f = features.hel1os_features(features.hel1os_channels(hel), grid, 10, features.bin_counts(counts, 10)["rate"])
+    assert list(f.columns) == features.HX_FEATURES
+    outside = (f.index < T0 + pd.Timedelta(hours=2)) | (f.index > T0 + pd.Timedelta(hours=5, minutes=1))
+    assert (f.loc[outside, "hel1os_available"] == 0).all()
+    assert f.loc[outside, features.HX_FEATURES[1:]].isna().all().all()     # missing, never filled
+    inside = (f.index > T0 + pd.Timedelta(hours=2, minutes=2)) & (f.index < T0 + pd.Timedelta(hours=5))
+    assert (f.loc[inside, "hel1os_available"] == 1).all()
+    assert features.hel1os_features(None, grid).shape[1] == 0                # no HEL1OS at all -> no columns

@@ -9,8 +9,8 @@ stages:
       size: 5387
     - path: src/pipeline.py
       hash: md5
-      md5: 4c1c59d16eae54bf8deda3792986f844
-      size: 9635
+      md5: 91adef6dba469bbf23064d6f2b019877
+      size: 9653
     params:
       params.yaml:
         periods:
@@ -38,8 +38,8 @@ stages:
       size: 8543
     - path: src/pipeline.py
       hash: md5
-      md5: 4c1c59d16eae54bf8deda3792986f844
-      size: 9635
+      md5: 91adef6dba469bbf23064d6f2b019877
+      size: 9653
     - path: src/solexs.py
       hash: md5
       md5: 48363970f48c546cfff24587af97940e
@@ -164,20 +164,20 @@ stages:
     deps:
     - path: src/hel1os.py
       hash: md5
-      md5: 7a36729533fcf107b312ba8d154ae3e0
-      size: 5906
+      md5: a684d60dff36bb33dbff84402857ae46
+      size: 6078
     - path: src/pipeline.py
       hash: md5
-      md5: 4c1c59d16eae54bf8deda3792986f844
-      size: 9635
+      md5: 91adef6dba469bbf23064d6f2b019877
+      size: 9653
     params:
       params.yaml:
         paths.data_root_hel1os: D:/MLOPS_CP/Data/HELIOS
     outs:
     - path: data/processed/hel1os
       hash: md5
-      md5: ca4dbc1a121674d9a749656beb4370ea.dir
-      size: 7314937
+      md5: 607f25d837b05bb2e0361aa4d9bda657.dir
+      size: 76684761
       nfiles: 2
   detect_events:
     cmd: python -m src.pipeline detect_events
@@ -192,8 +192,8 @@ stages:
       size: 8543
     - path: src/pipeline.py
       hash: md5
-      md5: 4c1c59d16eae54bf8deda3792986f844
-      size: 9635
+      md5: 91adef6dba469bbf23064d6f2b019877
+      size: 9653
     params:
       params.yaml:
         flare_detection:
@@ -242,8 +242,8 @@ stages:
       size: 3652
     - path: src/pipeline.py
       hash: md5
-      md5: 4c1c59d16eae54bf8deda3792986f844
-      size: 9635
+      md5: 91adef6dba469bbf23064d6f2b019877
+      size: 9653
     params:
       params.yaml:
         flare_detection_legacy:
@@ -297,8 +297,8 @@ stages:
       size: 5387
     - path: src/pipeline.py
       hash: md5
-      md5: 4c1c59d16eae54bf8deda3792986f844
-      size: 9635
+      md5: 91adef6dba469bbf23064d6f2b019877
+      size: 9653
     params:
       params.yaml:
         goes_match:
@@ -426,6 +426,11 @@ stages:
       hash: md5
       md5: 65777224953fa21434a59e5a9ffe10b0
       size: 128267
+    - path: data/processed/hel1os
+      hash: md5
+      md5: 607f25d837b05bb2e0361aa4d9bda657.dir
+      size: 76684761
+      nfiles: 2
     - path: data/processed/solexs_clean
       hash: md5
       md5: e1d8926c1ef03298ee12765f28f68eb7.dir
@@ -441,20 +446,20 @@ stages:
       size: 2010
     - path: src/dataset.py
       hash: md5
-      md5: a8669e8f679fbe298b24191b013fed53
-      size: 5707
+      md5: d308e3f7c0b813f3a7ec6495d2494c71
+      size: 5839
     - path: src/features.py
       hash: md5
-      md5: 9bd0c201c266ba7a7cc7a59b9e8b8101
-      size: 3677
+      md5: 2f5e04a74d31f5bf6167704ae0bbfcc0
+      size: 6872
     - path: src/labels.py
       hash: md5
       md5: 7d775979e4ae20a2f1d4ee3b9d38848b
       size: 6063
     - path: src/pipeline.py
       hash: md5
-      md5: 4c1c59d16eae54bf8deda3792986f844
-      size: 9635
+      md5: 91adef6dba469bbf23064d6f2b019877
+      size: 9653
     params:
       params.yaml:
         features:
@@ -487,13 +492,13 @@ stages:
     outs:
     - path: data/processed/dataset
       hash: md5
-      md5: c03b0810ad66cee339c3e5ec63c327ad.dir
-      size: 214957477
+      md5: 7a59987aeb8410528bcedbdc116f7e42.dir
+      size: 221276527
       nfiles: 3
     - path: reports/dataset_summary.json
       hash: md5
-      md5: ac1a8c1cd182546e21ad61493fa9757d
-      size: 2138
+      md5: 7b8155f137ee0dfc03cdc7d7ae0ef5f2
+      size: 2564
     - path: reports/label_comparison.json
       hash: md5
       md5: 98c8ee865edd71e183afd200b0ae4511

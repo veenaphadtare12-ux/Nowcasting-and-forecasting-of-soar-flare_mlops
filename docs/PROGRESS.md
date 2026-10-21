@@ -290,3 +290,40 @@ contents before any cleanup.
 
 **Decision:** the extraction lesson was added to lesson 09 (data inventory, part 2) rather than as a separate
 lesson; it's the same topic.
+
+## 2026-10-22 — Task 4.3: rebuild with the new HEL1OS data (no retraining yet)
+
+**Parser bug found and fixed (important).** In the newer HEL1OS files (V111/V112), the energy bands of one file start
+at different sub-second offsets (e.g. .793 s vs .858 s). `read_session` joined the bands on their raw timestamps and
+rounded to whole seconds *afterwards*, then dropped "duplicate" seconds, which discarded most of each band. One
+session went from ~43,000 rows per band to ~110. Fix: round each band to whole seconds *before* combining. All bands
+now keep their rows (2025-04-10 session: 42,865–43,176 per band; a 2024 session: 22,420–22,582). A regression test
+builds a FITS file with two offset bands and checks that none are lost.
+
+**HEL1OS features added** (`src/features.py`, all trailing/causal; 17 columns):
+- *Availability:* `hel1os_available` (≥ 30 valid HEL1OS seconds in the last minute).
+- *Four channels* (detectors 1 and 2 averaged): CdTe 5–20 keV, CdTe 20–40 keV, CZT 20–40 keV, CZT 40–150 keV.
+  Each gets a log 1-min mean and a 5-min max.
+- *Background ratios* for CdTe 5–20 keV and CZT 20–40 keV.
+- *Hardness ratios* for CdTe and CZT.
+- *Lag features:* lagged CdTe 5–20 keV values (5 and 10 min) and its 5-min change.
+- *Neupert feature:* a trailing 10-min correlation between hard X-rays and d(SoLEXS)/dt.
+
+Outside sessions every `hx_*` value is NaN (never filled) and `hel1os_available = 0`. Logistic regression now uses
+`SimpleImputer(median, add_indicator=True)` inside its pipeline, so missing-value flags and imputation are fitted on
+training rows only. XGBoost uses the NaNs natively. 4 new leakage/missingness tests (future HEL1OS perturbation at 3
+cut points; NaN outside sessions; no columns when HEL1OS is absent). `build_dataset` now declares
+`data/processed/hel1os` as a DVC dependency; the code still runs without HEL1OS.
+
+**What changed after `dvc repro build_dataset`**
+- *SoLEXS, detection, labels:* unchanged, as expected; no new SoLEXS data. 424 usable days, 3,126 detections,
+  2,380 GOES-matched. Detector metrics (tune/val) are unchanged: match rate 0.76/0.76, C+ recall 0.865/0.887, onset
+  error median 1 min, p90 10/9 min.
+- *HEL1OS index:* 104 sessions → 98 after the newest-version rule (6 older versions dropped), 4,064,754 one-second
+  rows (was 23 sessions, 0.87 M rows).
+- *Dataset:* rows unchanged (tune 1,936,953 / val 816,920 / test 792,482), features 27 → 44, files 121 / 51 / 49 MB.
+- *HEL1OS available on dataset rows:* tune 77,625 rows = **215.6 h** on 11 usable days; val 51,667 rows =
+  **143.5 h** on 6 days. GOES flares starting inside HEL1OS session time: tune 89 C + 28 M; val 69 C + 14 M + 2 X.
+  Counted from nominal session times; EDA section 9 gives the exact numbers on dataset rows.
+- *Note on the hardware:* most HEL1OS hours are in Apr 2025, Nov 2025 (tune) and Apr 2026 (val). No session falls in
+  Dec–Jan, the usual threshold-calibration block (this matters for the ablation, Task 4.5).

@@ -81,7 +81,9 @@ def _y(d: pd.DataFrame, target: str) -> np.ndarray:
 
 def make_logreg(cfg: dict, seed: int) -> Pipeline:
     return Pipeline([
-        ("impute", SimpleImputer(strategy="median")),
+        # median imputation + an explicit missing-value indicator per feature, fitted on training rows only
+        # (HEL1OS features are missing outside sessions)
+        ("impute", SimpleImputer(strategy="median", add_indicator=True)),
         ("scale", QuantileTransformer(n_quantiles=1000, output_distribution="normal", subsample=200_000, random_state=seed)),
         ("clf", LogisticRegression(C=cfg["C"], max_iter=cfg["max_iter"], class_weight="balanced")),
     ])
@@ -281,6 +283,13 @@ def run() -> dict:
         print(f"{target:7s} selected {selected:6s} TSS {a['tss_mean']:.3f}±{a['tss_std']:.3f} "
               f"[{a['tss_ci_low']:.3f}, {a['tss_ci_high']:.3f}]  xgb {xgb_params}  ({time.time() - t0:.0f}s)", flush=True)
 
+    from src.models import ablation
+
+    ab = ablation.run_ablation(tune, val, feats, P, {t: summary["targets"][t]["xgb_cv_best"] for t in mp["targets"]})
+    summary["ablation"] = ab
+    with mlflow.start_run(run_name="hel1os-ablation"):
+        mlflow.set_tags({"kind": "ablation", "rows": "hel1os_available == 1"})
+        mlflow.log_dict(ab, "ablation.json")
     _fresh(MODEL_DIR / "thresholds.json").write_text(json.dumps(thresholds, indent=2), newline="\n")
     pd.concat(cv_tables).to_csv(_fresh(REPORTS / "xgb_cv.csv"), index=False, lineterminator="\n")
     _fresh(REPORTS / "model_metrics.json").write_text(json.dumps(summary, indent=2, default=str), newline="\n")

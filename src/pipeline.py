@@ -223,7 +223,7 @@ def hel1os_index() -> None:
         cov.append(hel1os.coverage(s, df))
         frames.append(df)
     pd.DataFrame(cov).to_csv(_fresh(out / "coverage.csv"), index=False, lineterminator="\n")
-    allf = pd.concat(frames).sort_index()
+    allf = pd.concat(frames).sort_index().astype("float32")
     allf = allf[~allf.index.duplicated(keep="last")]
     allf.to_parquet(_fresh(out / "sessions.parquet"))
     print(f"{len(sessions)} sessions found, {len(kept)} kept (newest version), {len(allf)} rows")

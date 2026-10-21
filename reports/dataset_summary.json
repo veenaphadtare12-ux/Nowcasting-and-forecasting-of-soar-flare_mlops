@@ -5,8 +5,8 @@
       "rows": 1936953,
       "first": "2025-04-09 00:04:00+00:00",
       "last": "2026-01-31 23:59:50+00:00",
-      "file_mb": 118.5,
-      "n_features": 27,
+      "file_mb": 121.1,
+      "n_features": 44,
       "nowcast_pos_rate": 0.08431000792402889,
       "flare_in_progress_frac": 0.08762215706834393,
       "30m": {
@@ -29,8 +29,8 @@
       "rows": 816920,
       "first": "2026-02-01 00:00:00+00:00",
       "last": "2026-05-31 23:59:50+00:00",
-      "file_mb": 49.3,
-      "n_features": 27,
+      "file_mb": 51.1,
+      "n_features": 44,
       "nowcast_pos_rate": 0.06974122313078392,
       "flare_in_progress_frac": 0.07266317387259462,
       "30m": {
@@ -53,8 +53,8 @@
       "rows": 792482,
       "first": "2026-06-01 00:00:00+00:00",
       "last": "2026-09-12 23:59:50+00:00",
-      "file_mb": 47.1,
-      "n_features": 27
+      "file_mb": 49.1,
+      "n_features": 44
     }
   },
   "goes_missing_days": [
@@ -88,6 +88,23 @@
     "ratio_1m_60m",
     "ratio_5m_60m",
     "d_mean_1m_5m",
-    "accel_5m"
+    "accel_5m",
+    "hel1os_available",
+    "hx_cdte_lo_log_mean_1m",
+    "hx_cdte_lo_max_5m",
+    "hx_cdte_hi_log_mean_1m",
+    "hx_cdte_hi_max_5m",
+    "hx_czt_lo_log_mean_1m",
+    "hx_czt_lo_max_5m",
+    "hx_czt_hi_log_mean_1m",
+    "hx_czt_hi_max_5m",
+    "hx_cdte_lo_ratio_bg",
+    "hx_czt_lo_ratio_bg",
+    "hx_hr_cdte",
+    "hx_hr_czt",
+    "hx_cdte_lo_lag5m",
+    "hx_cdte_lo_lag10m",
+    "hx_cdte_lo_d5m",
+    "hx_neupert_corr_10m"
   ]
 }

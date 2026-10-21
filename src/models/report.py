@@ -69,6 +69,22 @@ def write_tables(summary: dict) -> None:
         "Climatology always forecasts the training positive rate, so it never crosses a threshold: TSS = 0 by construction.",
         "",
     ]
+    ab = summary.get("ablation")
+    if ab:
+        from src.models import ablation
+
+        out += [
+            "## HEL1OS ablation (rows where HEL1OS is available only)",
+            "",
+            (f"Same rows for all three feature sets: fit {ab['rows']['fit']:,} / calibration {ab['rows']['cal']:,} / validation "
+             f"{ab['rows']['val']:,} rows ({ab['val_days']} validation days). Thresholds from the HEL1OS rows of "
+             f"{ab['cal_block'][0]} to {ab['cal_block'][1]} (no HEL1OS session falls in Dec-Jan). Operating point A; TSS mean ± std over "
+             f"3 seeds [95 % day-bootstrap interval]. 'Val episodes' = separate runs of positive rows; ⚠ = fewer than "
+             f"{ab['min_positive_episodes']}, too few for a meaningful comparison."),
+            "",
+            *ablation.table(ab),
+            "",
+        ]
     path = config.PROJECT_ROOT / "reports" / "validation_table.md"
     if path.exists():
         path.chmod(0o666)
