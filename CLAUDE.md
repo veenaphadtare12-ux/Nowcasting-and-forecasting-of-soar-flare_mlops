@@ -56,3 +56,23 @@ Raw data lives outside the repo on D: (about 9.5 GB). Roots are set in `params.y
   (UTC), `CTR` (cts/sec), `STAT_ERR`; 1 s cadence. No TIMESYS/TIMEUNIT/MJDREF headers; time is an explicit MJD column.
 - SoLEXS (2024-10-01 .. 2026-09-13) and HEL1OS (2024-07-01 .. 2024-12-22) have **no overlapping dates** in
   the data currently held. The pipeline must work with SoLEXS alone and accept HEL1OS when available.
+
+## TEACHING MODE (the user is a 3rd-year student learning MLOps through this project)
+
+1. Work one task at a time. After each task, write a lesson file `docs/learn/NN-short-name.md`
+   (NN = 01, 02, ...) and then STOP. Wait until the user types "continue" before starting the next task.
+2. Every lesson file has these sections, in simple language:
+   - What we built (2-3 sentences, plain words)
+   - Why it matters (the problem it solves, with an everyday analogy)
+   - Concepts (each new idea explained from zero, no undefined jargon)
+   - Tools used (what each tool is, what it did here, the 3-5 most useful commands)
+   - Walkthrough of the code (the key files, with the 10-20 most important lines quoted and explained line by line)
+   - Hands-on (3-6 exercises the user does themselves in the terminal or a notebook, with the exact commands,
+     the expected output, and how to tell if it worked)
+   - Break it on purpose (one safe experiment: change something, see what fails, undo it)
+   - Check yourself (5 quiz questions; answers at the bottom under a spoiler line)
+   - Questions to discuss with my tutor (3 deeper questions)
+   - Key numbers (results from this task to remember for the review)
+3. Never do the hands-on exercises for the user. If they ask for help, give hints first.
+4. Keep `docs/learn/INDEX.md` updated: one line per lesson with its status.
+5. Commit after each task, including the lesson file.
