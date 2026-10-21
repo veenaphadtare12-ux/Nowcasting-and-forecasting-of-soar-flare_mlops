@@ -116,6 +116,26 @@ stages:
       - reports/dataset_summary.json:
           cache: false
 
+  train:   # fit on tune (inner time split), select on val; the test file is never opened
+    cmd: python -m src.pipeline train
+    deps:
+      - src/models/train.py
+      - src/models/metrics.py
+      - src/models/plots.py
+      - src/dataset.py
+      - src/pipeline.py
+      - data/processed/dataset
+    params:
+      - models
+      - periods
+    outs:
+      - models
+      - docs/model_figures:
+          cache: false
+    metrics:
+      - reports/model_metrics.json:
+          cache: false
+
   # Optional: HEL1OS is not a dependency of any other stage.
   hel1os_index:
     cmd: python -m src.pipeline hel1os_index

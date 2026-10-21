@@ -79,7 +79,7 @@ def solexs_clean() -> None:
         rows.append({"date": f"{d.date:%Y-%m-%d}", "version": d.version, "usable": False, "valid_fraction": 0.0,
                      "reason": "incomplete (no light curve or no GTI)"})
     qc = pd.DataFrame(rows).sort_values("date")
-    qc.to_csv(_fresh(_p("solexs_qc.csv")), index=False)
+    qc.to_csv(_fresh(_p("solexs_qc.csv")), index=False, lineterminator="\n")
     # continuous minute grid over the whole range; unusable / missing days are NaN rows (never filled)
     mm = pd.concat(minutes)
     mm = mm[~mm.index.duplicated()]
@@ -185,7 +185,7 @@ def evaluate_detector() -> None:
             for per in ("tune", "val")
         }
     REPORTS.mkdir(exist_ok=True)
-    _fresh(REPORTS / "detection_metrics.json").write_text(json.dumps(res, indent=2, default=str))
+    _fresh(REPORTS / "detection_metrics.json").write_text(json.dumps(res, indent=2, default=str), newline="\n")
     plots.make_all()
     for ver in res:
         for per in res[ver]:
@@ -198,6 +198,13 @@ def build_dataset() -> None:
     from src import dataset
 
     dataset.build_all()
+
+
+def train() -> None:
+    """Fit rule / logistic regression / XGBoost per target on tune, select on val; never reads test."""
+    from src.models import train as model_train
+
+    model_train.run()
 
 
 def hel1os_index() -> None:
@@ -215,7 +222,7 @@ def hel1os_index() -> None:
         df = hel1os.read_session(s)
         cov.append(hel1os.coverage(s, df))
         frames.append(df)
-    pd.DataFrame(cov).to_csv(_fresh(out / "coverage.csv"), index=False)
+    pd.DataFrame(cov).to_csv(_fresh(out / "coverage.csv"), index=False, lineterminator="\n")
     allf = pd.concat(frames).sort_index()
     allf = allf[~allf.index.duplicated(keep="last")]
     allf.to_parquet(_fresh(out / "sessions.parquet"))
@@ -225,7 +232,7 @@ def hel1os_index() -> None:
 STAGES = {
     f.__name__: f
     for f in (fetch_goes, solexs_clean, detect_events, legacy_events, match_goes, evaluate_detector,
-              build_dataset, hel1os_index)
+              build_dataset, train, hel1os_index)
 }
 
 if __name__ == "__main__":

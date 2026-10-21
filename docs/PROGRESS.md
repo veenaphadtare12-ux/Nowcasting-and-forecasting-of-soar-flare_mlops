@@ -47,3 +47,49 @@ Newest entries at the bottom. Each entry: what was done, key numbers, decisions 
 
 **Oddity noted, not touched:** `D:\dvc-cache\1NPDPRO5.DOC` (55 KB, dated Sep 2025) is not a DVC file. It looks like
 a user document that ended up in that folder. DVC ignores it.
+
+## 2026-10-21 — Task 2: model training (stage 5)
+
+**Done**
+- `src/models/metrics.py` (contingency, TSS, HSS, POD, FAR, exact best-threshold search), `src/models/train.py`
+  (rule / logistic regression / XGBoost for 7 targets), `src/models/plots.py`, new DVC stage `train`,
+  `tests/test_models.py` (6 tests), lesson `docs/learn/06-model-training.md`.
+- Every run is logged to MLflow, experiment `flare-models` (21 runs per training run: target × model; params,
+  calibration and validation metrics, model file, feature importance).
+
+**Key numbers (validation, 2026-02-01 … 2026-05-31; threshold frozen from calibration)**
+
+| Target | Selected | TSS | HSS | POD | FAR |
+|---|---|---|---|---|---|
+| nowcast | XGB | 0.722 | 0.515 | 0.80 | 0.57 |
+| ≥C 30/60/120 min | LogReg/LogReg/XGB | 0.181 / 0.177 / 0.233 | 0.106 / 0.159 / 0.248 | 0.43 / 0.39 / 0.41 | 0.83 / 0.70 / 0.47 |
+| ≥M 30/60/120 min | LogReg | 0.477 / 0.426 / 0.378 | 0.045 / 0.097 / 0.144 | 0.74 / 0.60 / 0.54 | 0.96 / 0.92 / 0.88 |
+
+The one-feature rule baseline scores TSS 0.02–0.14 on the forecasts, so the models add real skill.
+
+**Decisions**
+- *Kept the tuned detector* (the open recall trade-off from Task 1). The alternative setting differed by only
+  0.0009 in score, and changing it would invalidate the validated detector numbers.
+- *Inner time split of the tune period* (fit < 2025-12-01 minus a 120-min purge; calibrate on Dec–Jan). Early
+  stopping and thresholds come from calibration only. Validation is used once per model, for model selection.
+  `load_period` refuses the test period, and a test enforces it.
+- *Stride 6* (1 row per minute) for fitting: 248k rows instead of 1.49M, because adjacent 10-s rows are near-duplicates.
+- *Threshold = max TSS on calibration*, per the project's primary metric. Consequence: many false alarms for rare M flares.
+- *No re-tuning on validation results*: XGBoost's early-stopping weakness was recorded rather than iterated away,
+  to avoid overfitting model choices to validation.
+
+**Problems found**
+- *Thin calibration months:* XGBoost early-stops very early on M targets (best iteration 0 for ≥M in 30 min,
+  18–24 for 60/120 min). Dec–Jan held only 27 M-or-stronger flares, so `aucpr` is noisy there.
+  Calibration TSS (0.23–0.33) is below validation TSS (0.38–0.48) for the M targets.
+- *High false-alarm ratio for M:* 0.88–0.96 at the TSS-optimal threshold. That's expected for rare events, but an
+  operational system would need a different threshold rule (see lesson 06 discussion questions).
+- *Windows writes CRLF:* Python's `write_text` and pandas' `to_csv` write CRLF on Windows, so regenerated reports
+  disagreed with git (LF) and DVC hashes flip-flopped. Fixed: every text writer now passes `newline="\n"` /
+  `lineterminator="\n"`. A new test fails if any tracked text file has CRLF (`dvc.lock` is exempt, because DVC
+  writes it itself and it is never a stage dependency).
+- *GitHub MCP server is not connected:* "Authorization header is badly formatted". It can't be fixed from here;
+  the user must reconnect it with `/mcp`. Not needed for this work (git is local).
+
+**Checks:** 35 tests pass. `dvc repro` (full rerun, about 15 min) reproduced identical model scores, and
+`dvc status` is clean. Free disk: C: 18 GB, D: 27 GB.

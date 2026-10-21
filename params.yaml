@@ -82,3 +82,21 @@ features:
   cadence_s: 10
   windows_min: [1, 5, 15, 60]   # trailing windows
   min_valid_frac_5m: 0.8        # drop feature rows with less than this fraction of valid data in the last 5 min
+
+# --- models (src/models/train.py). Trained on the tune period only; val is for model selection; test never read.
+models:
+  targets: [now, c_30m, c_60m, c_120m, m_30m, m_60m, m_120m]
+  inner_split: "2025-12-01"   # tune is split in time: fit < split (minus purge), calibrate >= split
+  purge_min: 120              # drop fit rows whose label window could reach the calibration part
+  train_stride: 6             # use every 6th 10-s row (1 per minute) for fitting: neighbours are near-duplicates
+  random_state: 42
+  rule_feature: ratio_1m_bg   # one-feature baseline: alert when ratio to background exceeds a threshold
+  logreg: {C: 1.0, max_iter: 2000}
+  xgb:
+    n_estimators: 2000
+    learning_rate: 0.05
+    max_depth: 6
+    min_child_weight: 5
+    subsample: 0.8
+    colsample_bytree: 0.8
+    early_stopping_rounds: 100

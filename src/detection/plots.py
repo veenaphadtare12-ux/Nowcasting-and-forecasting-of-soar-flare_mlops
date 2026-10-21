@@ -153,4 +153,4 @@ def make_all():
     m, new, old, g = _load()
     ex = examples_figure(m, new, old, g)
     summary_figures()
-    (FIG_DIR / "examples.json").write_text(json.dumps(ex, indent=2))
+    (FIG_DIR / "examples.json").write_text(json.dumps(ex, indent=2), newline="\n")

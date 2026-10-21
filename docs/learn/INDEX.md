@@ -9,3 +9,4 @@ Study these in order. Each lesson ends with exercises to do yourself, a safe "br
 | 03 | [Detection](03-detection.md) | rolling background, noise (Poisson vs MAD), GOES-style onset/end, GOES matching, 300-trial tuning in MLflow, precision vs recall | ✅ written — to study |
 | 04 | [Labels & features](04-labels-features.md) | nowcast vs forecast labels, ok flags, 27 causal features at 10 s cadence, class imbalance | ✅ written — to study |
 | 05 | [DVC & tests](05-dvc-and-tests.md) | dvc.yaml stages, dvc.lock, hardlink cache, dvc repro, line endings, 28 tests, leakage tests, AST check | ✅ written — to study |
+| 06 | [Model training](06-model-training.md) | time split + purge, rule / logistic regression / XGBoost, class imbalance, early stopping, thresholds, TSS/HSS/POD/FAR, MLflow, DVC train stage | ✅ written — to study |

@@ -75,3 +75,17 @@ def test_hel1os_keeps_newest_version_per_session():
 def test_hel1os_is_optional_downstream():
     base = pd.DataFrame({"counts": [1.0, 2.0]}, index=pd.date_range("2025-01-01", periods=2, freq="s", tz="UTC"))
     assert hel1os.attach_optional(base, None) is base
+
+
+def test_tracked_text_files_use_lf_line_endings():
+    """DVC hashes raw bytes: CRLF rewrites (git autocrlf, Python text mode on Windows) look like changes."""
+    import subprocess
+
+    root = Path(__file__).resolve().parents[1]
+    files = subprocess.check_output(["git", "ls-files"], cwd=root, text=True).split()
+    binary = (".png", ".parquet", ".db", ".joblib", ".gz", ".fits")
+    # dvc.lock is written by DVC itself (CRLF on Windows); it is never a stage dependency, and git stores it as LF.
+    skip = {"dvc.lock"}
+    crlf = [f for f in files if not f.endswith(binary) and f not in skip and (root / f).exists()
+            and b"\r\n" in (root / f).read_bytes()]
+    assert not crlf, f"CRLF line endings in: {crlf}"

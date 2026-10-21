@@ -91,6 +91,6 @@ def build_all() -> dict:
     summary["feature_columns"] = feature_columns(df)
     reports = config.PROJECT_ROOT / "reports"
     reports.mkdir(exist_ok=True)
-    _fresh(reports / "dataset_summary.json").write_text(json.dumps(summary, indent=2))
+    _fresh(reports / "dataset_summary.json").write_text(json.dumps(summary, indent=2), newline="\n")
     print(json.dumps({k: v for k, v in summary.items() if k != "feature_columns"}, indent=2))
     return summary

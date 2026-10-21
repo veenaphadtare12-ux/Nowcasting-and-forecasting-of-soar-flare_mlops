@@ -82,8 +82,8 @@ def run(workers: int = 6) -> pd.DataFrame:
     best = df.iloc[0].to_dict()
     # save results first, so a logging problem can never lose a finished grid
     REPORTS.mkdir(exist_ok=True)
-    df.to_csv(REPORTS / "tuning_results.csv", index=False)
-    (REPORTS / "tuning_best.json").write_text(json.dumps({k: (v.item() if hasattr(v, "item") else v) for k, v in best.items()}, indent=2))
+    df.to_csv(REPORTS / "tuning_results.csv", index=False, lineterminator="\n")
+    (REPORTS / "tuning_best.json").write_text(json.dumps({k: (v.item() if hasattr(v, "item") else v) for k, v in best.items()}, indent=2), newline="\n")
 
     mlflow.set_tracking_uri(config.mlflow_uri())
     mlflow.set_experiment("detector-tuning")

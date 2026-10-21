@@ -9,8 +9,8 @@ stages:
       size: 5387
     - path: src/pipeline.py
       hash: md5
-      md5: ee43f91890471ccd8039af5a292b2bc8
-      size: 9374
+      md5: 4c1c59d16eae54bf8deda3792986f844
+      size: 9635
     params:
       params.yaml:
         periods:
@@ -38,8 +38,8 @@ stages:
       size: 8543
     - path: src/pipeline.py
       hash: md5
-      md5: ee43f91890471ccd8039af5a292b2bc8
-      size: 9374
+      md5: 4c1c59d16eae54bf8deda3792986f844
+      size: 9635
     - path: src/solexs.py
       hash: md5
       md5: 48363970f48c546cfff24587af97940e
@@ -74,8 +74,8 @@ stages:
       size: 6050846
     - path: data/processed/solexs_qc.csv
       hash: md5
-      md5: dbe8aa70360169fd6c4a4736857c7b45
-      size: 32688
+      md5: 813af0bb1ca03ed38e52a9e398fb50b9
+      size: 32235
   solexs_flares:
     cmd: python -m src.pipeline solexs_flares
     deps:
@@ -168,16 +168,16 @@ stages:
       size: 5906
     - path: src/pipeline.py
       hash: md5
-      md5: ee43f91890471ccd8039af5a292b2bc8
-      size: 9374
+      md5: 4c1c59d16eae54bf8deda3792986f844
+      size: 9635
     params:
       params.yaml:
         paths.data_root_hel1os: D:/MLOPS_CP/Data/HELIOS
     outs:
     - path: data/processed/hel1os
       hash: md5
-      md5: b8349c3141bf8a03a59c8db59623eb0a.dir
-      size: 7314961
+      md5: ca4dbc1a121674d9a749656beb4370ea.dir
+      size: 7314937
       nfiles: 2
   detect_events:
     cmd: python -m src.pipeline detect_events
@@ -192,8 +192,8 @@ stages:
       size: 8543
     - path: src/pipeline.py
       hash: md5
-      md5: ee43f91890471ccd8039af5a292b2bc8
-      size: 9374
+      md5: 4c1c59d16eae54bf8deda3792986f844
+      size: 9635
     params:
       params.yaml:
         flare_detection:
@@ -242,8 +242,8 @@ stages:
       size: 3652
     - path: src/pipeline.py
       hash: md5
-      md5: ee43f91890471ccd8039af5a292b2bc8
-      size: 9374
+      md5: 4c1c59d16eae54bf8deda3792986f844
+      size: 9635
     params:
       params.yaml:
         flare_detection_legacy:
@@ -297,8 +297,8 @@ stages:
       size: 5387
     - path: src/pipeline.py
       hash: md5
-      md5: ee43f91890471ccd8039af5a292b2bc8
-      size: 9374
+      md5: 4c1c59d16eae54bf8deda3792986f844
+      size: 9635
     params:
       params.yaml:
         goes_match:
@@ -367,12 +367,12 @@ stages:
       size: 5742
     - path: src/detection/plots.py
       hash: md5
-      md5: 1cb446310547211b299846603db1582c
-      size: 8124
+      md5: dbeee0b20927ae296583a1b0d4c6ae2d
+      size: 8138
     - path: src/pipeline.py
       hash: md5
-      md5: ee43f91890471ccd8039af5a292b2bc8
-      size: 9374
+      md5: 4c1c59d16eae54bf8deda3792986f844
+      size: 9635
     params:
       params.yaml:
         evaluation:
@@ -429,8 +429,8 @@ stages:
       size: 6050846
     - path: src/dataset.py
       hash: md5
-      md5: c7fe74fe0af83983bd7c71257d98bb8f
-      size: 4098
+      md5: 394a6ae19da3be77f882d80c61172525
+      size: 4112
     - path: src/features.py
       hash: md5
       md5: 9bd0c201c266ba7a7cc7a59b9e8b8101
@@ -441,8 +441,8 @@ stages:
       size: 3924
     - path: src/pipeline.py
       hash: md5
-      md5: ee43f91890471ccd8039af5a292b2bc8
-      size: 9374
+      md5: 4c1c59d16eae54bf8deda3792986f844
+      size: 9635
     params:
       params.yaml:
         features:
@@ -480,3 +480,83 @@ stages:
       hash: md5
       md5: c8486c3f2db444964c5f9e38051d0430
       size: 2032
+  train:
+    cmd: python -m src.pipeline train
+    deps:
+    - path: data/processed/dataset
+      hash: md5
+      md5: ac7011684f05ab50a8b9b5501e7a4924.dir
+      size: 214925776
+      nfiles: 3
+    - path: src/dataset.py
+      hash: md5
+      md5: 394a6ae19da3be77f882d80c61172525
+      size: 4112
+    - path: src/models/metrics.py
+      hash: md5
+      md5: 532d36eb8253b50e12babf0037e4b52e
+      size: 3370
+    - path: src/models/plots.py
+      hash: md5
+      md5: a1accc384340bf4478d66ef2d50c36e6
+      size: 2394
+    - path: src/models/train.py
+      hash: md5
+      md5: c59b57e4b521fe26c86941518511f973
+      size: 8803
+    - path: src/pipeline.py
+      hash: md5
+      md5: 4c1c59d16eae54bf8deda3792986f844
+      size: 9635
+    params:
+      params.yaml:
+        models:
+          targets:
+          - now
+          - c_30m
+          - c_60m
+          - c_120m
+          - m_30m
+          - m_60m
+          - m_120m
+          inner_split: '2025-12-01'
+          purge_min: 120
+          train_stride: 6
+          random_state: 42
+          rule_feature: ratio_1m_bg
+          logreg:
+            C: 1.0
+            max_iter: 2000
+          xgb:
+            n_estimators: 2000
+            learning_rate: 0.05
+            max_depth: 6
+            min_child_weight: 5
+            subsample: 0.8
+            colsample_bytree: 0.8
+            early_stopping_rounds: 100
+        periods:
+          tune:
+            start: '2025-04-09'
+            end: '2026-01-31'
+          val:
+            start: '2026-02-01'
+            end: '2026-05-31'
+          test:
+            start: '2026-06-01'
+            end: '2026-09-12'
+    outs:
+    - path: docs/model_figures
+      hash: md5
+      md5: e0d26472ba994473a56a50046fdfe0b1.dir
+      size: 52578
+      nfiles: 1
+    - path: models
+      hash: md5
+      md5: 7147ee1d0a732335f0cabd741fa5b615.dir
+      size: 7736614
+      nfiles: 15
+    - path: reports/model_metrics.json
+      hash: md5
+      md5: 1e0dfd397ddb896dab1a2f71641d86a4
+      size: 35995
