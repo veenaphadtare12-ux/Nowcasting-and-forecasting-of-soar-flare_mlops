@@ -12,3 +12,4 @@ Study these in order. Each lesson ends with exercises to do yourself, a safe "br
 | 06 | [Model training](06-model-training.md) | time split + purge, rule / logistic regression / XGBoost, class imbalance, early stopping, thresholds, TSS/HSS/POD/FAR, MLflow, DVC train stage | ✅ written — numbers superseded by 08 |
 | 07 | [Label noise & quiet-start](07-label-noise-and-quiet-start.md) | GOES-direct forecast labels, primary-match onset rule, label comparison, causal activity flag, quiet-start evaluation | ✅ written — to study |
 | 08 | [Baselines, CV, operating points, bootstrap](08-baselines-cv-operating-points-bootstrap.md) | climatology/persistence baselines, rolling-origin CV, seeds, operating points A/B, day-bootstrap intervals, validation re-use | ✅ written — to study |
+| 09 | [Data inventory](09-data-inventory.md) | archives vs extracted data, zip listings, truncated zips and local headers, duplicates/versions, disk budget | ✅ written — to study |

@@ -54,8 +54,10 @@ Raw data lives outside the repo on D: (about 9.5 GB). Roots are set in `params.y
   The zero-point keyword is spelled `TIMZERO` (=0) in these files.
 - HEL1OS light curves (`lightcurve_{cdte,czt}{1,2}.fits`): one extension per energy band; columns `MJD`, `ISOT`
   (UTC), `CTR` (cts/sec), `STAT_ERR`; 1 s cadence. No TIMESYS/TIMEUNIT/MJDREF headers; time is an explicit MJD column.
-- SoLEXS (2024-10-01 .. 2026-09-13) and HEL1OS (2024-07-01 .. 2024-12-22) have **no overlapping dates** in
-  the data currently held. The pipeline must work with SoLEXS alone and accept HEL1OS when available.
+- HEL1OS: 131 session zips exist in `paths.archive_root` (104 unique sessions after duplicates), covering 2024-07 .. 2026-09,
+  including 2025-04/06/08/11 and 2026-04/09, which OVERLAP usable SoLEXS days. As of 2026-10-22 only the 27 sessions
+  of 2024 are extracted under `data_root_hel1os`; 77 sessions (28.6 GB uncompressed, of which 19 GB event lists and
+  5.7 GB spectra) are not, for lack of disk space. See `reports/data_inventory.csv`. HEL1OS stays optional everywhere.
 
 ## AUTONOMOUS BUILD MODE (replaces the earlier teaching mode; the user studies the lessons afterwards)
 

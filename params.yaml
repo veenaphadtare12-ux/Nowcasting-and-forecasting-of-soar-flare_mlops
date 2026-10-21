@@ -3,6 +3,7 @@
 paths:
   data_root_solexs: "D:/MLOPS_CP/Data/SoLEXS"
   data_root_hel1os: "D:/MLOPS_CP/Data/HELIOS"
+  archive_root: "D:/MLOPS_CP/Data/original_zips"   # original downloads (kept, never modified)
   processed_dir: "data/processed"
   mlflow_tracking_uri: "sqlite:///mlflow.db"   # relative path = relative to the project root
 

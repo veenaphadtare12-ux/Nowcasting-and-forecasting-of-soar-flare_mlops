@@ -213,3 +213,58 @@ never been opened, and it must be used once, at the end, with every choice froze
 
 **Note on the run:** the first background training run was interrupted when the session was resumed ("Try again");
 it was restarted and completed normally. No partial results were used.
+
+## 2026-10-22 — Prompt 4, start: running jobs
+
+No training was running. The last training run (tasks 3.3–3.5) had completed and its results were already recorded
+above (commit `3722f6e`). The Python processes still alive were an MLflow UI server (started 2026-10-21 20:49),
+which was left running.
+
+## 2026-10-22 — Task 4.1: inventory of all Aditya-L1 data on D: (read-only)
+
+**Done.** New `src/data_inventory.py` (`python -m src.data_inventory inventory`) lists every archive under
+`paths.archive_root` (new param, `D:/MLOPS_CP/Data/original_zips`). For each archive it records the instrument,
+dates, version, compressed and uncompressed size (from the zip listing), and whether its files already exist with
+matching sizes. Truncated zips are listed by scanning local file headers, and an entry counts only if its compressed
+stream is complete. Output: `reports/data_inventory.csv` (1,054 archives). 2 new tests; one caught a version-parsing
+bug (`1.0.` instead of `1.0`), which was fixed.
+
+**Search.** The whole of D: was searched (skipping `D:\dvc-cache`, `D:\projects`, the recycle bin and system
+folders). The only Aditya-L1 data is in `D:\MLOPS_CP\Data` (extracted folders plus `original_zips`). The only other
+archive is unrelated: `D:\self_driving_car_training_data\tusimple\tusimple.zip` (23.2 GB).
+
+**Findings**
+
+| Group | Archives | Extracted? | New data |
+|---|---|---|---|
+| SoLEXS day zips (`mlops_cp` + `inner_solexs_zips`) | 913 (455 + 458; duplicates) | all yes | none |
+| SoLEXS bundles (3 ok) | 3 | yes (all inner zips present) | none |
+| SoLEXS bundles (2 truncated, Sep 15) | 2 | yes: all 19 + 71 complete entries are already in `inner_solexs_zips`; 1 entry in each is cut off | none |
+| HEL1OS session zips (`mlops_cp` + `inner_hel1os_zips`) | 131 (27 + 104) | 54 yes, **77 no** | **77 sessions** |
+| HEL1OS bundles | 5 | inner zips all present | — |
+
+- **New SoLEXS days:** none. All 458 SoLEXS days on disk are already in the pipeline.
+- **New HEL1OS sessions:** 77, dated 2025-01 (1), 2025-04 (23), 2025-06 (2), 2025-08 (2), 2025-11 (10),
+  2026-04 (18), 2026-09 (21). Versions: V111 ×48, V112 ×24, V211 ×4, V311 ×1.
+- **Overlap with usable SoLEXS days:**
+  - tune: 22 sessions on 11 usable days
+  - val: 13 sessions on 6 usable days
+  - test: 17 sessions on 9 days. These are counted only, never analysed.
+  - 25 more sessions fall on non-usable SoLEXS days or outside the periods.
+
+**Disk check (Task 2 blocked).** The 77 new sessions take **28.6 GB uncompressed** (4.2 GB compressed). D: has
+27 GB free, so full extraction would leave about −1.6 GB, far below the 15 GB floor. By file type:
+- event lists (`events/evt.fits`): 19.0 GB
+- spectra: 5.7 GB
+- light curves: 3.6 GB
+- aux (GTI, housekeeping): 0.25 GB
+
+The pipeline only reads light curves (and could use aux). Even full extraction of just the 35 tune+val overlap
+sessions (12.4 GB) would leave 14.6 GB, also below the floor. **Stopped before extraction, as instructed; nothing
+was extracted or deleted.** Options are reported to the user.
+
+**My earlier mistake, found during this inventory.** On 2026-09-17, while consolidating data onto D:, I deleted
+`D:\hel1os_extracted\2025` and `...\2026` assuming they were empty leftovers, without checking their contents. They
+held the extracted 2025/2026 HEL1OS sessions. No data was lost, because the original zips were kept, but it led to
+the wrong conclusion "HEL1OS and SoLEXS do not overlap", which had been written into `CLAUDE.md`. That statement is
+now corrected.
