@@ -1,15 +1,21 @@
-"""Train and compare flare models: one-feature rule, logistic regression, XGBoost. Every run is logged to MLflow.
+"""Train, compare and score flare models. Every training run is logged to MLflow.
+
+Models per target: climatology, persistence, one-feature rule, logistic regression, XGBoost.
 
 Data discipline (CLAUDE.md):
-* Only the tune and val dataset files are read. The test file is never opened here (`load_period` refuses it).
-* Tune is split IN TIME: fit on rows before `models.inner_split` (minus a purge gap so no fit row's label window
-  reaches the calibration part), calibrate on rows after it. Early stopping and the alert threshold are chosen on
-  the calibration part only.
-* Val is used once per model, with the frozen threshold, to compare models (model selection). Nothing is fitted on it.
+* Only the tune and val dataset files are read; `load_period` refuses the test period.
+* Tune is split IN TIME at `models.inner_split`:
+  - fit part (before the split, minus a purge gap): model fitting, and rolling-origin CV for XGBoost settings;
+  - calibration part (Dec-Jan): threshold selection only (operating points A = max TSS, B = max HSS).
+* Val is used to compare models (model selection). Nothing is fitted or tuned on it.
 * Rows are used only where the target's `ok` flag is True.
+* Every number is reported for all rows and for quiet-start rows (no flare in progress at t, causal flag).
+* Logistic regression and XGBoost are fitted with 3 seeds; scores are mean +- std over seeds, with a 95 % interval
+  from a bootstrap over validation days.
 """
 from __future__ import annotations
 
+import itertools
 import json
 import os
 import time
@@ -20,6 +26,7 @@ import numpy as np
 import pandas as pd
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import average_precision_score
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import QuantileTransformer
 from xgboost import XGBClassifier
@@ -32,6 +39,8 @@ TARGETS = {
     "c_30m": ("y_c_30m", "ok_30m"), "c_60m": ("y_c_60m", "ok_60m"), "c_120m": ("y_c_120m", "ok_120m"),
     "m_30m": ("y_m_30m", "ok_30m"), "m_60m": ("y_m_60m", "ok_60m"), "m_120m": ("y_m_120m", "ok_120m"),
 }
+MODELS = ("climatology", "persistence", "rule", "logreg", "xgb")
+FLAG = "flare_in_progress_at_t"
 MODEL_DIR = config.PROJECT_ROOT / "models"
 REPORTS = config.PROJECT_ROOT / "reports"
 ALLOWED_PERIODS = ("tune", "val")
@@ -47,17 +56,27 @@ def load_period(name: str) -> pd.DataFrame:
 def split_tune(df: pd.DataFrame, split: str, purge_min: int) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Chronological split of the tune period with a purge gap before the calibration part."""
     cut = pd.Timestamp(split, tz="UTC")
-    fit = df[df.index < cut - pd.Timedelta(minutes=purge_min)]
-    cal = df[df.index >= cut]
-    return fit, cal
+    return df[df.index < cut - pd.Timedelta(minutes=purge_min)], df[df.index >= cut]
 
 
-def _rows(df: pd.DataFrame, target: str, stride: int = 1) -> tuple[pd.DataFrame, np.ndarray]:
-    y_col, ok_col = TARGETS[target]
+def cv_folds(df: pd.DataFrame, fold_months: list[str], purge_min: int) -> list[tuple[pd.DataFrame, pd.DataFrame, str]]:
+    """Rolling-origin folds: for each month m, train on everything before m (minus a purge gap), score on m."""
+    folds = []
+    for m in fold_months:
+        lo = pd.Timestamp(m + "-01", tz="UTC")
+        hi = lo + pd.offsets.MonthBegin(1)
+        folds.append((df[df.index < lo - pd.Timedelta(minutes=purge_min)], df[(df.index >= lo) & (df.index < hi)], m))
+    return folds
+
+
+def _rows(df: pd.DataFrame, target: str, stride: int = 1) -> pd.DataFrame:
+    _, ok_col = TARGETS[target]
     d = df[df[ok_col].astype(bool)]
-    if stride > 1:
-        d = d.iloc[::stride]
-    return d, d[y_col].to_numpy().astype(int)
+    return d.iloc[::stride] if stride > 1 else d
+
+
+def _y(d: pd.DataFrame, target: str) -> np.ndarray:
+    return d[TARGETS[target][0]].to_numpy().astype(int)
 
 
 def make_logreg(cfg: dict, seed: int) -> Pipeline:
@@ -68,54 +87,116 @@ def make_logreg(cfg: dict, seed: int) -> Pipeline:
     ])
 
 
-def make_xgb(cfg: dict, seed: int, pos_weight: float) -> XGBClassifier:
-    return XGBClassifier(
-        n_estimators=cfg["n_estimators"], learning_rate=cfg["learning_rate"], max_depth=cfg["max_depth"],
-        min_child_weight=cfg["min_child_weight"], subsample=cfg["subsample"], colsample_bytree=cfg["colsample_bytree"],
-        early_stopping_rounds=cfg["early_stopping_rounds"], eval_metric="aucpr", tree_method="hist",
-        scale_pos_weight=pos_weight, random_state=seed, n_jobs=-1,
-    )
+def make_xgb(base: dict, params: dict, seed: int, pos_weight: float) -> XGBClassifier:
+    return XGBClassifier(**base, **params, eval_metric="aucpr", tree_method="hist", scale_pos_weight=pos_weight,
+                         random_state=seed, n_jobs=-1)
 
 
-def train_target(target: str, fit_df, cal_df, val_df, feats: list[str], P: dict) -> list[dict]:
-    """Fit the three models for one target; return one result dict per model (calibration + validation metrics)."""
+def _pos_weight(y: np.ndarray) -> float:
+    return float((y == 0).sum() / max((y == 1).sum(), 1))
+
+
+# ---------------------------------------------------------------- rolling-origin CV for XGBoost
+def xgb_cv(fit_df: pd.DataFrame, target: str, feats: list[str], P: dict) -> tuple[dict, pd.DataFrame]:
+    """Choose n_estimators and regularisation by mean aucpr over monthly rolling-origin folds (fit part only).
+
+    One model with the largest n_estimators is trained per (setting, fold); smaller tree counts are scored from
+    the same model with `iteration_range`, so trying 3 tree counts costs one fit.
+    """
     mp = P["models"]
-    Xf_df, yf = _rows(fit_df, target, mp["train_stride"])
-    Xc_df, yc = _rows(cal_df, target)
-    Xv_df, yv = _rows(val_df, target)
-    Xf, Xc, Xv = Xf_df[feats], Xc_df[feats], Xv_df[feats]
-    results = []
+    cv = mp["cv"]
+    grid = [dict(zip(("max_depth", "min_child_weight", "reg_lambda"), v))
+            for v in itertools.product(cv["max_depth"], cv["min_child_weight"], cv["reg_lambda"])]
+    n_list, n_max = sorted(cv["n_estimators"]), max(cv["n_estimators"])
+    rows = []
+    for tr_df, va_df, month in cv_folds(fit_df, cv["fold_months"], mp["purge_min"]):
+        tr, va = _rows(tr_df, target, cv["stride"]), _rows(va_df, target)
+        ytr, yva = _y(tr, target), _y(va, target)
+        if yva.sum() == 0 or ytr.sum() == 0:
+            continue  # aucpr undefined without positives in this month
+        for g in grid:
+            m = make_xgb(mp["xgb"], {**g, "n_estimators": n_max}, mp["seeds"][0], _pos_weight(ytr)).fit(tr[feats], ytr)
+            for n in n_list:
+                p = m.predict_proba(va[feats], iteration_range=(0, n))[:, 1]
+                rows.append({**g, "n_estimators": n, "fold": month, "aucpr": average_precision_score(yva, p),
+                             "fold_pos": int(yva.sum())})
+    table = pd.DataFrame(rows)
+    keys = ["max_depth", "min_child_weight", "reg_lambda", "n_estimators"]
+    summary = table.groupby(keys)["aucpr"].agg(["mean", "std", "count"]).reset_index().sort_values("mean", ascending=False)
+    best = {k: (int(v) if k != "reg_lambda" else float(v)) for k, v in summary.iloc[0][keys].items()}
+    return best, summary
 
-    # 1) one-feature rule: alert when the chosen feature exceeds a threshold (chosen on calibration)
+
+# ---------------------------------------------------------------- scoring
+def _score_block(y_cal, s_cal, y_val, s_val, quiet, day_codes, n_days, op_metrics: dict, fixed_threshold=None) -> dict:
+    """Thresholds from calibration (one per operating point), metrics on val (all rows and quiet-start rows)."""
+    out = {}
+    for op, met in op_metrics.items():
+        thr = fixed_threshold if fixed_threshold is not None else metrics.best_threshold(y_cal, s_cal, met)[0]
+        r = {"threshold": float(thr), "cal": metrics.evaluate(y_cal, s_cal, thr, proba=False)}
+        for subset, mask in (("all", np.ones(len(y_val), bool)), ("quiet", quiet)):
+            ev = metrics.evaluate(y_val[mask], s_val[mask], thr, proba=False)
+            ev["day_counts"] = metrics.daily_counts(y_val[mask], s_val[mask] >= thr, day_codes[mask], n_days)
+            r[subset] = ev
+        out[op] = r
+    return out
+
+
+def train_target(target: str, fit_df, cal_df, val_df, feats: list[str], P: dict, xgb_params: dict, days) -> dict:
+    """Fit every model for one target. Returns {model: [per-seed result]} where each result holds
+    calibration/validation metrics for each operating point."""
+    mp = P["models"]
+    ops = mp["operating_points"]
+    fit = _rows(fit_df, target, mp["train_stride"])
+    cal, val = _rows(cal_df, target), _rows(val_df, target)
+    yf, yc, yv = _y(fit, target), _y(cal, target), _y(val, target)
+    quiet = val[FLAG].to_numpy() == 0
+    day_codes = days.get_indexer(val.index.floor("D"))
+    n_days = len(days)
+    blk = lambda sc, sv, fixed=None: _score_block(yc, sc, yv, sv, quiet, day_codes, n_days, ops, fixed)  # noqa: E731
+    res: dict = {}
+
+    # climatology: always the training positive rate. A constant forecast has no skill (TSS 0) by construction.
+    rate = float(yf.mean())
+    res["climatology"] = [{"seed": None, "params": {"rate": rate},
+                           **blk(np.full(len(yc), rate), np.full(len(yv), rate), fixed=rate + 1e-12)}]
+    # persistence: "yes" while a flare is in progress at t (causal flag); no threshold to choose
+    res["persistence"] = [{"seed": None, "params": {"flag": FLAG},
+                           **blk(cal[FLAG].to_numpy().astype(float), val[FLAG].to_numpy().astype(float), fixed=0.5)}]
+    # one-feature rule
     rf = mp["rule_feature"]
-    sc, sv = Xc[rf].fillna(0).to_numpy(), Xv[rf].fillna(0).to_numpy()
-    thr, _ = metrics.best_threshold(yc, sc)
-    results.append({"model": "rule", "estimator": None, "threshold": thr,
-                    "cal": metrics.evaluate(yc, sc, thr, proba=False), "val": metrics.evaluate(yv, sv, thr, proba=False),
-                    "params": {"feature": rf}, "fit_rows": 0})
+    res["rule"] = [{"seed": None, "params": {"feature": rf},
+                    **blk(cal[rf].fillna(0).to_numpy(), val[rf].fillna(0).to_numpy())}]
+    # logistic regression and XGBoost, one fit per seed
+    res["logreg"], res["xgb"] = [], []
+    for seed in mp["seeds"]:
+        t0 = time.time()
+        lr = make_logreg(mp["logreg"], seed).fit(fit[feats], yf)
+        res["logreg"].append({"seed": seed, "params": mp["logreg"], "fit_seconds": time.time() - t0, "estimator": lr,
+                              **blk(lr.predict_proba(cal[feats])[:, 1], lr.predict_proba(val[feats])[:, 1])})
+        t0 = time.time()
+        xg = make_xgb(mp["xgb"], xgb_params, seed, _pos_weight(yf)).fit(fit[feats], yf)
+        imp = pd.Series(xg.get_booster().get_score(importance_type="gain")).reindex(feats).fillna(0)
+        res["xgb"].append({"seed": seed, "params": {**mp["xgb"], **xgb_params}, "fit_seconds": time.time() - t0,
+                           "estimator": xg, "importance": (imp / imp.sum()).sort_values(ascending=False).round(4).to_dict(),
+                           **blk(xg.predict_proba(cal[feats])[:, 1], xg.predict_proba(val[feats])[:, 1])})
+    return res
 
-    # 2) logistic regression
-    t0 = time.time()
-    lr = make_logreg(mp["logreg"], mp["random_state"]).fit(Xf, yf)
-    pc, pv = lr.predict_proba(Xc)[:, 1], lr.predict_proba(Xv)[:, 1]
-    thr, _ = metrics.best_threshold(yc, pc)
-    results.append({"model": "logreg", "estimator": lr, "threshold": thr, "cal": metrics.evaluate(yc, pc, thr),
-                    "val": metrics.evaluate(yv, pv, thr), "params": mp["logreg"], "fit_rows": len(yf),
-                    "fit_seconds": time.time() - t0})
 
-    # 3) XGBoost, early-stopped on the calibration part
-    t0 = time.time()
-    pos_weight = float((yf == 0).sum() / max((yf == 1).sum(), 1))
-    xgb = make_xgb(mp["xgb"], mp["random_state"], pos_weight)
-    xgb.fit(Xf, yf, eval_set=[(Xc, yc)], verbose=False)
-    pc, pv = xgb.predict_proba(Xc)[:, 1], xgb.predict_proba(Xv)[:, 1]
-    thr, _ = metrics.best_threshold(yc, pc)
-    imp = pd.Series(xgb.get_booster().get_score(importance_type="gain")).reindex(feats).fillna(0)
-    results.append({"model": "xgb", "estimator": xgb, "threshold": thr, "cal": metrics.evaluate(yc, pc, thr),
-                    "val": metrics.evaluate(yv, pv, thr), "params": {**mp["xgb"], "scale_pos_weight": pos_weight},
-                    "fit_rows": len(yf), "fit_seconds": time.time() - t0, "best_iteration": int(xgb.best_iteration),
-                    "importance": (imp / imp.sum()).sort_values(ascending=False).round(4).to_dict()})
-    return results
+def aggregate(runs: list[dict], ops: dict, boot_idx: np.ndarray, level: float) -> dict:
+    """Mean +- std over seeds and a day-bootstrap interval for TSS, per operating point and subset."""
+    out = {}
+    for op in ops:
+        out[op] = {"threshold_mean": float(np.mean([r[op]["threshold"] for r in runs]))}
+        for subset in ("all", "quiet"):
+            vals = {k: [r[op][subset][k] for r in runs] for k in ("tss", "hss", "pod", "far")}
+            agg = {f"{k}_mean": float(np.mean(v)) for k, v in vals.items()}
+            agg |= {f"{k}_std": float(np.std(v)) for k, v in vals.items()}
+            lo, hi = metrics.bootstrap_mean_tss([r[op][subset]["day_counts"] for r in runs], boot_idx, level)
+            agg |= {"tss_ci_low": lo, "tss_ci_high": hi, "n": runs[0][op][subset]["n"],
+                    "pos_rate": runs[0][op][subset]["pos_rate"], "n_seeds": len(runs)}
+            out[op][subset] = agg
+    return out
 
 
 def _fresh(path: Path) -> Path:
@@ -125,56 +206,85 @@ def _fresh(path: Path) -> Path:
     return path
 
 
+def _strip(r: dict) -> dict:
+    """Per-seed result without numpy arrays/estimators, for JSON."""
+    out = {k: v for k, v in r.items() if k not in ("estimator",)}
+    for op in ("A", "B"):
+        if op in out:
+            out[op] = {k: ({kk: vv for kk, vv in v.items() if kk != "day_counts"} if isinstance(v, dict) else v)
+                       for k, v in out[op].items()}
+    return out
+
+
 def run() -> dict:
     os.environ.setdefault("MLFLOW_DISABLE_AGENT_HINT", "1")
     import mlflow
 
-    from src.models import plots
+    from src.models import plots, report
 
     P = config.load_params()
     mp = P["models"]
+    ops = mp["operating_points"]
     tune, val = load_period("tune"), load_period("val")
     feats = dataset.feature_columns(tune)
     fit_df, cal_df = split_tune(tune, mp["inner_split"], mp["purge_min"])
+    days = pd.DatetimeIndex(sorted(val.index.floor("D").unique()))
+    bs = mp["bootstrap"]
+    boot_idx = metrics.bootstrap_indices(len(days), bs["n"], bs["seed"])
     MODEL_DIR.mkdir(exist_ok=True)
     for old in MODEL_DIR.glob("*"):
         _fresh(old)
 
     mlflow.set_tracking_uri(config.mlflow_uri())
-    mlflow.set_experiment("flare-models")
-    summary: dict = {"features": feats, "split": {"fit_end": str(fit_df.index.max()), "cal_start": str(cal_df.index.min()),
-                     "cal_end": str(cal_df.index.max()), "val_start": str(val.index.min()), "val_end": str(val.index.max())},
-                     "targets": {}}
+    mlflow.set_experiment("flare-models-v2")
+    summary: dict = {
+        "features": feats, "val_days": len(days),
+        "split": {"fit_end": str(fit_df.index.max()), "cal_start": str(cal_df.index.min()), "cal_end": str(cal_df.index.max()),
+                  "val_start": str(val.index.min()), "val_end": str(val.index.max())},
+        "targets": {},
+    }
+    thresholds: dict = {}
+    cv_tables = []
     for target in mp["targets"]:
-        res = train_target(target, fit_df, cal_df, val, feats, P)
-        summary["targets"][target] = {}
-        for r in res:
-            name = r["model"]
-            with mlflow.start_run(run_name=f"{target}-{name}"):
-                mlflow.set_tags({"target": target, "model": name, "periods": "fit+cal=tune, eval=val"})
-                mlflow.log_params({"target": target, "model": name, "threshold": r["threshold"], "fit_rows": r["fit_rows"],
-                                   "n_features": len(feats), **{f"p_{k}": v for k, v in r["params"].items()}})
-                for part in ("cal", "val"):
-                    mlflow.log_metrics({f"{part}_{k}": float(v) for k, v in r[part].items() if isinstance(v, (int, float))})
-                if r["estimator"] is not None:
-                    path = MODEL_DIR / (f"{target}_xgb.json" if name == "xgb" else f"{target}_{name}.joblib")
-                    if name == "xgb":
-                        r["estimator"].save_model(_fresh(path))
-                    else:
-                        joblib.dump(r["estimator"], _fresh(path))
-                    mlflow.log_artifact(str(path))
-                if "importance" in r:
-                    mlflow.log_dict(r["importance"], "feature_importance.json")
-            summary["targets"][target][name] = {k: v for k, v in r.items() if k != "estimator"}
-        best = max(res, key=lambda r: r["val"]["tss"])
-        summary["targets"][target]["selected"] = best["model"]
-        print(f"{target:7s} " + "  ".join(f"{r['model']}: val TSS {r['val']['tss']:.3f} HSS {r['val']['hss']:.3f}" for r in res)
-              + f"  -> {best['model']}")
-    (MODEL_DIR / "thresholds.json").write_text(json.dumps(
-        {t: {m: summary["targets"][t][m]["threshold"] for m in ("rule", "logreg", "xgb")} | {"selected": summary["targets"][t]["selected"]}
-         for t in mp["targets"]}, indent=2), newline="\n")
-    REPORTS.mkdir(exist_ok=True)
+        t0 = time.time()
+        xgb_params, cv_table = xgb_cv(fit_df, target, feats, P)
+        cv_tables.append(cv_table.assign(target=target))
+        res = train_target(target, fit_df, cal_df, val, feats, P, xgb_params, days)
+        agg = {m: aggregate(res[m], ops, boot_idx, bs["level"]) for m in MODELS}
+        candidates = ("rule", "logreg", "xgb")
+        selected = max(candidates, key=lambda m: agg[m]["A"]["all"]["tss_mean"])
+        summary["targets"][target] = {"selected": selected, "xgb_cv_best": xgb_params,
+                                      "models": {m: {"summary": agg[m], "runs": [_strip(r) for r in res[m]]} for m in MODELS}}
+        thresholds[target] = {m: {op: agg[m][op]["threshold_mean"] for op in ops} for m in MODELS} | {"selected": selected}
+        for name in ("logreg", "xgb"):  # keep the first seed's fitted model of each learner
+            est = res[name][0]["estimator"]
+            if name == "xgb":
+                est.save_model(_fresh(MODEL_DIR / f"{target}_xgb.json"))
+            else:
+                joblib.dump(est, _fresh(MODEL_DIR / f"{target}_logreg.joblib"))
+        with mlflow.start_run(run_name=f"{target}"):
+            mlflow.set_tags({"target": target, "selected": selected, "periods": "fit+cv+cal=tune, eval=val"})
+            mlflow.log_params({f"xgb_{k}": v for k, v in xgb_params.items()} | {"seeds": str(mp["seeds"]),
+                              "n_features": len(feats), "cv_folds": str(mp["cv"]["fold_months"])})
+            mlflow.log_text(cv_table.to_csv(index=False, lineterminator="\n"), "xgb_cv.csv")
+            for m in MODELS:
+                with mlflow.start_run(run_name=f"{target}-{m}", nested=True):
+                    mlflow.set_tags({"target": target, "model": m})
+                    for op in ops:
+                        for subset in ("all", "quiet"):
+                            mlflow.log_metrics({f"{op}_{subset}_{k}": v for k, v in agg[m][op][subset].items()
+                                                if isinstance(v, (int, float))})
+            for name in ("logreg", "xgb"):
+                path = MODEL_DIR / (f"{target}_xgb.json" if name == "xgb" else f"{target}_logreg.joblib")
+                mlflow.log_artifact(str(path))
+        a = agg[selected]["A"]["all"]
+        print(f"{target:7s} selected {selected:6s} TSS {a['tss_mean']:.3f}±{a['tss_std']:.3f} "
+              f"[{a['tss_ci_low']:.3f}, {a['tss_ci_high']:.3f}]  xgb {xgb_params}  ({time.time() - t0:.0f}s)", flush=True)
+
+    _fresh(MODEL_DIR / "thresholds.json").write_text(json.dumps(thresholds, indent=2), newline="\n")
+    pd.concat(cv_tables).to_csv(_fresh(REPORTS / "xgb_cv.csv"), index=False, lineterminator="\n")
     _fresh(REPORTS / "model_metrics.json").write_text(json.dumps(summary, indent=2, default=str), newline="\n")
+    report.write_tables(summary)
     plots.skill_figure()
     return summary
 

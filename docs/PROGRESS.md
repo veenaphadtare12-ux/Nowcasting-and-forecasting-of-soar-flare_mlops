@@ -151,3 +151,65 @@ points around a synthetic flare); one checks that it starts at the trigger, not 
 
 **Decision.** The all-rows vs quiet-start metrics are reported by the rewritten training stage (tasks 3.3–3.5), so
 every number comes from the final models and is reported once.
+
+## 2026-10-21 — Tasks 3.3–3.5: baselines, robust XGBoost, operating points, bootstrap intervals
+
+**Done.** The training stage (`src/models/train.py`, `metrics.py`, `report.py`, `plots.py`) was rewritten:
+- *Five models per target:* climatology (constant = fit-period positive rate), persistence (`flare_in_progress_at_t`),
+  1-feature rule, logistic regression, XGBoost.
+- *XGBoost settings by rolling-origin CV:* train on all earlier months, score on Aug, Sep, Oct, Nov 2025 (120-min
+  purge), metric aucpr. Grid: max_depth {3,5} × min_child_weight {5,50} × reg_lambda {1,10} × n_estimators
+  {100,300,600}, the tree counts scored from one 600-tree fit via `iteration_range`. No early stopping. Dec–Jan is
+  used only for thresholds.
+- *Seeds:* LogReg and XGBoost fitted with seeds 42/43/44, reported as mean ± std.
+- *Operating points from Dec–Jan:* A = max TSS (main), B = max HSS (fewer false alarms).
+- *Intervals:* 95% intervals from 1,000 resamples of the 114 validation days. The same draws are used for every model,
+  and the interval is for the seed-mean TSS.
+- *Subsets:* everything is reported on all rows and on quiet-start rows.
+- *Outputs:* `reports/validation_table.md`, `reports/xgb_cv.csv`, `reports/model_metrics.json`,
+  `docs/model_figures/val_skill.png`, MLflow experiment `flare-models-v2` (42 runs). 5 new tests (48 total).
+
+**Validation TSS, operating point A (mean over seeds [95% day-bootstrap interval]), all rows / quiet-start**
+
+| Target | Persistence | Rule | LogReg | XGBoost | Selected |
+|---|---|---|---|---|---|
+| nowcast | 0.657 / 0.000 | 0.634 / 0.297 | 0.678 / 0.406 | **0.726 [0.71, 0.74]** / 0.448 | XGBoost |
+| ≥C 30 min | 0.016 / 0 | 0.034 / 0.019 | **0.196 [0.14, 0.25]** / 0.193 | 0.151 / 0.155 | LogReg |
+| ≥C 60 min | 0.013 / 0 | 0.031 / 0.018 | **0.194 [0.14, 0.25]** / 0.193 | 0.192 / 0.192 | LogReg |
+| ≥C 120 min | 0.026 / 0 | 0.032 / 0.010 | 0.263 / 0.263 | **0.263 [0.20, 0.33]** / 0.263 | XGBoost |
+| ≥M 30 min | 0.108 / 0 | 0.050 / 0.026 | **0.478 [0.34, 0.58]** / 0.475 | 0.423 / 0.407 | LogReg |
+| ≥M 60 min | 0.089 / 0 | 0.139 / 0.070 | **0.454 [0.28, 0.60]** / 0.438 | 0.328 / 0.314 | LogReg |
+| ≥M 120 min | 0.076 / 0 | 0.113 / 0.067 | **0.382 [0.19, 0.55]** / 0.377 | 0.342 / 0.338 | LogReg |
+
+Climatology is 0 everywhere, by construction. Seed std is 0.000–0.011.
+
+**Findings**
+- *Nowcast beats persistence:* XGBoost 0.726 [0.71, 0.74] vs persistence 0.657 [0.63, 0.68], intervals separated.
+  On quiet-start rows it still reaches 0.448: it catches flares before the detector's own trigger.
+- *Forecast skill isn't just clustering:* quiet-start TSS is almost identical to all-rows TSS for every forecast
+  target, while persistence is near zero. The models use the activity *level* (background, recent maxima), not
+  "a flare is happening now".
+- *Uncertainty is dominated by day-to-day variation, not seeds:* intervals are about ±0.05 (C) and ±0.15–0.2 (M)
+  wide. For M targets the LogReg and XGBoost intervals overlap, so LogReg winning is not a statistically clear
+  result.
+- *CV choice barely matters for M:* the top settings differ by < 0.001 aucpr, while fold-to-fold std is about 0.04.
+- *Operating point B trades POD for fewer false alarms.* ≥M 120 min LogReg: A POD 0.56 / FAR 0.88 / HSS 0.14 →
+  B POD 0.40 / FAR 0.77 / HSS 0.26. For the nowcast, XGBoost B: FAR 0.30 / HSS 0.66 at POD 0.66.
+
+**Decisions**
+- Thresholds are applied unchanged to the quiet-start subset (one operating model, two report views).
+- CV uses stride 30 (1 row per 5 min) for speed, while final fits use stride 6. The chosen tree counts may be
+  slightly conservative for the larger final training set.
+- Model selection stays "highest mean val TSS at A among Rule/LogReg/XGBoost". Baselines are reference points,
+  not candidates.
+- Saved models: the seed-42 LogReg and XGBoost per target, plus `models/thresholds.json` (A and B for every model).
+
+**IMPORTANT — validation has now been used for two model comparisons** (Task 2 with the old detector-based labels,
+and this rewrite with GOES-direct labels). Each comparison picks winners on validation, so validation scores are now
+somewhat optimistic. **The test period (2026-06-01 … 2026-09-12) is the only fully unbiased score left.** It has
+never been opened, and it must be used once, at the end, with every choice frozen.
+
+**Checks:** 48 tests pass. `dvc repro` ran the `train` stage (about 16 min). `dvc status` is clean.
+
+**Note on the run:** the first background training run was interrupted when the session was resumed ("Try again");
+it was restarted and completed normally. No partial results were used.

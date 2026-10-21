@@ -512,16 +512,20 @@ stages:
       size: 5707
     - path: src/models/metrics.py
       hash: md5
-      md5: 532d36eb8253b50e12babf0037e4b52e
-      size: 3370
+      md5: c0fe753278e9e7cc0c666e5326b780a4
+      size: 5030
     - path: src/models/plots.py
       hash: md5
-      md5: a1accc384340bf4478d66ef2d50c36e6
-      size: 2394
+      md5: 32c3d62ba35b936f77f86036bc4fa1f5
+      size: 2812
+    - path: src/models/report.py
+      hash: md5
+      md5: 3061472a53a470cbefe5bc615db8c85c
+      size: 3556
     - path: src/models/train.py
       hash: md5
-      md5: c59b57e4b521fe26c86941518511f973
-      size: 8803
+      md5: d8ff4a7c727f71a3e7e7349f37158769
+      size: 15030
     - path: src/pipeline.py
       hash: md5
       md5: 4c1c59d16eae54bf8deda3792986f844
@@ -540,19 +544,45 @@ stages:
           inner_split: '2025-12-01'
           purge_min: 120
           train_stride: 6
-          random_state: 42
+          seeds:
+          - 42
+          - 43
+          - 44
           rule_feature: ratio_1m_bg
           logreg:
             C: 1.0
             max_iter: 2000
           xgb:
-            n_estimators: 2000
             learning_rate: 0.05
-            max_depth: 6
-            min_child_weight: 5
             subsample: 0.8
             colsample_bytree: 0.8
-            early_stopping_rounds: 100
+          cv:
+            fold_months:
+            - 2025-08
+            - 2025-09
+            - 2025-10
+            - 2025-11
+            stride: 30
+            n_estimators:
+            - 100
+            - 300
+            - 600
+            max_depth:
+            - 3
+            - 5
+            min_child_weight:
+            - 5
+            - 50
+            reg_lambda:
+            - 1
+            - 10
+          operating_points:
+            A: tss
+            B: hss
+          bootstrap:
+            n: 1000
+            seed: 0
+            level: 0.95
         periods:
           tune:
             start: '2025-04-09'
@@ -566,15 +596,23 @@ stages:
     outs:
     - path: docs/model_figures
       hash: md5
-      md5: 029944c7a0091b63d3c59f23c9e7afef.dir
-      size: 52565
+      md5: f4b29b4be53b5475009239a5e94b36a2.dir
+      size: 70722
       nfiles: 1
     - path: models
       hash: md5
-      md5: 7ae925f758eb1bb90b190855a3277048.dir
-      size: 7375767
+      md5: a788903faf7e0d5f274aecae9d5cc8c5.dir
+      size: 6154412
       nfiles: 15
     - path: reports/model_metrics.json
       hash: md5
-      md5: 6320cf7c633243602d55f38df9106f60
-      size: 36027
+      md5: 9855e32cf2600c4247da62422e60af82
+      size: 375643
+    - path: reports/validation_table.md
+      hash: md5
+      md5: e3889253592688ba18324377f7ef6f4f
+      size: 5793
+    - path: reports/xgb_cv.csv
+      hash: md5
+      md5: d5f01e0a048bbfe3922e97bfab1b2d28
+      size: 9924

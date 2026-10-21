@@ -1,5 +1,11 @@
 # Lesson 06 — Model training: time splits, three models, TSS/HSS, thresholds, MLflow, and a DVC train stage
 
+> **Update (lesson 08):** the training stage has since been rebuilt. XGBoost now uses rolling-origin
+> cross-validation instead of early stopping on Dec–Jan; climatology and persistence baselines, 3 seeds,
+> two operating points and bootstrap intervals were added; and forecast labels now come from GOES directly
+> (lesson 07). The concepts here (time split, purge, thresholds, TSS/HSS) still apply, but the numbers and
+> some code lines below describe the first version. For current results see `reports/validation_table.md`.
+
 ## What we built
 
 We trained three kinds of model for each of our 7 targets (1 nowcast + 6 forecasts):

@@ -71,3 +71,32 @@ def evaluate(y: np.ndarray, score: np.ndarray, threshold: float, proba: bool = T
     if proba:
         out["brier"] = float(brier_score_loss(y, np.clip(score, 0, 1)))
     return out
+
+
+# ---------------------------------------------------------------- bootstrap by day
+def daily_counts(y: np.ndarray, yhat: np.ndarray, day_codes: np.ndarray, n_days: int) -> np.ndarray:
+    """(n_days, 4) array of TP, FP, FN, TN per day. day_codes are integers 0..n_days-1."""
+    y, yhat = np.asarray(y).astype(bool), np.asarray(yhat).astype(bool)
+    cols = [y & yhat, ~y & yhat, y & ~yhat, ~y & ~yhat]
+    return np.stack([np.bincount(day_codes, weights=c, minlength=n_days) for c in cols], axis=1)
+
+
+def tss_from_counts(c: np.ndarray) -> np.ndarray:
+    """TSS for counts with last axis (TP, FP, FN, TN)."""
+    tp, fp, fn, tn = (c[..., i] for i in range(4))
+    pos, neg = tp + fn, fp + tn
+    return np.where(pos > 0, tp / np.where(pos > 0, pos, 1), 0.0) - np.where(neg > 0, fp / np.where(neg > 0, neg, 1), 0.0)
+
+
+def bootstrap_indices(n_days: int, n_boot: int, seed: int) -> np.ndarray:
+    """(n_boot, n_days) day indices drawn with replacement. Reuse the same draws for every model so the
+    intervals are comparable."""
+    return np.random.default_rng(seed).integers(0, n_days, size=(n_boot, n_days))
+
+
+def bootstrap_mean_tss(day_counts_per_seed: list[np.ndarray], idx: np.ndarray, level: float = 0.95) -> tuple[float, float]:
+    """Confidence interval of the seed-averaged TSS: resample whole days (flares cluster within days, so rows are
+    not independent), recompute each seed's TSS from the summed counts, average over seeds, take percentiles."""
+    boot = np.mean([tss_from_counts(dc[idx].sum(axis=1)) for dc in day_counts_per_seed], axis=0)
+    a = (1 - level) / 2
+    return float(np.quantile(boot, a)), float(np.quantile(boot, 1 - a))

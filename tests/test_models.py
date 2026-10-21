@@ -52,3 +52,61 @@ def test_inner_split_is_chronological_with_purge():
     assert fit.index.max() < cut - pd.Timedelta(minutes=120)
     assert cal.index.min() >= cut
     assert len(fit) + len(cal) < len(df)  # the purge gap really drops rows
+
+
+def test_rolling_origin_folds_train_only_on_the_past():
+    idx = pd.date_range("2025-06-01", "2025-11-30 20:00", freq="10min", tz="UTC")
+    df = pd.DataFrame({"x": np.arange(len(idx))}, index=idx)
+    folds = train.cv_folds(df, ["2025-08", "2025-09", "2025-10", "2025-11"], purge_min=120)
+    assert [f[2] for f in folds] == ["2025-08", "2025-09", "2025-10", "2025-11"]
+    for tr, va, m in folds:
+        start = pd.Timestamp(m + "-01", tz="UTC")
+        assert tr.index.max() < start - pd.Timedelta(minutes=120)        # purge gap before the scored month
+        assert va.index.min() >= start and va.index.max() < start + pd.offsets.MonthBegin(1)
+    assert len(folds[-1][0]) > len(folds[0][0])                           # the training window grows (rolling origin)
+
+
+def test_cv_months_lie_inside_the_fit_part_of_tune():
+    from src import config
+
+    P = config.load_params()["models"]
+    split = pd.Timestamp(P["inner_split"], tz="UTC")
+    for m in P["cv"]["fold_months"]:
+        assert pd.Timestamp(m + "-01", tz="UTC") + pd.offsets.MonthBegin(1) <= split  # never touches Dec-Jan or val
+
+
+def test_hss_operating_point_matches_brute_force():
+    rng = np.random.default_rng(3)
+    y = rng.random(3000) < 0.05
+    s = np.round(rng.random(3000) + 0.5 * y, 2)
+    thr, val = metrics.best_threshold(y, s, "hss")
+    brute = max(metrics.hss(metrics.contingency(y, s >= t)) for t in np.unique(s))
+    assert val == pytest.approx(brute)
+
+
+def test_day_bootstrap_interval_brackets_the_estimate_and_is_reproducible():
+    rng = np.random.default_rng(0)
+    n_days, per_day = 60, 200
+    day = np.repeat(np.arange(n_days), per_day)
+    y = rng.random(n_days * per_day) < 0.1
+    yhat = np.where(rng.random(len(y)) < 0.7, y, ~y)
+    dc = metrics.daily_counts(y, yhat, day, n_days)
+    point = metrics.tss(metrics.contingency(y, yhat))
+    assert metrics.tss_from_counts(dc.sum(axis=0)) == pytest.approx(point)
+    idx = metrics.bootstrap_indices(n_days, 500, seed=0)
+    lo, hi = metrics.bootstrap_mean_tss([dc], idx)
+    assert lo < point < hi
+    assert (lo, hi) == metrics.bootstrap_mean_tss([dc], metrics.bootstrap_indices(n_days, 500, seed=0))
+
+
+def test_climatology_and_persistence_baselines():
+    y_cal = np.array([0, 1, 0, 0]); y_val = np.array([0, 1, 1, 0, 0, 0])
+    flag = np.array([0, 1, 0, 1, 0, 0], dtype=float)
+    days = np.zeros(6, dtype=int)
+    quiet = flag == 0
+    ops = {"A": "tss", "B": "hss"}
+    clim = train._score_block(y_cal, np.full(4, 0.25), y_val, np.full(6, 0.25), quiet, days, 1, ops, fixed_threshold=0.25 + 1e-12)
+    assert clim["A"]["all"]["tss"] == 0.0 and clim["A"]["all"]["tp"] + clim["A"]["all"]["fp"] == 0  # never alerts
+    pers = train._score_block(y_cal, np.zeros(4), y_val, flag, quiet, days, 1, ops, fixed_threshold=0.5)
+    assert pers["A"]["all"]["tp"] == 1 and pers["A"]["all"]["fp"] == 1        # alerts exactly where the flag is on
+    assert pers["A"]["quiet"]["tp"] + pers["A"]["quiet"]["fp"] == 0          # no alerts on quiet-start rows
