@@ -26,3 +26,27 @@ def test_truncated_zip_entries_are_listed_and_only_complete_ones_count(tmp_path)
     entries = inv.scan_local_headers(f)
     assert [e["name"] for e in entries] == ["AL1_SLX_L1_20250101_v1.0.zip", "AL1_SLX_L1_20250102_v1.0.zip"]
     assert [e["complete"] for e in entries] == [True, False]
+
+
+def test_extraction_writes_only_selected_files_and_never_overwrites(tmp_path, monkeypatch):
+    import pandas as pd
+
+    root = tmp_path / "HELIOS"
+    monkeypatch.setattr(inv, "_dest_root", lambda instrument: root)
+    sess = "2025/04/10/HLS_20250410_000008_43184sec_lev1_V112"
+    zp = tmp_path / "HLS_20250410_000008_43184sec_lev1_V112.zip"
+    with zipfile.ZipFile(zp, "w") as z:
+        z.writestr(f"{sess}/cdte/lightcurve_cdte1.txt", "new-lc")
+        z.writestr(f"{sess}/aux/gticdte1.txt", "new-gti")
+        z.writestr(f"{sess}/events/evt.fits", "big events")
+    existing = root / sess / "aux" / "gticdte1.txt"
+    existing.parent.mkdir(parents=True)
+    existing.write_text("OLD")  # different size on purpose
+    df = pd.DataFrame([{"archive": str(zp), "kind": "session", "instrument": "HEL1OS", "status": "ok", "extracted": "partial"}])
+    log = inv.extract_missing(df)
+    assert (root / sess / "cdte" / "lightcurve_cdte1.txt").read_text() == "new-lc"  # selected -> written
+    assert not (root / sess / "events" / "evt.fits").exists()                        # not selected -> stays in zip
+    assert existing.read_text() == "OLD"                                              # never overwritten
+    r = log.iloc[0]
+    assert r["files_expected"] == 2 and r["files_written"] == 1 and r["files_skipped_existing"] == 1
+    assert r["size_mismatch"] == 1  # the clash is reported, not silently resolved

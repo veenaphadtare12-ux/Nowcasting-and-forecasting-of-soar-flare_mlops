@@ -268,3 +268,25 @@ was extracted or deleted.** Options are reported to the user.
 held the extracted 2025/2026 HEL1OS sessions. No data was lost, because the original zips were kept, but it led to
 the wrong conclusion "HEL1OS and SoLEXS do not overlap", which had been written into `CLAUDE.md`. That statement is
 now corrected.
+
+## 2026-10-22 — Task 4.2: selective extraction of the 77 HEL1OS sessions
+
+**Done (user chose option 1).** Only light curves and aux files were extracted (new param
+`paths.hel1os_extract_include: ["/cdte/lightcurve_", "/czt/lightcurve_", "/aux/"]`), into `data_root_hel1os`, using
+the same `YYYY/MM/DD/HLS_.../{cdte,czt,aux}` structure as the existing sessions. Event lists and spectra stay inside
+the zips. All zips are kept; nothing was moved or deleted. Files are opened with mode `"x"`, so nothing can be
+overwritten; a size clash with an existing file would be kept and reported, but none occurred.
+
+**Verification:** 77 archives, 847 / 847 expected files written (11 per session: 4 light curves, 4 GTI, `hk.fits`,
+2 detector-map text files), 0 size mismatches, 693 / 693 FITS files open with astropy. HEL1OS folder: 6.4 → 9.9 GB,
+104 session folders. D: free: 27 → 23 GB. Inventory state for the 77 sessions: `selected` (all chosen files present).
+Logged in `reports/data_inventory.csv` (columns `files_expected`, `files_written`, `count_ok`, `size_mismatch`,
+`fits_checked`, `fits_failed`).
+
+**Fix:** `verify_fits` counted the text files as "checked". It now counts only FITS files.
+
+**New rule in CLAUDE.md (rule 8):** never delete or move a data folder or archive without asking; check folder
+contents before any cleanup.
+
+**Decision:** the extraction lesson was added to lesson 09 (data inventory, part 2) rather than as a separate
+lesson; it's the same topic.

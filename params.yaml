@@ -4,6 +4,9 @@ paths:
   data_root_solexs: "D:/MLOPS_CP/Data/SoLEXS"
   data_root_hel1os: "D:/MLOPS_CP/Data/HELIOS"
   archive_root: "D:/MLOPS_CP/Data/original_zips"   # original downloads (kept, never modified)
+  # HEL1OS extraction: only files the pipeline reads (light curves + aux = 3.9 GB of 28.6 GB). Event lists and
+  # spectra stay inside the kept zips and can be extracted later.
+  hel1os_extract_include: ["/cdte/lightcurve_", "/czt/lightcurve_", "/aux/"]
   processed_dir: "data/processed"
   mlflow_tracking_uri: "sqlite:///mlflow.db"   # relative path = relative to the project root
 

@@ -191,3 +191,70 @@ Make the version parser sloppy again and let the test catch it.
    unrelated 23 GB `tusimple.zip` or the duplicate archive copies to another drive. That's the user's decision.
 
 </details>
+
+---
+
+# Part 2 — Safe, selective extraction (what we did next)
+
+## What we built
+We extracted only the light-curve and aux files of the 77 HEL1OS sessions (3.9 GB instead of 28.6 GB), checked
+every file, and kept all the zips. A new rule in `CLAUDE.md` forbids deleting or moving data without asking first.
+
+## Why it matters
+It's like unpacking only the pans you need from a moving box and leaving the rest sealed and labelled: the box
+(zip) is still there if you need the rest later. Checking every unpacked item against the packing list (the zip
+listing) proves nothing was damaged on the way.
+
+## Concepts
+- **Selective extraction:** extract entries whose path matches patterns from `params.yaml`
+  (`hel1os_extract_include`). The selection is configuration, not hard-coded, so it is visible in git and DVC.
+- **Never overwrite:** opening with mode `"x"` raises an error if the file exists. Existing data always wins, and
+  any clash is *reported* (`size_mismatch`), never silently fixed.
+- **Verification:** count (written + already-present = expected), size (on-disk size = size in the listing), and
+  content (every FITS file opens with astropy).
+- **Inventory states:** `yes` (all files on disk), `selected` (all chosen files on disk), `partial`, `no`.
+
+## Code walkthrough (`src/data_inventory.py`)
+```python
+def selected(name, instrument):
+    pats = config.load_params()["paths"].get("hel1os_extract_include") or []
+    return not pats or any(p in name for p in pats)
+...
+                if i.is_dir() or not selected(i.filename, r["instrument"]):
+                    continue                    # unselected files stay in the zip
+                expected += 1
+                if target.exists():
+                    skipped += 1                # existing file kept
+                    if target.stat().st_size != i.file_size:
+                        mismatch.append(i.filename)   # reported, not overwritten
+                    continue
+                with z.open(i) as src, open(target, "xb") as dst:
+```
+
+## Hands-on
+1. `python -m src.data_inventory inventory`. *Expected:* `session HEL1OS ok selected 77` and `yes 54`.
+2. `python -c "import pandas as pd; d=pd.read_csv('reports/data_inventory.csv'); e=d[d.files_written.notna()]; print(len(e), e.files_written.sum(), e.files_expected.sum(), e.size_mismatch.sum(), e.fits_failed.sum())"`.
+   *Expected:* `77 847.0 847.0 0.0 0.0`.
+3. Open one new session folder, e.g. `D:\MLOPS_CP\Data\HELIOS\2025\04\10\`. *Expected:* `cdte`, `czt` and `aux`
+   sub-folders, but no `events` folder.
+
+## Break it on purpose
+Run `python -m src.data_inventory extract` a second time. *Expected:* nothing is written, because every selected
+file already exists; the archives are skipped as `selected`. Re-running is safe; that's called being **idempotent**.
+
+## Check yourself (part 2)
+1. Why does extraction open files with `"xb"` rather than `"wb"`?
+2. What three checks prove an extraction is correct?
+3. What does the inventory state `selected` mean?
+
+## Key numbers (part 2)
+- **Extracted:** 847 files (693 FITS, all opening cleanly), 0 mismatches.
+- **Disk:** HEL1OS folder 6.4 → 9.9 GB; D: free 27 → 23 GB. Event lists (19 GB) and spectra (5.7 GB) stay zipped.
+
+<details><summary><b>Answers (part 2)</b></summary>
+
+1. `"x"` fails if the file already exists, so existing raw data can never be overwritten.
+2. File count (written + kept = expected), file size (matches the listing), content (FITS opens).
+3. Every file matching the include patterns (light curves, aux) is on disk; the rest (events, spectra) is not.
+
+</details>

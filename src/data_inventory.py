@@ -95,13 +95,36 @@ def _dest_root(instrument: str) -> Path:
     return config.solexs_root() if instrument == "SoLEXS" else config.hel1os_root()
 
 
+def selected(name: str, instrument: str) -> bool:
+    """Is this archive entry one we extract? SoLEXS: everything. HEL1OS: only `paths.hel1os_extract_include` patterns."""
+    if instrument != "HEL1OS":
+        return True
+    pats = config.load_params()["paths"].get("hel1os_extract_include") or []
+    return not pats or any(p in name for p in pats)
+
+
+def _present(root: Path, i: zipfile.ZipInfo) -> bool:
+    t = root / i.filename
+    return t.is_file() and t.stat().st_size == i.file_size
+
+
 def extracted_state(infos: list[zipfile.ZipInfo], instrument: str) -> tuple[str, int, int]:
-    """('yes' | 'partial' | 'no', files present with matching size, files in archive)."""
+    """State, files present with matching size, files in archive.
+
+    'yes' = every file on disk; 'selected' = every selected file on disk (HEL1OS light curves + aux) but not all;
+    'partial' = some files; 'no' = none.
+    """
     root = _dest_root(instrument)
     files = [i for i in infos if not i.is_dir()]
-    present = sum(1 for i in files if (root / i.filename).is_file() and (root / i.filename).stat().st_size == i.file_size)
-    state = "yes" if present == len(files) else ("partial" if present else "no")
-    return state, present, len(files)
+    ok = [_present(root, i) for i in files]
+    sel = [o for i, o in zip(files, ok) if selected(i.filename, instrument)]
+    if all(ok):
+        state = "yes"
+    elif sel and all(sel):
+        state = "selected"
+    else:
+        state = "partial" if any(ok) else "no"
+    return state, sum(ok), len(files)
 
 
 def inventory() -> pd.DataFrame:
@@ -145,31 +168,33 @@ def inventory() -> pd.DataFrame:
 def verify_fits(paths: list[Path]) -> tuple[int, list[str]]:
     from astropy.io import fits
 
-    bad = []
+    bad, n = [], 0
     for p in paths:
         if p.suffix in (".fits",) or p.name.endswith((".lc.gz", ".gti.gz", ".pi.gz", ".hk.gz")):
+            n += 1
             try:
                 with fits.open(p) as h:
                     _ = [x.header for x in h]
             except Exception as e:  # noqa: BLE001
                 bad.append(f"{p.name}: {e}")
-    return len(paths), bad
+    return n, bad
 
 
 def extract_missing(df: pd.DataFrame) -> pd.DataFrame:
     """Extract day/session zips whose files are not (all) on disk. Existing files are never overwritten.
     Returns one row per extracted archive with verification results."""
     log = []
-    todo = df[df["kind"].isin(["day", "session"]) & (df["status"] == "ok") & (df["extracted"] != "yes")]
+    todo = df[df["kind"].isin(["day", "session"]) & (df["status"] == "ok") & (~df["extracted"].isin(["yes", "selected"]))]
+    todo = todo[~todo["archive"].map(lambda a: Path(a).name).duplicated()]  # the same zip can exist in two folders
     for _, r in todo.iterrows():
         root = _dest_root(r["instrument"])
-        written, skipped, mismatch = [], 0, []
+        written, skipped, mismatch, expected = [], 0, [], 0
         with zipfile.ZipFile(r["archive"]) as z:
             for i in z.infolist():
                 target = root / i.filename
-                if i.is_dir():
-                    target.mkdir(parents=True, exist_ok=True)
-                    continue
+                if i.is_dir() or not selected(i.filename, r["instrument"]):
+                    continue  # folders are created on demand; unselected files stay in the zip
+                expected += 1
                 if target.exists():
                     skipped += 1
                     if target.stat().st_size != i.file_size:
@@ -183,7 +208,8 @@ def extract_missing(df: pd.DataFrame) -> pd.DataFrame:
                     mismatch.append(i.filename)
                 written.append(target)
         n, bad = verify_fits(written)
-        log.append({"archive": r["archive"], "files_written": len(written), "files_skipped_existing": skipped,
+        log.append({"archive": r["archive"], "files_expected": expected, "files_written": len(written),
+                    "files_skipped_existing": skipped, "count_ok": len(written) + skipped == expected,
                     "size_mismatch": len(mismatch), "fits_checked": n, "fits_failed": len(bad), "fits_errors": "; ".join(bad[:5])})
         print(f"{Path(r['archive']).name}: wrote {len(written)}, kept {skipped} existing, fits bad {len(bad)}", flush=True)
     return pd.DataFrame(log)
