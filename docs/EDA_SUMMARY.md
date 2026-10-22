@@ -79,7 +79,7 @@ loaded. Full analysis: `notebooks/01_eda.ipynb` (executed, outputs saved). Numbe
 - **For modelling:** M forecasting is a rare-event problem, so use TSS and HSS (never accuracy alone) plus
   baselines. Monthly swings make single-number scores fragile, which is another reason for intervals.
 
-### 10. Hard X-rays (HEL1OS) overlap only about 2% of the time, but the physics checks out
+### 10. Hard X-rays (HEL1OS) cover only 4.7% of rows (tune 4.0%, val 6.3%), but the physics checks out
 ![neupert](figures/eda/09_neupert_lag.png) ![example](figures/eda/09_stacked_example.png)
 
 - **Overlap:** tune has 13 days / 215.6 h (GOES flares starting inside: C 75, M 27, X 0); val has 8 days / 143.5 h

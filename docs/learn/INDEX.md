@@ -17,3 +17,5 @@ Study these in order. Each lesson ends with exercises to do yourself, a safe "br
 | 11 | [EDA](11-eda.md) | why EDA comes first, reading each plot type, test-period guard, takeaways, correlation vs causation | ✅ written — to study |
 | 12 | [Ablation](12-ablation.md) | retraining with HEL1OS features, fair ablation (same rows/model/thresholds), positive episodes, statistical power, saying "too few to conclude" | ✅ written — to study |
 | 13 | [Presentation pack](13-presentation-pack.md) | facts sheet with sources, provenance, honest framing, slide-ready figures | ✅ written — to study |
+| — | [Hands-on DVC & MLflow](lesson-dvc-mlflow.md) | run `dvc status/dag/params diff/metrics diff`, hardlinks, time travel with `dvc checkout`; count, browse and compare MLflow runs; quiz | ✅ written — to do yourself |
+| 14 | [Slide figures 03–10](14-slide-figures.md) | superposed epoch, honest bin widths, best-vs-baseline with intervals, faded underpowered bars, permutation importance and where it is blind | ✅ written — to study |

@@ -7,11 +7,9 @@ Written on 2026-10-22, at commit `40d0d40` *(source: `git log`)*. Nothing was ch
 params, `dvc.yaml`, MLflow runs or git history.
 
 > **Two things to know before you read**
-> - The working copy has one uncommitted code change, in `src/eda.py`: a refactor started during the unfinished
->   slide-figure task. It was left as it is. *(source: `git status`)*
-> - One test currently fails (56 of 57 pass). The working copy of `notebooks/01_eda.ipynb` has Windows (CRLF) line
->   endings, although its content is the same as in git. The fix is one command: `git checkout -- notebooks/01_eda.ipynb`
->   (it rewrites the file with Unix line endings). It was not run, because this task is read-only. *(source: `pytest -q`, see "Live outputs")*
+> - *Updated 2026-10-22, after the audit:* the `src/eda.py` refactor is committed, and the notebook's CRLF line endings
+>   were fixed, so **all 57 tests pass**. The "Live outputs" section below is a snapshot from before that fix.
+>   *(source: `pytest -q`, `docs/AUDIT.md`)*
 
 ---
 
@@ -78,9 +76,9 @@ deploy, monitor) and the final test-period evaluation have not been started.
 | Labels from our own detector | Forecast labels taken **directly from the NOAA GOES list** | The detector misses about 14% of C-class flares; those misses would become wrong "no flare" labels *(source: `reports/label_comparison.json`)*. |
 | DVC tracks the raw data | Raw data stays on `D:\MLOPS_CP\Data` and is read through paths in `params.yaml` (not `dvc add`-ed) | It's 9.5+ GB and never changes; copying it into the cache would double the disk use. |
 | MLflow with a folder (`mlruns/`) | MLflow with a **SQLite database** (`mlflow.db`) | MLflow 3 refuses the old folder store. |
-| Use both instruments everywhere | HEL1OS is **optional**; only its light curves and aux files were extracted (847 files) | It covers only about 6% of tune+val rows, and full extraction (28.6 GB) did not fit on D: *(source: `docs/PROGRESS.md`)*. |
+| Use both instruments everywhere | HEL1OS is **optional**; only its light curves and aux files were extracted (847 files) | It covers only 4.7% of tune+val rows (tune 4.0%, val 6.3%), and full extraction (28.6 GB) did not fit on D: *(source: `docs/PROGRESS.md`)*. |
 | Early stopping for XGBoost | **Rolling-origin cross-validation** (score each month after training on earlier months) | Early stopping on Dec–Jan used too few flares and stopped after 0–85 trees. |
-| — | Test period **never opened** | It's kept for one final, honest score. |
+| — | Test period **never evaluated** | The pipeline processes test days, but no score or decision uses them; they're kept for one final, honest score. |
 
 ---
 
@@ -416,8 +414,8 @@ Then open **http://127.0.0.1:5000** in a browser.
 
 ## 5. Tests
 
-**57 tests** in 5 files *(source: `pytest --collect-only -q`)*. Today **56 pass and 1 fails**: the line-ending check,
-because of the notebook file's working copy (see the top of this file).
+**57 tests** in 5 files *(source: `pytest --collect-only -q`)*. **All 57 pass** (the line-ending check failed once,
+on the notebook's working copy, until the audit fixed it; see the top of this file).
 
 | Group (file, number) | What they check (one line each) |
 |---|---|
@@ -456,7 +454,7 @@ because of the notebook file's working copy (see the top of this file).
 7. Forecasting an M-class flare within 30 minutes reaches **TSS 0.468** (interval 0.33–0.57), but **97%** of those alarms are false (FAR 0.97). *(source: `reports/model_metrics.json`, `m_30m`)*
 8. Forecast skill stays almost the same when no flare is already happening (quiet-start ≥M 30 min: TSS **0.465**), so the models don't just copy "a flare is going on". *(source: `reports/model_metrics.json`, quiet subset)*
 9. Hard X-rays (HEL1OS) overlap only **215.6 h** of tuning and **143.5 h** of validation, and the Neupert lag is a **median of 0 s** over 71 flares. *(source: `reports/eda_numbers.json`, `hel1os`)*
-10. The pipeline has **9 DVC stages**, **57 tests**, **600 MLflow runs** and **10 data versions**, and the test period has **never been opened**. *(source: `dvc.yaml`, `pytest`, `mlflow.db`, `git log -- dvc.lock`)*
+10. The pipeline has **9 DVC stages**, **57 tests**, **600 MLflow runs** and **10 data versions**, and the test period has **never been evaluated**. *(source: `dvc.yaml`, `pytest`, `mlflow.db`, `git log -- dvc.lock`)*
 
 ---
 

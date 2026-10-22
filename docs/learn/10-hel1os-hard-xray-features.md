@@ -13,7 +13,7 @@ to handle that: XGBoost natively, logistic regression with a missing flag.
 watches (one at 08:00:00.79, another at 08:00:00.86). If you merge on the exact time, almost nobody matches, and if
 you then keep only "the first record per second", you lose most students. That's what happened to our energy bands.
 
-**Missing by design.** HEL1OS observes only part of each day, and about 2% of our rows. A weather station that's
+**Missing by design.** HEL1OS observes only part of each day: 4.7% of our tune+val rows (tune 4.0%, val 6.3%). A weather station that's
 switched off at night shouldn't report "0 °C" at night. It should report "no reading". Filling the gap with zeros
 would teach the model a fake signal.
 
@@ -156,7 +156,7 @@ Bring the bug back and let the regression test catch it.
 
 1. Our availability rule is "at least 30 of the last 60 seconds". How would a different rule change which rows the
    models see as "hard X-ray rows"?
-2. HEL1OS covers about 2% of rows. Is it better to train one model with missing values, or separate models for "with
+2. HEL1OS covers about 5% of rows (4.7%). Is it better to train one model with missing values, or separate models for "with
    HEL1OS" and "without"?
 3. The bug was invisible in the 2024 files and only appeared with new data versions. What monitoring would catch such
    format changes automatically (for example pandera schemas with row-count checks)?

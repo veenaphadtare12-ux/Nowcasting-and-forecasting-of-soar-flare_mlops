@@ -1,0 +1,105 @@
+{
+  "profiles_n": {
+    "C": 1596,
+    "M": 218,
+    "X": 16
+  },
+  "stacked_example": "GOES X2.5, onset 2026-04-24 08:01 UTC",
+  "detector_examples": [
+    "Early legacy onset (2025-04-10)",
+    "Longest legacy event (15.3 h)",
+    "Merged flares, now separated"
+  ],
+  "skill": {
+    "now_all_xgb": 0.727,
+    "now_all_persistence": 0.657,
+    "c_30m_all_logreg": 0.208,
+    "c_30m_all_rule": 0.034,
+    "c_60m_all_logreg": 0.208,
+    "c_60m_all_rule": 0.031,
+    "c_120m_all_xgb": 0.27,
+    "c_120m_all_rule": 0.032,
+    "m_30m_all_logreg": 0.468,
+    "m_30m_all_persistence": 0.108,
+    "m_60m_all_logreg": 0.468,
+    "m_60m_all_rule": 0.139,
+    "m_120m_all_logreg": 0.388,
+    "m_120m_all_rule": 0.113,
+    "now_quiet_xgb": 0.446,
+    "now_quiet_rule": 0.297,
+    "c_30m_quiet_logreg": 0.208,
+    "c_30m_quiet_rule": 0.019,
+    "c_60m_quiet_logreg": 0.209,
+    "c_60m_quiet_rule": 0.018,
+    "c_120m_quiet_xgb": 0.27,
+    "c_120m_quiet_rule": 0.01,
+    "m_30m_quiet_logreg": 0.465,
+    "m_30m_quiet_rule": 0.026,
+    "m_60m_quiet_logreg": 0.456,
+    "m_60m_quiet_rule": 0.07,
+    "m_120m_quiet_logreg": 0.381,
+    "m_120m_quiet_rule": 0.067
+  },
+  "importance_top15": [
+    [
+      "bg_60m",
+      0.0852
+    ],
+    [
+      "std_15m",
+      0.0637
+    ],
+    [
+      "mean_15m",
+      0.0474
+    ],
+    [
+      "mean_60m",
+      0.0422
+    ],
+    [
+      "max_15m",
+      0.0307
+    ],
+    [
+      "max_60m",
+      0.0284
+    ],
+    [
+      "ratio_5m_60m",
+      0.0265
+    ],
+    [
+      "max_5m",
+      0.0254
+    ],
+    [
+      "std_5m",
+      0.0254
+    ],
+    [
+      "mean_5m",
+      0.0241
+    ],
+    [
+      "std_60m",
+      0.0204
+    ],
+    [
+      "max_1m",
+      0.0182
+    ],
+    [
+      "ratio_1m_bg",
+      0.0112
+    ],
+    [
+      "excess_1m",
+      0.0093
+    ],
+    [
+      "ratio_1m_60m",
+      0.008
+    ]
+  ]
+}

@@ -384,7 +384,7 @@ New `src/models/ablation.py` runs on rows with `hel1os_available == 1` only.
 
 Quiet-start rows: nowcast XGBoost 0.446 [0.43, 0.47]; ≥C 0.21 / 0.21 / 0.27; ≥M 0.465 / 0.456 / 0.381, almost
 identical to all rows. All changes from the previous run are well inside the intervals: adding HEL1OS features (present
-on about 6% of rows) neither helps nor hurts the main models measurably. Full tables, including operating point B:
+on 4.7% of tune+val rows: tune 4.0%, val 6.3%; corrected 2026-10-22, first written as "about 6%") neither helps nor hurts the main models measurably. Full tables, including operating point B:
 `reports/validation_table.md`.
 
 **Ablation (rows with HEL1OS available; same rows, models, thresholds procedure, 3 seeds, bootstrap)**

@@ -23,7 +23,7 @@ Only the feature set changes. And if only three people tasted the cake, you shou
 **Ablation study.** Remove (or isolate) one component and measure the change. Here the component is a feature group:
 soft, hard, or combined.
 
-**Fair comparison = same rows.** HEL1OS covers about 6% of tune+val rows. Comparing "soft on all rows" with "hard on
+**Fair comparison = same rows.** HEL1OS covers 4.7% of tune+val rows (tune 4.0%, val 6.3%). Comparing "soft on all rows" with "hard on
 HEL1OS rows" would mix two different questions. So every variant uses only `hel1os_available == 1` rows.
 
 **Same threshold procedure, adapted.** Normally thresholds come from Dec–Jan, but no HEL1OS session falls there. The
