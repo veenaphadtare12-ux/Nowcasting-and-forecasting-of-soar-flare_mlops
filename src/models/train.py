@@ -218,6 +218,35 @@ def _strip(r: dict) -> dict:
     return out
 
 
+def _log_seed_run(mlflow, mu, r: dict, target: str, model: str, ttags: dict, inputs: dict, ops: dict,
+                  example: pd.DataFrame) -> None:
+    """One nested run per seed: that seed's validation metrics. The first seed's model (the one saved in models/) is
+    also logged as an MLflow model with a signature and a 5-row input example."""
+    from mlflow.models import infer_signature
+
+    seed = r["seed"]
+    with mlflow.start_run(run_name=f"{target}-{model}-seed{seed}", nested=True):
+        mlflow.set_tags(ttags | {"model": model, "seed": str(seed)})
+        mu.log_inputs(inputs)
+        for op in ops:
+            mlflow.log_metric(f"{op}_threshold", float(r[op]["threshold"]))
+            for subset in ("all", "quiet"):
+                mlflow.log_metrics({f"{op}_{subset}_{k}": float(v) for k, v in r[op][subset].items()
+                                    if k in ("tss", "hss", "pod", "far", "roc_auc", "avg_precision")})
+        if seed == config.load_params()["models"]["seeds"][0]:
+            import sklearn
+            import xgboost
+
+            est = r["estimator"]
+            sig = infer_signature(example, est.predict_proba(example))
+            mlflow.sklearn.log_model(
+                est, name="model", signature=sig, input_example=example, serialization_format="cloudpickle",
+                pyfunc_predict_fn="predict_proba",
+                pip_requirements=[f"scikit-learn=={sklearn.__version__}", f"xgboost=={xgboost.__version__}",
+                                  f"pandas=={pd.__version__}", f"numpy=={np.__version__}"])
+            mlflow.set_tag("saved_model", "models/" + (f"{target}_xgb.json" if model == "xgb" else f"{target}_logreg.joblib"))
+
+
 def run() -> dict:
     os.environ.setdefault("MLFLOW_DISABLE_AGENT_HINT", "1")
     import mlflow
@@ -237,8 +266,15 @@ def run() -> dict:
     for old in MODEL_DIR.glob("*"):
         _fresh(old)
 
+    from src import mlflow_utils as mu
+
     mlflow.set_tracking_uri(config.mlflow_uri())
     mlflow.set_experiment("flare-models-v2")
+    base_tags = mu.run_tags()
+    inputs = mu.make_inputs({"tune": tune, "val": val})  # the test set is never logged
+    example = fit_df.loc[fit_df["hel1os_available"] == 1, feats].dropna().head(5)  # all 44 features filled in
+    if len(example) < 5:
+        example = fit_df[feats].head(5)
     summary: dict = {
         "features": feats, "val_days": len(days),
         "split": {"fit_end": str(fit_df.index.max()), "cal_start": str(cal_df.index.min()), "cal_end": str(cal_df.index.max()),
@@ -264,18 +300,29 @@ def run() -> dict:
                 est.save_model(_fresh(MODEL_DIR / f"{target}_xgb.json"))
             else:
                 joblib.dump(est, _fresh(MODEL_DIR / f"{target}_logreg.joblib"))
+        ttags = base_tags | {"target": target, "horizon_min": str(mu.horizon_min(target))}
+        seeds_str = ",".join(str(s) for s in mp["seeds"])
         with mlflow.start_run(run_name=f"{target}"):
-            mlflow.set_tags({"target": target, "selected": selected, "periods": "fit+cv+cal=tune, eval=val"})
+            mlflow.set_tags(ttags | {"model": "all", "seed": seeds_str, "selected": selected,
+                                     "periods": "fit+cv+cal=tune, eval=val"})
+            mu.log_inputs(inputs)
             mlflow.log_params({f"xgb_{k}": v for k, v in xgb_params.items()} | {"seeds": str(mp["seeds"]),
-                              "n_features": len(feats), "cv_folds": str(mp["cv"]["fold_months"])})
+                              "n_features": len(feats), "cv_folds": str(mp["cv"]["fold_months"]),
+                              "rows_tune": len(tune), "rows_val": len(val)})
             mlflow.log_text(cv_table.to_csv(index=False, lineterminator="\n"), "xgb_cv.csv")
             for m in MODELS:
+                learner = m in ("logreg", "xgb")
                 with mlflow.start_run(run_name=f"{target}-{m}", nested=True):
-                    mlflow.set_tags({"target": target, "model": m})
+                    mlflow.set_tags(ttags | {"model": m, "seed": seeds_str if learner else "none",
+                                             "aggregate": "mean over seeds" if learner else "deterministic"})
+                    mu.log_inputs(inputs)
                     for op in ops:
                         for subset in ("all", "quiet"):
                             mlflow.log_metrics({f"{op}_{subset}_{k}": v for k, v in agg[m][op][subset].items()
                                                 if isinstance(v, (int, float))})
+                    if learner:
+                        for r in res[m]:
+                            _log_seed_run(mlflow, mu, r, target, m, ttags, inputs, ops, example)
             for name in ("logreg", "xgb"):
                 path = MODEL_DIR / (f"{target}_xgb.json" if name == "xgb" else f"{target}_logreg.joblib")
                 mlflow.log_artifact(str(path))
@@ -288,7 +335,9 @@ def run() -> dict:
     ab = ablation.run_ablation(tune, val, feats, P, {t: summary["targets"][t]["xgb_cv_best"] for t in mp["targets"]})
     summary["ablation"] = ab
     with mlflow.start_run(run_name="hel1os-ablation"):
-        mlflow.set_tags({"kind": "ablation", "rows": "hel1os_available == 1"})
+        mlflow.set_tags(base_tags | {"kind": "ablation", "rows": "hel1os_available == 1", "target": "all",
+                                     "model": "logreg,xgb", "horizon_min": "all", "seed": seeds_str})
+        mu.log_inputs(inputs)
         mlflow.log_dict(ab, "ablation.json")
     _fresh(MODEL_DIR / "thresholds.json").write_text(json.dumps(thresholds, indent=2), newline="\n")
     pd.concat(cv_tables).to_csv(_fresh(REPORTS / "xgb_cv.csv"), index=False, lineterminator="\n")
