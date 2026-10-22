@@ -403,6 +403,39 @@ def base_rates(d: pd.DataFrame) -> dict:
 
 
 # ---------------------------------------------------------------- 9. HEL1OS
+def neupert_lags(chan: pd.DataFrame, d: pd.DataFrame, ev: pd.DataFrame, max_lag: int = 30, min_corr: float = 0.3):
+    """Neupert lag per GOES-matched >=C flare inside HEL1OS time.
+
+    Cross-correlates the CZT 20-40 keV rate with d(SoLEXS)/dt (10-s rows) from onset-5 min to peak+5 min, over lags of
+    +-max_lag rows (+-5 min). Returns (lags in seconds; positive = d(SXR)/dt lags the hard X-rays), examples
+    [(class, onset, peak correlation)], and the 10-s HEL1OS channel table. Flares with peak correlation < min_corr
+    are skipped (no clear relation).
+    """
+    av = d["hel1os_available"] == 1
+    c10 = chan.resample("10s", label="right", closed="right").mean()
+    sx = d["rate"][av]
+    e = ev[ev["is_goes_matched"].astype(bool) & ev["goes_class"].astype(str).str[0].isin(list("CMX"))]
+    lags, examples = [], []
+    for _, r in e.iterrows():
+        a, b = r["onset"] - pd.Timedelta(minutes=5), r["peak"] + pd.Timedelta(minutes=5)
+        hx = c10["czt_lo"][(c10.index >= a) & (c10.index <= b)]
+        s = sx[(sx.index >= a) & (sx.index <= b)]
+        if len(hx) < 40 or hx.notna().mean() < 0.9 or len(s) < 40:
+            continue
+        ds = s.diff()
+        j = pd.concat([hx.rename("hx"), ds.rename("ds")], axis=1).dropna()
+        if len(j) < 40 or j["hx"].std() == 0:
+            continue
+        h, dsv = (j["hx"] - j["hx"].mean()).to_numpy(), (j["ds"] - j["ds"].mean()).to_numpy()
+        cc = [np.corrcoef(h[max(0, -k): len(h) - max(0, k)], dsv[max(0, k): len(dsv) - max(0, -k)])[0, 1]
+              for k in range(-max_lag, max_lag + 1)]
+        if np.nanmax(cc) < min_corr:
+            continue
+        lags.append((int(np.nanargmax(cc)) - max_lag) * 10)
+        examples.append((r["goes_class"], r["onset"], float(np.nanmax(cc))))
+    return np.asarray(lags, float), examples, c10
+
+
 def hel1os_eda(chan: pd.DataFrame | None, m: pd.Series, ev: pd.DataFrame, g: pd.DataFrame, d: pd.DataFrame) -> dict:
     if chan is None or "hel1os_available" not in d:
         return {"available": False}
@@ -424,31 +457,8 @@ def hel1os_eda(chan: pd.DataFrame | None, m: pd.Series, ev: pd.DataFrame, g: pd.
         inside = gp[near]
         out["per_period"][per] = {"overlap_days": int(a.index.floor("D").nunique()), "overlap_hours": round(hours, 1),
                                   "goes_in_hel1os_time": inside["class_letter"].value_counts().reindex(list("CMX"), fill_value=0).astype(int).to_dict()}
-    # Neupert lag: cross-correlate the hard X-ray rate with d(SXR)/dt around each matched >=C flare inside HEL1OS time
-    c10 = chan.resample("10s", label="right", closed="right").mean()
-    sx = d["rate"][av]
+    lags, examples, c10 = neupert_lags(chan, d, ev)
     e = ev[ev["is_goes_matched"].astype(bool) & ev["goes_class"].astype(str).str[0].isin(list("CMX"))]
-    lags, examples = [], []
-    max_lag = 30  # 10-s steps = +-5 min
-    for _, r in e.iterrows():
-        a, b = r["onset"] - pd.Timedelta(minutes=5), r["peak"] + pd.Timedelta(minutes=5)
-        hx = c10["czt_lo"][(c10.index >= a) & (c10.index <= b)]
-        s = sx[(sx.index >= a) & (sx.index <= b)]
-        if len(hx) < 40 or hx.notna().mean() < 0.9 or len(s) < 40:
-            continue
-        ds = s.diff()
-        j = pd.concat([hx.rename("hx"), ds.rename("ds")], axis=1).dropna()
-        if len(j) < 40 or j["hx"].std() == 0:
-            continue
-        h, dsv = (j["hx"] - j["hx"].mean()).to_numpy(), (j["ds"] - j["ds"].mean()).to_numpy()
-        cc = [np.corrcoef(h[max(0, -k): len(h) - max(0, k)], dsv[max(0, k): len(dsv) - max(0, -k)])[0, 1]
-              for k in range(-max_lag, max_lag + 1)]
-        k_best = int(np.nanargmax(cc)) - max_lag
-        if np.nanmax(cc) < 0.3:
-            continue  # no clear Neupert relation for this flare
-        lags.append(k_best * 10)  # seconds; positive = d(SXR)/dt lags the hard X-rays
-        examples.append((r["goes_class"], r["onset"], float(np.nanmax(cc))))
-    lags = np.asarray(lags, float)
     fig, ax = plt.subplots(figsize=(6.5, 3.4), constrained_layout=True)
     ax.hist(lags / 60, bins=np.arange(-5.25, 5.3, 0.5), color=SERIES, zorder=3)
     ax.axvline(0, color=MUTED, lw=0.8, ls="--")
