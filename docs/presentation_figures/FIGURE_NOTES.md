@@ -25,11 +25,13 @@ The test period is never evaluated. Orange = SoLEXS (soft X-rays), blue = HEL1OS
 
 **Key numbers**
 - 326 M-class and 21 X-class flares — `reports/eda_numbers.json` (`long_term.n_M`, `long_term.n_X`)
-- Daily medians range 3.5–91 counts/s; the highest daily peak is 34,637 counts/s — `reports/eda_numbers.json` (`long_term.median_range`, `max_daily_peak`)
+- 90% of daily medians lie between 3.5 and 91 counts/s (5th–95th percentile, not min–max); the highest 1-minute peak of any day is 34,637 counts/s — `reports/eda_numbers.json` (`long_term.median_range` = [p5, p95], `max_daily_peak`)
 
 **Takeaway:** Near solar maximum, flares are frequent and the signal spans four orders of magnitude, so we work in log space and relative-to-background features.
 
-**Caveat:** Log scale. The daily maximum is a 1-minute mean, so very short spikes are smoothed.
+**Caveats**
+- Log scale. The daily maximum is a 1-minute mean, so very short spikes are smoothed.
+- The single lowest and highest daily medians fall outside the 3.5–91 range; `median_range` deliberately reports the 5th–95th percentile so that a few extreme days don't define the range.
 
 ---
 
@@ -68,12 +70,14 @@ The test period is never evaluated. Orange = SoLEXS (soft X-rays), blue = HEL1OS
 
 **Takeaway:** Hard X-rays peak at the same moment soft X-rays rise fastest, as solar physics predicts. This also proves the two instruments' clocks are aligned.
 
-**Caveat:** The bin width (10 s) equals the data resolution. Lags shorter than 10 s can't be measured, so "0 s" means "within one 10-s step".
+**Caveats**
+- The bin width (10 s) equals the data resolution. Lags shorter than 10 s can't be measured, so "0 s" means "within one 10-s step".
+- 5 of the 71 flares lie beyond ±200 s (−290, −270, −220, +210, +210 s). These are likely mismatched peaks in complex events. The median is robust to them: it stays 0 s with or without them (checked with `eda.neupert_lags`, read-only).
 
 ---
 
 ## 06 — `06_stacked_flare_example.png`
-**Caption:** One flare seen by both instruments: SoLEXS soft X-rays (top) and three HEL1OS hard X-ray bands (bottom).
+**Caption:** One flare seen by both instruments: SoLEXS soft X-rays (top) and HEL1OS bands 5–150 keV (CdTe 5–20, CZT 20–40, CZT 40–150) (bottom).
 
 **Key numbers**
 - GOES X2.5 flare, SoLEXS onset 2026-04-24 08:01 UTC — `reports/presentation_figures.json` (`stacked_example`)
@@ -88,7 +92,7 @@ The test period is never evaluated. Orange = SoLEXS (soft X-rays), blue = HEL1OS
 ---
 
 ## 07 — `07_detector_before_after.png`
-**Caption:** The old (legacy) and new detector on three real cases: early onset fixed, over-long event ended, merged flares separated (bars = detected events, grey bands = GOES flares).
+**Caption:** The old (legacy) and new detector on three real cases: early onset fixed, over-long event ended, merged flares separated. Legend: grey bar = old detector event, black bar = new detector event, shaded band = GOES flare (begin to end); orange line = SoLEXS 1-minute mean.
 
 **Key numbers**
 - Median onset error: 5.8 min (old) → 1.0 min (new), tune — `reports/detection_metrics.json` (`legacy.tune`, `new.tune` → `onset_error_min.median_abs`)
@@ -117,6 +121,10 @@ The test period is never evaluated. Orange = SoLEXS (soft X-rays), blue = HEL1OS
 - At these thresholds the ≥M models raise many false alarms (FAR 0.88–0.97).
 - Validation was used to select models, so these scores are slightly optimistic.
 - The best baseline is chosen separately per target and per panel.
+- **Quiet start, especially for the nowcast:** a row is "quiet-start" when the causal activity flag `flare_in_progress_at_t` is 0.
+  - The flag comes from our own detector in real time: it switches on at the detector's trigger and off once the end is confirmed.
+  - So it can lag the GOES flare times by minutes. A quiet-start nowcast row can still lie inside a GOES flare that the detector hasn't triggered on yet; these rows are the hard early-detection cases.
+  - Persistence ("yes while a flare is in progress") never alerts on quiet-start rows, so its quiet-start TSS is 0 by construction. That is why the nowcast's best quiet-start baseline is the 1-feature rule (0.30), not persistence.
 
 ---
 

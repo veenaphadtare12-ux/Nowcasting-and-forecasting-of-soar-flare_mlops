@@ -231,7 +231,7 @@ def write_facts() -> None:
     c, lt2, at, se, fs, dg, fe, b = (eda[k] for k in ("coverage", "long_term", "activity", "profiles", "stats", "detector", "features", "base_rates"))
     findings = [
         (f"{pct(c['missing_minute_fraction'])} of minutes are missing and the 17th of each month is only {pct(c['valid_frac_17th'], 0)} covered (other days {pct(c['valid_frac_other'], 0)}).", "docs/figures/eda/01_coverage_calendar.png"),
-        (f"Daily median counts span {lt2['median_range'][0]:.1f}–{lt2['median_range'][1]:.0f} counts/s while peaks reach {lt2['max_daily_peak']:,.0f}; {lt2['n_M']} M and {lt2['n_X']} X flares occurred.", "docs/figures/eda/02_long_term_lightcurve.png"),
+        (f"90% of daily median counts lie between {lt2['median_range'][0]:.1f} and {lt2['median_range'][1]:.0f} counts/s (5th–95th percentile) while peaks reach {lt2['max_daily_peak']:,.0f}; {lt2['n_M']} M and {lt2['n_X']} X flares occurred.", "docs/figures/eda/02_long_term_lightcurve.png"),
         (f"The background drifts from {at['bg_first_last'][0]:.1f} to {at['bg_first_last'][1]:.1f} counts/s and monthly GOES flare counts range {at['flares_per_month_range'][0]}–{at['flares_per_month_range'][1]}: the data are not stationary.", "docs/figures/eda/03_activity_trend.png"),
         (f"Median flare profiles peak {se['C_median_peak_min']}, {se['M_median_peak_min']} and {se['X_median_peak_min']} min after onset for C, M and X (n = {se['C']}, {se['M']}, {se['X']}).", "docs/figures/eda/04_superposed_epoch.png"),
         (f"SoLEXS peak excess grows as GOES flux^{fs['fit_slope']:.2f} (r = {fs['fit_r']:.2f}, {fs['n_matched_fit']} flares); the median event lasts {fs['median_duration_min']:.0f} min.", "docs/figures/eda/05_peak_vs_goes.png"),
@@ -277,6 +277,14 @@ def write_facts() -> None:
     a("Each table: TSS mean ± std over 3 seeds (LogReg, XGBoost; others deterministic), 95% day-bootstrap interval for TSS, and HSS / POD / FAR "
       "(means over seeds). ★ = model selected for the target (highest mean TSS at operating point A, all rows, among rule / LogReg / XGBoost). "
       "Source for every number: `reports/model_metrics.json` (`targets.<target>.models.<model>.summary`). Rendered summary: `reports/validation_table.md`.")
+    a("")
+    a("**Quiet-start rows (read this before the nowcast tables):**")
+    a("- A row is quiet-start when the causal activity flag `flare_in_progress_at_t` is 0 (`src/activity.py`).")
+    a("- The flag comes from our own detector in real time: on at the detector's trigger, off once the end is confirmed.")
+    a("- It can therefore lag the GOES flare times by minutes. A quiet-start nowcast row can lie inside a GOES flare the "
+      "detector hasn't triggered on yet; these are the hard early-detection cases.")
+    a("- Persistence (\"yes while a flare is in progress\") never alerts on quiet-start rows, so its quiet-start TSS is 0 by "
+      "construction.")
     a("")
     for key, _, _, desc in TARGETS:
         t = mm["targets"][key]

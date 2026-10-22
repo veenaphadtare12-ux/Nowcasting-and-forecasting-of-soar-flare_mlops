@@ -16,7 +16,7 @@ loaded. Full analysis: `notebooks/01_eda.ipynb` (executed, outputs saved). Numbe
 ### 2. The Sun's brightness spans four orders of magnitude
 ![long-term](figures/eda/02_long_term_lightcurve.png)
 
-- **What we saw:** daily median counts range from about 3.5 to 90 counts/s, while flare peaks reach about 35,000
+- **What we saw:** 90% of daily median counts lie between about 3.5 and 90 counts/s (5th–95th percentile), while flare peaks reach about 35,000
   counts/s. 326 M and 21 X flares occurred, clustered in one-to-two-week active-region episodes.
 - **For modelling:** use log and background-relative features. Rows are strongly correlated in time, so
   confidence intervals must resample whole days, not rows.
