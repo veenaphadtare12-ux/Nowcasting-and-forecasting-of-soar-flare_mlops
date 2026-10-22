@@ -434,3 +434,29 @@ nothing else was retrained.
 - An observation worth stating in the review: for the nowcast, persistence has a higher HSS (0.645) than XGBoost
   (0.520) at the max-TSS threshold, because XGBoost raises more false alarms. TSS, the main metric, favours XGBoost
   (0.727 vs 0.657).
+
+## 2026-10-22 — Slide figures 03–10, facts sheet regenerated, stale statements fixed
+
+**Done**
+- Committed the verified `src/eda.py` refactor (`neupert_lags()`; reproduces n = 71, median 0 s).
+- Added figures 03–10 to `docs/presentation_figures/` (1920 × 1080, tune + val only). The numbers behind them are in
+  `reports/presentation_figures.json`. Lesson `docs/learn/14-slide-figures.md`.
+- `PRESENTATION_FACTS.md` regenerated:
+  - new section J lists the figures;
+  - the HEL1OS share is now computed from the dataset: tune 4.0% (77,625 rows), val 6.3% (51,667), overall 4.7%;
+  - the test period is described as "never evaluated".
+- Fixed the HEL1OS share in `EDA_SUMMARY.md`, `WHAT_WE_DID.md`, lessons 10 and 12, and the 2026-10-22 entry above.
+  Fixed the test count in `WHAT_WE_DID.md` (57/57). Added the DVC/MLflow lesson and lesson 14 to `docs/learn/INDEX.md`.
+  `AUDIT.md` is a dated record and was left unchanged.
+
+**Decisions**
+- *Figure 06:* the SoLEXS panel uses a log scale. On a linear scale, the 8-min gradual rise after the detector onset
+  (08:01, X2.5 flare on 2026-04-24) is invisible.
+- *Figure 08:* the best baseline is chosen per target and per subset. Persistence wins on all rows for nowcast and
+  ≥M 30 min; the 1-feature rule wins elsewhere.
+- *Figure 10:* permutation importance (drop in average precision) of the saved seed-42 LogReg, on the Dec–Jan
+  calibration rows, so validation is not used again. Top feature: `bg_60m`.
+  - **Caveat:** no HEL1OS session falls in Dec–Jan, so HEL1OS features score exactly 0 there. The figure says nothing
+    about HEL1OS; figure 09 does. This is stated in the facts sheet.
+
+**Checks:** 57 tests pass; `dvc status` is up to date (no stage changed). No test-period data was read.
