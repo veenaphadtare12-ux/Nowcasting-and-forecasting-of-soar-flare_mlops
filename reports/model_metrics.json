@@ -679,7 +679,7 @@
                 "C": 1.0,
                 "max_iter": 2000
               },
-              "fit_seconds": 13.01163911819458,
+              "fit_seconds": 13.152793645858765,
               "A": {
                 "threshold": 0.5644341707229614,
                 "cal": {
@@ -789,7 +789,7 @@
                 "C": 1.0,
                 "max_iter": 2000
               },
-              "fit_seconds": 15.833609819412231,
+              "fit_seconds": 15.331871747970581,
               "A": {
                 "threshold": 0.5444376468658447,
                 "cal": {
@@ -899,7 +899,7 @@
                 "C": 1.0,
                 "max_iter": 2000
               },
-              "fit_seconds": 16.052785396575928,
+              "fit_seconds": 17.013532876968384,
               "A": {
                 "threshold": 0.5468088984489441,
                 "cal": {
@@ -1086,7 +1086,7 @@
                 "reg_lambda": 1.0,
                 "n_estimators": 300
               },
-              "fit_seconds": 3.6065125465393066,
+              "fit_seconds": 3.5576493740081787,
               "importance": {
                 "excess_1m": 0.3401,
                 "ratio_1m_bg": 0.2512,
@@ -1247,7 +1247,7 @@
                 "reg_lambda": 1.0,
                 "n_estimators": 300
               },
-              "fit_seconds": 3.4569263458251953,
+              "fit_seconds": 4.699763536453247,
               "importance": {
                 "excess_1m": 0.3802,
                 "ratio_1m_bg": 0.1996,
@@ -1408,7 +1408,7 @@
                 "reg_lambda": 1.0,
                 "n_estimators": 300
               },
-              "fit_seconds": 3.4671459197998047,
+              "fit_seconds": 3.5093231201171875,
               "importance": {
                 "excess_1m": 0.3,
                 "ratio_1m_bg": 0.2338,
@@ -2187,7 +2187,7 @@
                 "C": 1.0,
                 "max_iter": 2000
               },
-              "fit_seconds": 10.752882242202759,
+              "fit_seconds": 11.901949644088745,
               "A": {
                 "threshold": 0.49756065011024475,
                 "cal": {
@@ -2297,7 +2297,7 @@
                 "C": 1.0,
                 "max_iter": 2000
               },
-              "fit_seconds": 10.79703950881958,
+              "fit_seconds": 13.316518545150757,
               "A": {
                 "threshold": 0.49705976247787476,
                 "cal": {
@@ -2407,7 +2407,7 @@
                 "C": 1.0,
                 "max_iter": 2000
               },
-              "fit_seconds": 12.626139640808105,
+              "fit_seconds": 13.954519033432007,
               "A": {
                 "threshold": 0.49901482462882996,
                 "cal": {
@@ -2594,7 +2594,7 @@
                 "reg_lambda": 10.0,
                 "n_estimators": 100
               },
-              "fit_seconds": 1.4731993675231934,
+              "fit_seconds": 1.5587949752807617,
               "importance": {
                 "mean_1m": 0.0945,
                 "max_1m": 0.0688,
@@ -2755,7 +2755,7 @@
                 "reg_lambda": 10.0,
                 "n_estimators": 100
               },
-              "fit_seconds": 1.473743200302124,
+              "fit_seconds": 1.759917974472046,
               "importance": {
                 "max_1m": 0.1204,
                 "mean_1m": 0.1043,
@@ -2916,7 +2916,7 @@
                 "reg_lambda": 10.0,
                 "n_estimators": 100
               },
-              "fit_seconds": 1.4717719554901123,
+              "fit_seconds": 1.6249618530273438,
               "importance": {
                 "mean_1m": 0.1144,
                 "mean_5m": 0.0624,
@@ -3695,7 +3695,7 @@
                 "C": 1.0,
                 "max_iter": 2000
               },
-              "fit_seconds": 9.839521408081055,
+              "fit_seconds": 10.069055080413818,
               "A": {
                 "threshold": 0.5075073838233948,
                 "cal": {
@@ -3805,7 +3805,7 @@
                 "C": 1.0,
                 "max_iter": 2000
               },
-              "fit_seconds": 10.75971007347107,
+              "fit_seconds": 10.866957187652588,
               "A": {
                 "threshold": 0.5064311623573303,
                 "cal": {
@@ -3915,7 +3915,7 @@
                 "C": 1.0,
                 "max_iter": 2000
               },
-              "fit_seconds": 10.372355937957764,
+              "fit_seconds": 10.679176330566406,
               "A": {
                 "threshold": 0.5072963833808899,
                 "cal": {
@@ -4102,7 +4102,7 @@
                 "reg_lambda": 10.0,
                 "n_estimators": 100
               },
-              "fit_seconds": 1.4325432777404785,
+              "fit_seconds": 1.4701330661773682,
               "importance": {
                 "mean_1m": 0.0546,
                 "log_rate": 0.0505,
@@ -4263,7 +4263,7 @@
                 "reg_lambda": 10.0,
                 "n_estimators": 100
               },
-              "fit_seconds": 1.4445924758911133,
+              "fit_seconds": 1.5666468143463135,
               "importance": {
                 "mean_5m": 0.0725,
                 "mean_1m": 0.0663,
@@ -4424,7 +4424,7 @@
                 "reg_lambda": 10.0,
                 "n_estimators": 100
               },
-              "fit_seconds": 1.5849034786224365,
+              "fit_seconds": 1.5230591297149658,
               "importance": {
                 "hx_cdte_lo_lag5m": 0.0656,
                 "max_60m": 0.0532,
@@ -5203,7 +5203,7 @@
                 "C": 1.0,
                 "max_iter": 2000
               },
-              "fit_seconds": 9.019992113113403,
+              "fit_seconds": 9.204935312271118,
               "A": {
                 "threshold": 0.4943201541900635,
                 "cal": {
@@ -5313,7 +5313,7 @@
                 "C": 1.0,
                 "max_iter": 2000
               },
-              "fit_seconds": 8.346767902374268,
+              "fit_seconds": 8.681655883789062,
               "A": {
                 "threshold": 0.4950478672981262,
                 "cal": {
@@ -5423,7 +5423,7 @@
                 "C": 1.0,
                 "max_iter": 2000
               },
-              "fit_seconds": 8.859892129898071,
+              "fit_seconds": 9.345223903656006,
               "A": {
                 "threshold": 0.4917948544025421,
                 "cal": {
@@ -5610,7 +5610,7 @@
                 "reg_lambda": 10.0,
                 "n_estimators": 100
               },
-              "fit_seconds": 1.4311764240264893,
+              "fit_seconds": 1.5094904899597168,
               "importance": {
                 "hx_cdte_lo_lag5m": 0.0652,
                 "hx_cdte_lo_log_mean_1m": 0.0625,
@@ -5771,7 +5771,7 @@
                 "reg_lambda": 10.0,
                 "n_estimators": 100
               },
-              "fit_seconds": 1.449739694595337,
+              "fit_seconds": 1.513115406036377,
               "importance": {
                 "hx_cdte_lo_log_mean_1m": 0.0637,
                 "max_60m": 0.0551,
@@ -5932,7 +5932,7 @@
                 "reg_lambda": 10.0,
                 "n_estimators": 100
               },
-              "fit_seconds": 1.4319195747375488,
+              "fit_seconds": 1.494987964630127,
               "importance": {
                 "hx_cdte_lo_lag5m": 0.061,
                 "max_60m": 0.0582,
@@ -6711,7 +6711,7 @@
                 "C": 1.0,
                 "max_iter": 2000
               },
-              "fit_seconds": 12.667564153671265,
+              "fit_seconds": 12.768811702728271,
               "A": {
                 "threshold": 0.3347063362598419,
                 "cal": {
@@ -6821,7 +6821,7 @@
                 "C": 1.0,
                 "max_iter": 2000
               },
-              "fit_seconds": 13.968215227127075,
+              "fit_seconds": 14.25512146949768,
               "A": {
                 "threshold": 0.33308517932891846,
                 "cal": {
@@ -6931,7 +6931,7 @@
                 "C": 1.0,
                 "max_iter": 2000
               },
-              "fit_seconds": 11.881046295166016,
+              "fit_seconds": 11.569842100143433,
               "A": {
                 "threshold": 0.331818163394928,
                 "cal": {
@@ -7118,7 +7118,7 @@
                 "reg_lambda": 1.0,
                 "n_estimators": 100
               },
-              "fit_seconds": 1.273003339767456,
+              "fit_seconds": 1.52054762840271,
               "importance": {
                 "rate": 0.1987,
                 "mean_1m": 0.1658,
@@ -7279,7 +7279,7 @@
                 "reg_lambda": 1.0,
                 "n_estimators": 100
               },
-              "fit_seconds": 1.2755012512207031,
+              "fit_seconds": 1.3297333717346191,
               "importance": {
                 "log_rate": 0.2036,
                 "max_1m": 0.1985,
@@ -7440,7 +7440,7 @@
                 "reg_lambda": 1.0,
                 "n_estimators": 100
               },
-              "fit_seconds": 1.261610507965088,
+              "fit_seconds": 1.338672399520874,
               "importance": {
                 "rate": 0.1979,
                 "log_rate": 0.1812,
@@ -8219,7 +8219,7 @@
                 "C": 1.0,
                 "max_iter": 2000
               },
-              "fit_seconds": 11.433853149414062,
+              "fit_seconds": 11.126354455947876,
               "A": {
                 "threshold": 0.4332338273525238,
                 "cal": {
@@ -8329,7 +8329,7 @@
                 "C": 1.0,
                 "max_iter": 2000
               },
-              "fit_seconds": 11.88364028930664,
+              "fit_seconds": 10.880023717880249,
               "A": {
                 "threshold": 0.4334973990917206,
                 "cal": {
@@ -8439,7 +8439,7 @@
                 "C": 1.0,
                 "max_iter": 2000
               },
-              "fit_seconds": 12.505363464355469,
+              "fit_seconds": 11.858139991760254,
               "A": {
                 "threshold": 0.43436500430107117,
                 "cal": {
@@ -8626,7 +8626,7 @@
                 "reg_lambda": 10.0,
                 "n_estimators": 100
               },
-              "fit_seconds": 1.5698719024658203,
+              "fit_seconds": 1.3391993045806885,
               "importance": {
                 "log_rate": 0.2094,
                 "mean_1m": 0.196,
@@ -8787,7 +8787,7 @@
                 "reg_lambda": 10.0,
                 "n_estimators": 100
               },
-              "fit_seconds": 1.4299488067626953,
+              "fit_seconds": 1.3095526695251465,
               "importance": {
                 "rate": 0.2416,
                 "log_rate": 0.1704,
@@ -8948,7 +8948,7 @@
                 "reg_lambda": 10.0,
                 "n_estimators": 100
               },
-              "fit_seconds": 1.3216667175292969,
+              "fit_seconds": 1.3001782894134521,
               "importance": {
                 "log_rate": 0.2545,
                 "mean_1m": 0.2309,
@@ -9727,7 +9727,7 @@
                 "C": 1.0,
                 "max_iter": 2000
               },
-              "fit_seconds": 9.942545652389526,
+              "fit_seconds": 10.148188829421997,
               "A": {
                 "threshold": 0.44073835015296936,
                 "cal": {
@@ -9837,7 +9837,7 @@
                 "C": 1.0,
                 "max_iter": 2000
               },
-              "fit_seconds": 10.481351852416992,
+              "fit_seconds": 10.837546110153198,
               "A": {
                 "threshold": 0.44193315505981445,
                 "cal": {
@@ -9947,7 +9947,7 @@
                 "C": 1.0,
                 "max_iter": 2000
               },
-              "fit_seconds": 9.791613340377808,
+              "fit_seconds": 10.332224130630493,
               "A": {
                 "threshold": 0.4406481683254242,
                 "cal": {
@@ -10134,7 +10134,7 @@
                 "reg_lambda": 10.0,
                 "n_estimators": 100
               },
-              "fit_seconds": 1.2840065956115723,
+              "fit_seconds": 1.3148131370544434,
               "importance": {
                 "rate": 0.1341,
                 "bg_60m": 0.1304,
@@ -10295,7 +10295,7 @@
                 "reg_lambda": 10.0,
                 "n_estimators": 100
               },
-              "fit_seconds": 1.2359588146209717,
+              "fit_seconds": 1.3299190998077393,
               "importance": {
                 "rate": 0.1824,
                 "mean_1m": 0.1165,
@@ -10456,7 +10456,7 @@
                 "reg_lambda": 10.0,
                 "n_estimators": 100
               },
-              "fit_seconds": 1.541795015335083,
+              "fit_seconds": 1.3143939971923828,
               "importance": {
                 "rate": 0.2078,
                 "max_1m": 0.2075,

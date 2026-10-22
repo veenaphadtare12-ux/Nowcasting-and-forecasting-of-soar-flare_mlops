@@ -37,7 +37,7 @@ dvc dag
 ```
 git log --oneline -- dvc.lock
 ```
-*Expected:* 10 lines, newest first, starting with `998609a Retrain with HEL1OS features + soft/hard ablation ...` and
+*Expected:* 11 lines, newest first, starting with the commit that retrained with MLflow dataset tracking and signatures, and
 ending with `3e0781a Add stage-2 data pipeline ...`. Each line is one saved version of all our data outputs.
 
 ### A4. What settings changed between two versions?
@@ -90,7 +90,7 @@ git stash pop
 ```
 python -c "import sqlite3; c=sqlite3.connect('mlflow.db'); [print(n, k) for n, k in c.execute('select e.name, count(r.run_uuid) from experiments e left join runs r on r.experiment_id=e.experiment_id group by e.name')]"
 ```
-*Expected:* `Default 0`, `detector-tuning 410`, `flare-models 105`, `flare-models-v2 85`, for 600 runs in total.
+*Expected:* `Default 0`, `detector-tuning 410`, `flare-models 105`, `flare-models-v2 170`, `eda 1`, for 686 runs in total.
 
 ### B2. Open the UI
 ```

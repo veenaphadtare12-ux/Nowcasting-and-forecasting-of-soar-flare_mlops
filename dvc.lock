@@ -546,6 +546,10 @@ stages:
       hash: md5
       md5: d308e3f7c0b813f3a7ec6495d2494c71
       size: 5839
+    - path: src/mlflow_utils.py
+      hash: md5
+      md5: cdc42dbcd30296b06cd7597ff71eabb8
+      size: 2573
     - path: src/models/ablation.py
       hash: md5
       md5: 02af2d9475c8c9639e03989d0a053940
@@ -564,8 +568,8 @@ stages:
       size: 4414
     - path: src/models/train.py
       hash: md5
-      md5: 5de9b3fee287f72b9608f8337d86ac78
-      size: 15578
+      md5: e9fa5f443d439904a58a8fc34397726a
+      size: 18491
     - path: src/pipeline.py
       hash: md5
       md5: 91adef6dba469bbf23064d6f2b019877
@@ -651,8 +655,8 @@ stages:
       nfiles: 15
     - path: reports/model_metrics.json
       hash: md5
-      md5: 506c5adfba954033c23e393c399a0618
-      size: 511557
+      md5: ddb2ceaf673111587fe1d4c4e0fe2e6c
+      size: 511561
     - path: reports/validation_table.md
       hash: md5
       md5: f4510218070305aeeb99b09a48fe69d4

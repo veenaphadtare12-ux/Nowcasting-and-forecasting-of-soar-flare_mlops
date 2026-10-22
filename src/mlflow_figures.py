@@ -29,9 +29,10 @@ def _latest_parent(mlflow, experiment: str, run_name: str) -> str:
 
 
 def _attach(mlflow, run_id: str, files: list, folder: str) -> int:
-    with mlflow.start_run(run_id=run_id):
-        for f in files:
-            mlflow.log_artifact(str(f), artifact_path=folder)
+    """Client call: adds files to a finished run without reopening it (status, end time and metrics unchanged)."""
+    client = mlflow.MlflowClient()
+    for f in files:
+        client.log_artifact(run_id, str(f), artifact_path=folder)
     return len(files)
 
 

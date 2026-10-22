@@ -460,3 +460,44 @@ nothing else was retrained.
     about HEL1OS; figure 09 does. This is stated in the facts sheet.
 
 **Checks:** 57 tests pass; `dvc status` is up to date (no stage changed). No test-period data was read.
+
+## 2026-10-22 — Figure notes and MLflow completion
+
+**Done**
+- `docs/presentation_figures/FIGURE_NOTES.md`: for each of the 10 slide figures, a caption, key numbers with
+  sources, a takeaway and caveats.
+- **MLflow** (`src/mlflow_utils.py`, `src/models/train.py`):
+  - Every new run carries the tags `git_commit`, `git_dirty`, `dvc_lock_md5`, `dataset_md5`, `target`, `model`,
+    `horizon_min` and `seed`.
+  - tune and val are logged with `mlflow.log_input` (digest = DVC md5 `7a59987a…`, rows 1,936,953 / 816,920). The
+    test set is refused.
+  - New per-seed nested runs.
+  - The seed-42 LogReg/XGBoost of each target (14) are logged as MLflow models with a signature and a 5-row input
+    example. They use the sklearn flavour with `predict_proba`, so pyfunc returns probabilities.
+- `src/mlflow_figures.py` attached the figures:
+  - new experiment `eda`, run `eda-figures` (23 files);
+  - detector-tuning parent (10);
+  - the 7 newest `flare-models-v2` target parents (`val_skill.png`, slide 08, plus slide 10 for c_60m);
+  - the ablation run (slide 09).
+- `src/models/load_production.py` + `tests/test_load_production.py`: a round trip on a throwaway registry passes; the
+  real-registry test is skipped while the registry is empty.
+- `WHAT_WE_DID.md` section 4 updated, with a completion estimate of about 75%. Lesson 15.
+
+**Checks**
+- `dvc repro train` re-ran the stage (new dependency `src/mlflow_utils.py`). All 10,952 values in
+  `reports/model_metrics.json` are identical to the previous run; only `fit_seconds` changed.
+- MLflow now holds 686 runs.
+
+**Problems and decisions**
+- *The first `dvc repro` failed* because `python` resolved to the system interpreter (venv not on PATH in that shell).
+  DVC had already removed the stage outputs; the second, successful run regenerated them.
+  - Lesson: put `.venv/Scripts` on PATH before `dvc repro`.
+- *Scratch runs wrote into the project's `mlruns/1`:* a scratch SQLite database uses `./mlruns/<id>` as its default
+  artifact folder. The two stray logged-model folders I created (`mlruns/1/models`) were deleted; they were not
+  referenced in `mlflow.db`. The round-trip test now uses an explicit temporary artifact folder.
+- *Figures are attached with `MlflowClient.log_artifact`:* reopening finished runs failed across experiments and
+  would have changed their status and end time.
+- *Models are logged with cloudpickle* (MLflow warns that pickle is unsafe for untrusted files). These are our own
+  models, and the default skops format would need trusted-type lists for XGBoost.
+- *The registry is still empty on purpose:* choosing the production model is the user's decision.
+- *Older runs were not back-filled with tags,* because their commit and data versions can't be proven afterwards.

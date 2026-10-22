@@ -19,3 +19,4 @@ Study these in order. Each lesson ends with exercises to do yourself, a safe "br
 | 13 | [Presentation pack](13-presentation-pack.md) | facts sheet with sources, provenance, honest framing, slide-ready figures | ✅ written — to study |
 | — | [Hands-on DVC & MLflow](lesson-dvc-mlflow.md) | run `dvc status/dag/params diff/metrics diff`, hardlinks, time travel with `dvc checkout`; count, browse and compare MLflow runs; quiz | ✅ written — to do yourself |
 | 14 | [Slide figures 03–10](14-slide-figures.md) | superposed epoch, honest bin widths, best-vs-baseline with intervals, faded underpowered bars, permutation importance and where it is blind | ✅ written — to study |
+| 15 | [MLflow provenance](15-mlflow-provenance.md) | git/dvc.lock tags, dataset inputs with DVC digest, per-seed runs, model signatures, attaching figures, registry + production loader | ✅ written — to study |

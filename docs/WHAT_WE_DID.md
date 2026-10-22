@@ -44,9 +44,9 @@ params, `dvc.yaml`, MLflow runs or git history.
 |---|---|---|
 | Git | used | Whole project; 19 commits *(source: `git log`)* |
 | DVC | used | `dvc.yaml` (9 stages), `dvc.lock`, cache on `D:/dvc-cache` *(source: `dvc.yaml`, `.dvc/config`)* |
-| MLflow | used | `src/detection/tune.py`, `src/models/train.py`; data in `mlflow.db` (600 runs) *(source: `mlflow.db`)* |
+| MLflow | used | `src/detection/tune.py`, `src/models/train.py`; data in `mlflow.db` (686 runs) *(source: `mlflow.db`)* |
 | params.yaml | used | Every setting; read through `src/config.py` |
-| pytest | used | `tests/` (57 tests) *(source: `pytest --collect-only`)* |
+| pytest | used | `tests/` (59 tests in 6 files: 58 pass, 1 skipped) *(source: `pytest --collect-only`)* |
 | pandera | installed but unused | In `requirements.txt` (0.34.0); no code imports it |
 | Prefect | installed but unused | In `requirements.txt` (3.8.7); no code imports it |
 | XGBoost | used | `src/models/train.py`, `src/models/ablation.py` |
@@ -284,10 +284,40 @@ model). Later you can sort, compare and reopen any attempt. We store everything 
 |---|---|---|---|---|
 | `detector-tuning` | 410 | One detector setting tried on the tuning period (2 "parent" runs = 2 grid searches, 108 + 300 "child" trials) | 2026-10-07 11:42 | 2026-10-07 11:48 |
 | `flare-models` | 105 | One model (rule / LogReg / XGBoost) for one target, first training version; 5 training runs × 21 | 2026-10-21 18:47 | 2026-10-21 19:57 |
-| `flare-models-v2` | 85 | Parent = one target; children = its 5 models (climatology, persistence, rule, LogReg, XGBoost). 2 training runs × (7 parents + 35 children) + 1 ablation run | 2026-10-21 20:11 | 2026-10-22 01:44 |
+| `flare-models-v2` | 170 | Parent = one target; children = its 5 models (climatology, persistence, rule, LogReg, XGBoost). Older training runs: 2 × (7 parents + 35 children) + 1 ablation = 85. **Newest training run (2026-10-22 ~20:00):** 7 parents + 35 model children + 42 per-seed grandchildren (LogReg and XGBoost × 3 seeds) + 1 ablation = 85 | 2026-10-21 20:11 | 2026-10-22 20:29 |
+| `eda` | 1 | `eda-figures`: all EDA figures, slide figures 01–06, `eda_numbers.json`, `FIGURE_NOTES.md` | 2026-10-22 | 2026-10-22 |
 | `Default` | 0 | (unused) | — | — |
 
-**Total 600 runs.**
+**Total 686 runs.** The newest training run reproduced every one of the 10,952 numbers in `reports/model_metrics.json`
+exactly (only the fit times differ) *(source: comparison with the committed file)*.
+
+### What is now recorded in MLflow *(added 2026-10-22; source: `src/models/train.py`, `src/mlflow_utils.py`, `src/mlflow_figures.py`)*
+Applies to the newest training run and every training run from now on.
+
+- **Tags on every run:**
+  - `git_commit` (+ `git_dirty`) and `dvc_lock_md5`: the exact code and data versions.
+  - `dataset_md5`: the DVC hash of `data/processed/dataset`.
+  - `target`, `model`, `horizon_min` and `seed`: the seed list on aggregate runs, `none` for deterministic baselines,
+    and a single seed on per-seed runs.
+- **Datasets (`mlflow.log_input`):** every run lists `flare-dataset-tune` (context *training*, 1,936,953 rows) and
+  `flare-dataset-val` (context *validation*, 816,920 rows).
+  - Their digest is the DVC md5 `7a59987a…`, so a run points to an exact data version.
+  - **The test set is never logged:** `mlflow_utils.make_inputs` refuses any other period.
+- **Per-seed runs:** each LogReg and XGBoost model has one nested run per seed (42, 43, 44) with that seed's own
+  validation metrics and thresholds.
+- **Models with signatures:** the seed-42 LogReg and XGBoost of every target (14 models, the same ones saved in
+  `models/`) are logged as MLflow models.
+  - Each has a **signature** (44 float features in, 2 class probabilities out) and a **5-row input example**.
+  - They load with `mlflow.pyfunc`, which returns probabilities.
+- **Figures as artifacts:**
+  - `eda-figures` run: EDA figures, slides 01–06.
+  - Detector-tuning parent: detector figures, slide 07.
+  - Each newest `flare-models-v2` target parent: `val_skill.png` and slide 08 (plus slide 10 for `c_60m`).
+  - `hel1os-ablation`: slide 09.
+  - The figures were added with the MLflow client, which doesn't reopen runs, so no metric or run status changed.
+- **Production loader:** `src/models/load_production.py` loads `models:/<name>@production` with `mlflow.pyfunc`.
+  - It is tested end to end on a throwaway registry.
+  - The test against the real registry is skipped while the registry is empty.
 
 ### Detector tuning experiment
 - **What was searched** *(source: `params.yaml` `tuning.grid`)*: every combination of
@@ -373,8 +403,24 @@ model). Later you can sort, compare and reopen any attempt. We store everything 
   runs. The table above is new-label only.
 
 **Model registry:** **empty**: 0 registered models, 0 versions *(source: `mlflow.db` tables `registered_models`,
-`model_versions`)*. A registry is a shelf of "official" model versions (for example "production v3"). We save model
-files as run artifacts and in `models/`, but have **not done** registry promotion yet.
+`model_versions`)*. A registry is a shelf of "official" model versions (for example "production v3"). The models are now
+logged with signatures, so registering one is a single call (`mlflow.register_model("runs:/<seed-42 run id>/model",
+"flare-nowcast")`, then set the alias `production`). It has **not been done**, because choosing the production model is
+your decision, ideally after the final test-period evaluation.
+
+### How complete is the MLflow setup? *(estimate)*
+
+| Part | Weight | Status | Score |
+|---|---|---|---|
+| Tracking server/backend (SQLite `mlflow.db`) | 10% | Done | 10 |
+| Params and metrics for detector tuning, models, ablation | 20% | Done | 20 |
+| Provenance tags (git commit, dvc.lock, target, model, horizon, seed) | 10% | Done for new runs; older runs not back-filled | 9 |
+| Dataset tracking (`log_input`, DVC digest, rows; no test set) | 10% | Done for new runs | 9 |
+| Models logged with signature + input example | 15% | Done (seed-42 models) | 14 |
+| Figures and reports as artifacts | 10% | Done | 10 |
+| Model registry: registered versions + `production` alias | 15% | Not done (registry empty); loader ready and tested | 3 |
+| Serving from the registry (API using `load_production`) | 10% | Not started | 0 |
+| **Total** | 100% | | **≈ 75%** |
 
 ### How to open the MLflow UI on our setup
 With the venv active, in the project folder:
@@ -400,9 +446,14 @@ Then open **http://127.0.0.1:5000** in a browser.
 4. Scroll to the metrics table and look at `A_all_tss_mean`, `A_all_far_mean` and `A_quiet_tss_mean` side by side.
 
 **View a plot or file saved in a run**
-- **No PNG plots were saved inside MLflow runs: not done.** Our figures are saved in `docs/` instead.
+- **Figures (PNG) are now saved inside runs:**
+  - `eda` → `eda-figures`: folders `eda_figures/` and `presentation_figures/`
+  - `detector-tuning` → newest `grid-tune-period`: `detector_figures/`
+  - newest `flare-models-v2` target parents: `model_figures/` and `presentation_figures/`
 - **Files you can open:**
   - in a `flare-models-v2` parent run, the **Artifacts** tab has `xgb_cv.csv` and the saved models
+  - in a newest per-seed run such as `now-xgb-seed42`, the run page shows the **logged model** (MLflow 3 lists it
+    under the run's logged models; its `MLmodel` file shows the signature), and **Datasets used** lists tune and val
   - in a `flare-models` XGBoost run, the **Artifacts** tab has `feature_importance.json`
   - in `hel1os-ablation`, the **Artifacts** tab has `ablation.json`
 
@@ -414,8 +465,9 @@ Then open **http://127.0.0.1:5000** in a browser.
 
 ## 5. Tests
 
-**57 tests** in 5 files *(source: `pytest --collect-only -q`)*. **All 57 pass** (the line-ending check failed once,
-on the notebook's working copy, until the audit fixed it; see the top of this file).
+**59 tests** in 6 files *(source: `pytest --collect-only -q`)*. **58 pass and 1 is skipped**: the real-registry check in
+`test_load_production.py` waits until a model is registered. (The line-ending check failed once, on the notebook's
+working copy, until the audit fixed it; see the top of this file.)
 
 | Group (file, number) | What they check (one line each) |
 |---|---|
@@ -424,6 +476,7 @@ on the notebook's working copy, until the audit fixed it; see the top of this fi
 | **Leakage** (`test_leakage.py`, 27) ⭐ | See below; these protect against "seeing the future". |
 | **Models** (`test_models.py`, 12) | TSS/HSS formulas; best-threshold search; baselines; time-ordered CV folds; bootstrap intervals; ablation helpers; **test period locked**. |
 | **Pipeline** (`test_pipeline.py`, 8) | UTC time conversion; GOES text parser; time-unit-safe masks; GOES class only from GOES; HEL1OS newest-version rule; HEL1OS sub-second bug; HEL1OS optional; Unix line endings. |
+| **Production loader** (`test_load_production.py`, 2) | `load_production` registers, aliases and reloads a toy model on a throwaway registry; models in the real registry with alias `production` load and return probabilities (skipped while the registry is empty). |
 
 **Leakage tests ⭐** (a "leak" means the model accidentally sees future information):
 - `test_features_unchanged_when_future_is_altered` (×3) and `test_hel1os_features_unchanged_when_future_is_altered`
@@ -454,7 +507,7 @@ on the notebook's working copy, until the audit fixed it; see the top of this fi
 7. Forecasting an M-class flare within 30 minutes reaches **TSS 0.468** (interval 0.33–0.57), but **97%** of those alarms are false (FAR 0.97). *(source: `reports/model_metrics.json`, `m_30m`)*
 8. Forecast skill stays almost the same when no flare is already happening (quiet-start ≥M 30 min: TSS **0.465**), so the models don't just copy "a flare is going on". *(source: `reports/model_metrics.json`, quiet subset)*
 9. Hard X-rays (HEL1OS) overlap only **215.6 h** of tuning and **143.5 h** of validation, and the Neupert lag is a **median of 0 s** over 71 flares. *(source: `reports/eda_numbers.json`, `hel1os`)*
-10. The pipeline has **9 DVC stages**, **57 tests**, **600 MLflow runs** and **10 data versions**, and the test period has **never been evaluated**. *(source: `dvc.yaml`, `pytest`, `mlflow.db`, `git log -- dvc.lock`)*
+10. The pipeline has **9 DVC stages**, **59 tests** (58 pass, 1 skipped until a model is registered), **686 MLflow runs** and **11 data versions**, and the test period has **never been evaluated**. *(source: `dvc.yaml`, `pytest`, `mlflow.db`, `git log -- dvc.lock`)*
 
 ---
 
