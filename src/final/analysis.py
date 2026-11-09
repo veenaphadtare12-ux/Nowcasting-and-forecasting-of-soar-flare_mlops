@@ -110,7 +110,8 @@ def event_eval(sc: pd.DataFrame, fl: pd.DataFrame, events: pd.DataFrame, thr: di
                 continue
             hit = np.flatnonzero(a[lo:hi])
             lead = (w1 - tns[lo + hit[0]]) / 6e10 if len(hit) else np.nan
-            rows.append({"cls": f["class_letter"], "warned": bool(len(hit)), "lead_min": lead})
+            rows.append({"cls": f["class_letter"], "warned": bool(len(hit)), "lead_min": lead,
+                         "already_on": bool(hi > lo and a[lo])})
             per_flare.append({"target": t, "goes_class": f["goes_class"], "start": str(f["start"]), "warned": bool(len(hit)),
                               "lead_min": None if np.isnan(lead) else round(float(lead), 1)})
         r = pd.DataFrame(rows)
@@ -121,7 +122,13 @@ def event_eval(sc: pd.DataFrame, fl: pd.DataFrame, events: pd.DataFrame, thr: di
             out[t][cls] = {"flares": int(len(g)), "warned": int(g["warned"].sum()), "hit_rate": float(g["warned"].mean()),
                            "lead_median_min": float(ld.median()) if len(ld) else None,
                            "lead_q25_min": float(ld.quantile(0.25)) if len(ld) else None,
-                           "lead_q75_min": float(ld.quantile(0.75)) if len(ld) else None}
+                           "lead_q75_min": float(ld.quantile(0.75)) if len(ld) else None,
+                           # descriptive (added after the test, nothing re-tuned): a lead equal to the full horizon
+                           # mostly means the alert was already on when the window opened
+                           "alert_already_on_at_window_start": int((g["warned"] & g["already_on"]).sum()),
+                           "lead_median_min_new_alerts": float(g.loc[g["warned"] & ~g["already_on"], "lead_min"].median())
+                           if (g["warned"] & ~g["already_on"]).any() else None,
+                           "new_alerts": int((g["warned"] & ~g["already_on"]).sum())}
     # nowcast: GOES-matched detector events in the test period, alert between onset and end
     a = _alerts(sc, "s_now_chosen", thr["now"]["chosen"]["A"], "ok_now").to_numpy()
     okv = sc["ok_now"].to_numpy()
@@ -204,6 +211,11 @@ def operational_lead(sc: pd.DataFrame, fl: pd.DataFrame, gx: pd.DataFrame, thr: 
                              "lead_q25_min": float(v.quantile(0.25)) if v.notna().any() else None,
                              "lead_q75_min": float(v.quantile(0.75)) if v.notna().any() else None,
                              "alert_already_on_at_window_start": int(df.get(f"{t}_active_at_window_start", pd.Series(dtype=bool)).fillna(False).sum())}
+        new = v[v.notna() & ~df.get(f"{t}_active_at_window_start", pd.Series(False, index=df.index)).fillna(False).astype(bool)]
+        out["summary"][t] |= {"new_alerts": int(len(new)), "new_alert_lead_median_min": float(new.median()) if len(new) else None,
+                              "new_alert_lead_q25_min": float(new.quantile(0.25)) if len(new) else None,
+                              "new_alert_lead_q75_min": float(new.quantile(0.75)) if len(new) else None,
+                              "new_alerts_before_m1": int((new > 0).sum())}
     if len(df):
         fig, ax = plt.subplots(figsize=(8, 3.8), constrained_layout=True)
         for t, col in zip(L["models"], (SOLEXS, "#7E3F0C", HEL1OS)):

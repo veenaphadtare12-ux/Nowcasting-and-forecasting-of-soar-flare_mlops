@@ -95,3 +95,39 @@ One-sided p-value = share of resamples in which the chosen model is not better.
 - SHAP summary for the XGBoost nowcast, from XGBoost's built-in exact tree SHAP (`pred_contribs`).
 - MLflow registry: one model per target, alias `champion`. Tags: target, thresholds, training dates, git commit,
   dvc.lock hash; signature and input example included.
+
+---
+
+## 4. Results — added on 2026-11-09 AFTER the one-time test (sections 1–3 above are unchanged)
+
+**Order of events in git:**
+1. Choice: `d31d6ab` (22:25 IST).
+2. Test-evaluation code: `edac79a`.
+3. Frozen and registered models: `5fb3338`.
+4. Only then the test run, stage `evaluate_test`.
+
+### Test vs rolling evaluation (TSS at operating point A, all rows)
+
+| Target | Chosen model | Rolling protocol, mean ± std of 10 months | Original validation block | **Test** [95% day-bootstrap] | Test, quiet-start | Chosen − runner-up (one-sided p) | Chosen − best baseline (p) |
+|---|---|---|---|---|---|---|---|
+| now | XGBoost | 0.701 ± 0.035 | 0.730 | **0.758** [0.74, 0.78] | 0.548 | +0.016 (p ≤ 0.001) | +0.090 vs persistence (p ≤ 0.001) |
+| c_30m | LogReg+XGB, E2/E3/E5 | 0.193 ± 0.113 | 0.290 | **0.358** [0.29, 0.42] | 0.372 | +0.091 (p ≤ 0.001) | +0.342 vs persistence (p ≤ 0.001) |
+| c_60m | XGBoost | 0.189 ± 0.102 | 0.188 | **0.304** [0.23, 0.37] | 0.311 | −0.007 (p = 0.61) | +0.277 vs rule (p ≤ 0.001) |
+| m_30m | LogReg, E5/E6 | 0.311 ± 0.185 | 0.474 | **0.518** [0.34, 0.63] | 0.534 | +0.013 (p = 0.27) | +0.463 vs rule (p ≤ 0.001) |
+| m_60m | LogReg | 0.261 ± 0.174 | 0.467 | **0.494** [0.33, 0.60] | 0.497 | +0.005 (p = 0.15) | +0.414 vs persistence (p ≤ 0.001) |
+
+Sources:
+- `reports/improve/reference.json` and `final.json` (rolling and validation block);
+- `reports/final/test_metrics.json` → `targets.<t>.metrics.chosen.A`, `paired`.
+- p-values come from 1,000 paired day-bootstrap resamples, so "p ≤ 0.001" is the smallest value they can show.
+
+### Reading
+- **Every chosen model beats every baseline clearly** (p ≤ 0.001).
+- **The one improvement adopted from the experiments, c_30m, is confirmed on the test:** +0.091 TSS over the model
+  it replaced (p ≤ 0.001).
+- **For c_60m, m_30m and m_60m the chosen model and the runner-up are statistically tied.** The choice between them
+  doesn't matter much.
+- **Test scores are higher than the rolling-protocol means.** The final models were trained on more data, and the
+  rolling mean includes months with almost no skill (`docs/MODEL_CARD.md`). They are close to the original
+  validation block for M targets.
+- **Nothing was changed after these results.** The champions stay as registered (version 1).

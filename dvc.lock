@@ -2110,3 +2110,357 @@ stages:
       hash: md5
       md5: 2a9da7d19bf2ff3126e4f44520d5d535
       size: 7064
+  solexs_spectral_test:
+    cmd: python -m src.final.test_inputs spectral
+    deps:
+    - path: data/processed/solexs_qc.csv
+      hash: md5
+      md5: 813af0bb1ca03ed38e52a9e398fb50b9
+      size: 32235
+    - path: src/final/test_inputs.py
+      hash: md5
+      md5: 112f02535e311f0e2799e062b99c3e9c
+      size: 3817
+    - path: src/improve/spectral.py
+      hash: md5
+      md5: 8feae7a13fa76304465461411066ac39
+      size: 3020
+    params:
+      params.yaml:
+        improve.spectral:
+          low_channels:
+          - 20
+          - 60
+          high_channels:
+          - 80
+          - 160
+        periods:
+          tune:
+            start: '2025-04-09'
+            end: '2026-01-31'
+          val:
+            start: '2026-02-01'
+            end: '2026-05-31'
+          test:
+            start: '2026-06-01'
+            end: '2026-09-12'
+    outs:
+    - path: data/processed/final/solexs_spectral_minute_test.parquet
+      hash: md5
+      md5: 977cbd2376751dd3decb9a0c9fc8a7a1
+      size: 1872976
+  goes_xrs_test_fetch:
+    cmd: python -m src.final.test_inputs goes_fetch
+    deps:
+    - path: src/final/test_inputs.py
+      hash: md5
+      md5: 112f02535e311f0e2799e062b99c3e9c
+      size: 3817
+    params:
+      params.yaml:
+        improve.goes_xrs:
+          base_url: 
+            https://data.ngdc.noaa.gov/platforms/solar-space-observing-satellites/goes/goes19/l2/data/xrsf-l2-avg1m_science
+          satellite: g19
+          version: v2-2-2
+        periods:
+          tune:
+            start: '2025-04-09'
+            end: '2026-01-31'
+          val:
+            start: '2026-02-01'
+            end: '2026-05-31'
+          test:
+            start: '2026-06-01'
+            end: '2026-09-12'
+    outs:
+    - path: data/external/goes_xrs_test
+      hash: md5
+      md5: de1ffc317dd69d4f7425dc1d348a305e.dir
+      size: 30416376
+      nfiles: 104
+  goes_xrs_test_minute:
+    cmd: python -m src.final.test_inputs goes_process
+    deps:
+    - path: data/external/goes_xrs_test
+      hash: md5
+      md5: de1ffc317dd69d4f7425dc1d348a305e.dir
+      size: 30416376
+      nfiles: 104
+    - path: src/final/test_inputs.py
+      hash: md5
+      md5: 112f02535e311f0e2799e062b99c3e9c
+      size: 3817
+    - path: src/improve/goes_xrs.py
+      hash: md5
+      md5: 2e590280a0af19a52370e80b36891c3e
+      size: 3082
+    outs:
+    - path: data/processed/final/goes_xrs_minute_test.parquet
+      hash: md5
+      md5: ab76036c7d8409e9dbfc013bf2286272
+      size: 2943780
+  evaluate_test:
+    cmd: python -m src.final.evaluate_test
+    deps:
+    - path: data/processed/dataset
+      hash: md5
+      md5: 7a59987aeb8410528bcedbdc116f7e42.dir
+      size: 221276527
+      nfiles: 3
+    - path: data/processed/events.parquet
+      hash: md5
+      md5: 3f988b232e058661f3285af5e85dbe94
+      size: 188968
+    - path: data/processed/final/goes_xrs_minute_test.parquet
+      hash: md5
+      md5: ab76036c7d8409e9dbfc013bf2286272
+      size: 2943780
+    - path: data/processed/final/solexs_spectral_minute_test.parquet
+      hash: md5
+      md5: 977cbd2376751dd3decb9a0c9fc8a7a1
+      size: 1872976
+    - path: data/processed/goes_xrs_minute.parquet
+      hash: md5
+      md5: 4773180905ce1f7abedff853afc3032f
+      size: 9749689
+    - path: data/processed/solexs_minute.parquet
+      hash: md5
+      md5: 909cdc962a62700281ad3b2c4ae51543
+      size: 6050846
+    - path: data/processed/solexs_spectral_minute.parquet
+      hash: md5
+      md5: 331b4f50826f53243578d3035221914d
+      size: 5858686
+    - path: models_final
+      hash: md5
+      md5: 0744aa7c3a1bfb0690f57fa89df68c59.dir
+      size: 6372664
+      nfiles: 16
+    - path: src/final/evaluate_test.py
+      hash: md5
+      md5: 9338cf063c4ca5926dd7afed80d7359c
+      size: 9608
+    - path: src/final/features.py
+      hash: md5
+      md5: 46405ab65fbdc7126334c4c15949fb64
+      size: 3220
+    - path: src/final/freeze.py
+      hash: md5
+      md5: 6beff106a9775d0911b1e4a21f2efb6f
+      size: 9087
+    - path: src/improve/features_extra.py
+      hash: md5
+      md5: 791b70ce270e16bec67385b997082cea
+      size: 7706
+    params:
+      params.yaml:
+        final:
+          fit_end: '2026-05-01'
+          threshold_block:
+          - '2026-05-01'
+          - '2026-06-01'
+          purge_min: 120
+          seed: 42
+          train_stride: 6
+          far_cap: 0.8
+          operating_points:
+            A: tss
+            B: hss
+            C: far_cap
+          targets:
+            now:
+              registry: flare-nowcast
+              model: xgb
+              ideas: []
+              runner_up:
+                model: logreg
+                ideas: []
+            c_30m:
+              registry: flare-forecast-c30
+              model: ensemble
+              ideas:
+              - E2
+              - E3
+              - E5
+              runner_up:
+                model: logreg
+                ideas: []
+            c_60m:
+              registry: flare-forecast-c60
+              model: xgb
+              ideas: []
+              runner_up:
+                model: logreg
+                ideas: []
+            m_30m:
+              registry: flare-forecast-m30
+              model: logreg
+              ideas:
+              - E5
+              - E6
+              runner_up:
+                model: logreg
+                ideas: []
+            m_60m:
+              registry: flare-forecast-m60
+              model: logreg
+              ideas: []
+              runner_up:
+                model: xgb
+                ideas: []
+          registry_alias: champion
+          bootstrap:
+            n: 1000
+            seed: 0
+            level: 0.95
+          event_eval:
+            min_coverage: 0.5
+            false_alarm_merge_min: 10
+          lead_time:
+            m1_flux: 1e-05
+            window_before_min: 120
+            window_after_min: 30
+            models:
+            - m_30m
+            - m_60m
+            - now
+    outs:
+    - path: data/processed/final/shap_nowcast_sample.parquet
+      hash: md5
+      md5: 11a8a38ab4e211b019c2f4c582083ed2
+      size: 4049592
+    - path: data/processed/final/test_scores.parquet
+      hash: md5
+      md5: 175bcc90295fa6edfa7c6c2b9c508bc9
+      size: 44060696
+    - path: reports/final/test_metrics.json
+      hash: md5
+      md5: 61ddb1ae12d7a0743afc32227abdf94e
+      size: 70040
+  test_analysis:
+    cmd: python -m src.final.analysis
+    deps:
+    - path: data/processed/events.parquet
+      hash: md5
+      md5: 3f988b232e058661f3285af5e85dbe94
+      size: 188968
+    - path: data/processed/events_pairs.parquet
+      hash: md5
+      md5: 91a562c07296b1f834221604fae2f803
+      size: 30212
+    - path: data/processed/final/goes_xrs_minute_test.parquet
+      hash: md5
+      md5: ab76036c7d8409e9dbfc013bf2286272
+      size: 2943780
+    - path: data/processed/final/shap_nowcast_sample.parquet
+      hash: md5
+      md5: 11a8a38ab4e211b019c2f4c582083ed2
+      size: 4049592
+    - path: data/processed/final/test_scores.parquet
+      hash: md5
+      md5: 175bcc90295fa6edfa7c6c2b9c508bc9
+      size: 44060696
+    - path: data/processed/goes_matched.parquet
+      hash: md5
+      md5: 65777224953fa21434a59e5a9ffe10b0
+      size: 128267
+    - path: data/processed/solexs_minute.parquet
+      hash: md5
+      md5: 909cdc962a62700281ad3b2c4ae51543
+      size: 6050846
+    - path: models_final
+      hash: md5
+      md5: 0744aa7c3a1bfb0690f57fa89df68c59.dir
+      size: 6372664
+      nfiles: 16
+    - path: reports/final/test_metrics.json
+      hash: md5
+      md5: 61ddb1ae12d7a0743afc32227abdf94e
+      size: 70040
+    - path: src/final/analysis.py
+      hash: md5
+      md5: 3ed89ef955d2c5c9299f120e268034e7
+      size: 19558
+    params:
+      params.yaml:
+        final:
+          fit_end: '2026-05-01'
+          threshold_block:
+          - '2026-05-01'
+          - '2026-06-01'
+          purge_min: 120
+          seed: 42
+          train_stride: 6
+          far_cap: 0.8
+          operating_points:
+            A: tss
+            B: hss
+            C: far_cap
+          targets:
+            now:
+              registry: flare-nowcast
+              model: xgb
+              ideas: []
+              runner_up:
+                model: logreg
+                ideas: []
+            c_30m:
+              registry: flare-forecast-c30
+              model: ensemble
+              ideas:
+              - E2
+              - E3
+              - E5
+              runner_up:
+                model: logreg
+                ideas: []
+            c_60m:
+              registry: flare-forecast-c60
+              model: xgb
+              ideas: []
+              runner_up:
+                model: logreg
+                ideas: []
+            m_30m:
+              registry: flare-forecast-m30
+              model: logreg
+              ideas:
+              - E5
+              - E6
+              runner_up:
+                model: logreg
+                ideas: []
+            m_60m:
+              registry: flare-forecast-m60
+              model: logreg
+              ideas: []
+              runner_up:
+                model: xgb
+                ideas: []
+          registry_alias: champion
+          bootstrap:
+            n: 1000
+            seed: 0
+            level: 0.95
+          event_eval:
+            min_coverage: 0.5
+            false_alarm_merge_min: 10
+          lead_time:
+            m1_flux: 1e-05
+            window_before_min: 120
+            window_after_min: 30
+            models:
+            - m_30m
+            - m_60m
+            - now
+    outs:
+    - path: docs/final_figures
+      hash: md5
+      md5: 75f1b1a57783920ab4db438ff6d9aee4.dir
+      size: 1082231
+      nfiles: 6
+    - path: reports/final/analysis.json
+      hash: md5
+      md5: 9be5c6c1b8461f2ab1c5601add9ac46f
+      size: 42589

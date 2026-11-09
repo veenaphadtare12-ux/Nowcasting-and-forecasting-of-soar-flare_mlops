@@ -556,3 +556,63 @@ nothing else was retrained.
 - DVC wrote `data/external/.gitignore` with CRLF line endings; converted to LF.
 
 **Checks:** 66 tests pass and 1 is skipped (registry). `dvc status` is up to date. Free disk: C: 18 GB, D: 34 GB.
+
+## 2026-11-09 — Stage 5 closed: final choice, one-time test, registry, precision pack
+
+**Order (git):**
+1. `docs/FINAL_CHOICE.md` + `params.yaml final` committed first (`d31d6ab`).
+2. Test code (`edac79a`).
+3. Frozen models + registry (`5fb3338`).
+4. Then `dvc repro test_analysis`, which ran the test-input stages, `evaluate_test` (the only reader of the test
+   file) and `test_analysis`.
+
+**Final choice:**
+- Rolling-protocol learner per target.
+- Improvement ideas adopted only if they passed the rule AND were not worse on the validation block. As a result:
+  - c_30m = LogReg+XGB average with E2/E3/E5;
+  - m_30m = LogReg with E5/E6;
+  - the others are the reference models on the 44 base features.
+- Fit on 2025-04-09 → 2026-04-30; thresholds A/B/C and isotonic calibration on May 2026.
+
+**Test results (TSS at A [95%]):**
+- now 0.758 [0.74, 0.78]
+- c_30m 0.358 [0.29, 0.42]
+- c_60m 0.304 [0.23, 0.37]
+- m_30m 0.518 [0.34, 0.63]
+- m_60m 0.494 [0.33, 0.60]
+
+All beat the baselines (paired p ≤ 0.001). c_30m beats its predecessor (+0.091, p ≤ 0.001). The other chosen
+models are tied with their runner-ups.
+
+**Precision pack** (`reports/final/analysis.json`, `docs/final_figures/`):
+- reliability diagrams and Brier: raw probabilities are badly calibrated; isotonic on May fixes them;
+- per-flare hit rates and lead times;
+- lead over NOAA's M1 crossing;
+- missed-flare figures and false-alarm episodes;
+- SHAP for the nowcast.
+
+`docs/MODEL_CARD.md`, `docs/DATA_CARD.md`, lesson 17.
+
+**Registry:** 5 models with alias `champion`, version 1. Tags: thresholds, fit dates, git commit, dvc.lock hash,
+test TSS. Signature and input example included. 46 MLflow runs added in total (6 in `flare-final`).
+
+**Decisions and problems**
+- *Lead times saturate at the window length:* the alerts were usually already on, so the pre-registered lead-time
+  numbers are kept, but descriptive splits were added after the test (nothing re-tuned):
+  - how many alerts were already on when the window opened (m_60m: 65 of 71 M flares; 70 of 82 for the M1
+    analysis);
+  - the lead of alerts that switched on inside the window (median about 50 min).
+
+  The main honest message: the M models mostly signal *active periods* (alerting 31% of the time), not
+  flare-specific precursors.
+- *A test-lock test passed vacuously at first:* a backslash in a regex was turned into a literal backspace by the
+  shell tooling, so the pattern could never match. Caught by checking the file bytes. The file was rewritten
+  without backslashes, plus a test that proves the pattern matches `test.parquet` and nothing else.
+- *Wrong claim corrected before commit:* "the test period was unusually active" is not supported (validation had
+  a similar number of M flares). It was replaced by the real explanation: the rolling mean includes near-zero-skill
+  months.
+- *CRLF again:* DVC rewrote `data/external/.gitignore` (and the root `.gitignore`) with CRLF; converted to LF.
+- *The registry test now covers alias `champion`:* the real models load and predict; the `production` alias is
+  still unused, hence 1 skip.
+
+**Checks:** 75 tests pass, 1 skipped. `dvc status` is up to date. 25 DVC stages.

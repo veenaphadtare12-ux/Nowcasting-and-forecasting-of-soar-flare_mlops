@@ -9,13 +9,14 @@ os.environ.setdefault("MLFLOW_DISABLE_AGENT_HINT", "1")
 from src.models import load_production as lp  # noqa: E402
 
 
-def test_registered_production_models_load():
-    """Real registry (mlflow.db): every model with alias 'production' loads and predicts probabilities."""
-    names = lp.production_models()
+@pytest.mark.parametrize("alias", ["champion", "production"])
+def test_registered_models_load(alias):
+    """Real registry (mlflow.db): every model with the alias loads and predicts probabilities."""
+    names = lp.production_models(alias=alias)
     if not names:
-        pytest.skip("model registry has no model with alias 'production' yet")
+        pytest.skip(f"model registry has no model with alias '{alias}' yet")
     for name in names:
-        model = lp.load_production(name)
+        model = lp.load_production(name, alias=alias)
         cols = [c.name for c in model.metadata.get_input_schema().inputs]
         p = np.asarray(model.predict(pd.DataFrame(np.zeros((3, len(cols)), np.float32), columns=cols)))
         assert p.shape == (3, 2) and np.all((p >= 0) & (p <= 1))
