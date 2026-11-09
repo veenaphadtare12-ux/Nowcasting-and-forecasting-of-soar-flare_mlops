@@ -1872,3 +1872,241 @@ stages:
       hash: md5
       md5: 733f663e195b4f058c0341a5030bf187
       size: 8308
+  final_models:
+    cmd: python -m src.final.freeze
+    deps:
+    - path: data/processed/dataset
+      hash: md5
+      md5: 7a59987aeb8410528bcedbdc116f7e42.dir
+      size: 221276527
+      nfiles: 3
+    - path: data/processed/events.parquet
+      hash: md5
+      md5: 3f988b232e058661f3285af5e85dbe94
+      size: 188968
+    - path: data/processed/goes_xrs_minute.parquet
+      hash: md5
+      md5: 4773180905ce1f7abedff853afc3032f
+      size: 9749689
+    - path: data/processed/solexs_minute.parquet
+      hash: md5
+      md5: 909cdc962a62700281ad3b2c4ae51543
+      size: 6050846
+    - path: data/processed/solexs_spectral_minute.parquet
+      hash: md5
+      md5: 331b4f50826f53243578d3035221914d
+      size: 5858686
+    - path: reports/model_metrics.json
+      hash: md5
+      md5: ddb2ceaf673111587fe1d4c4e0fe2e6c
+      size: 511561
+    - path: src/final/features.py
+      hash: md5
+      md5: 46405ab65fbdc7126334c4c15949fb64
+      size: 3220
+    - path: src/final/freeze.py
+      hash: md5
+      md5: 6beff106a9775d0911b1e4a21f2efb6f
+      size: 9087
+    - path: src/improve/features_extra.py
+      hash: md5
+      md5: 791b70ce270e16bec67385b997082cea
+      size: 7706
+    - path: src/improve/protocol.py
+      hash: md5
+      md5: d603af56f21252ee58f2295b746f1827
+      size: 5708
+    - path: src/mlflow_utils.py
+      hash: md5
+      md5: cdc42dbcd30296b06cd7597ff71eabb8
+      size: 2573
+    - path: src/models/train.py
+      hash: md5
+      md5: e9fa5f443d439904a58a8fc34397726a
+      size: 18491
+    params:
+      params.yaml:
+        final:
+          fit_end: '2026-05-01'
+          threshold_block:
+          - '2026-05-01'
+          - '2026-06-01'
+          purge_min: 120
+          seed: 42
+          train_stride: 6
+          far_cap: 0.8
+          operating_points:
+            A: tss
+            B: hss
+            C: far_cap
+          targets:
+            now:
+              registry: flare-nowcast
+              model: xgb
+              ideas: []
+              runner_up:
+                model: logreg
+                ideas: []
+            c_30m:
+              registry: flare-forecast-c30
+              model: ensemble
+              ideas:
+              - E2
+              - E3
+              - E5
+              runner_up:
+                model: logreg
+                ideas: []
+            c_60m:
+              registry: flare-forecast-c60
+              model: xgb
+              ideas: []
+              runner_up:
+                model: logreg
+                ideas: []
+            m_30m:
+              registry: flare-forecast-m30
+              model: logreg
+              ideas:
+              - E5
+              - E6
+              runner_up:
+                model: logreg
+                ideas: []
+            m_60m:
+              registry: flare-forecast-m60
+              model: logreg
+              ideas: []
+              runner_up:
+                model: xgb
+                ideas: []
+          registry_alias: champion
+          bootstrap:
+            n: 1000
+            seed: 0
+            level: 0.95
+          event_eval:
+            min_coverage: 0.5
+            false_alarm_merge_min: 10
+          lead_time:
+            m1_flux: 1e-05
+            window_before_min: 120
+            window_after_min: 30
+            models:
+            - m_30m
+            - m_60m
+            - now
+        improve:
+          months:
+          - 2025-08
+          - 2025-09
+          - 2025-10
+          - 2025-11
+          - 2025-12
+          - 2026-01
+          - 2026-02
+          - 2026-03
+          - 2026-04
+          - 2026-05
+          targets:
+          - c_60m
+          - m_60m
+          - now
+          - c_30m
+          - m_30m
+          purge_min: 120
+          seed: 42
+          train_stride: 6
+          acceptance:
+            min_months_improved: 6
+          rolling_days: 30
+          far_cap: 0.8
+          long_windows_h:
+          - 3
+          - 6
+          - 12
+          - 24
+          event_windows_h:
+          - 6
+          - 24
+          since_event_cap_h: 48
+          drift_days: 7
+          prune_r: 0.95
+          spectral:
+            low_channels:
+            - 20
+            - 60
+            high_channels:
+            - 80
+            - 160
+          goes_xrs:
+            base_url: 
+              https://data.ngdc.noaa.gov/platforms/solar-space-observing-satellites/goes/goes19/l2/data/xrsf-l2-avg1m_science
+            satellite: g19
+            version: v2-2-2
+        models:
+          targets:
+          - now
+          - c_30m
+          - c_60m
+          - c_120m
+          - m_30m
+          - m_60m
+          - m_120m
+          inner_split: '2025-12-01'
+          purge_min: 120
+          train_stride: 6
+          seeds:
+          - 42
+          - 43
+          - 44
+          rule_feature: ratio_1m_bg
+          logreg:
+            C: 1.0
+            max_iter: 2000
+          xgb:
+            learning_rate: 0.05
+            subsample: 0.8
+            colsample_bytree: 0.8
+          cv:
+            fold_months:
+            - 2025-08
+            - 2025-09
+            - 2025-10
+            - 2025-11
+            stride: 30
+            n_estimators:
+            - 100
+            - 300
+            - 600
+            max_depth:
+            - 3
+            - 5
+            min_child_weight:
+            - 5
+            - 50
+            reg_lambda:
+            - 1
+            - 10
+          operating_points:
+            A: tss
+            B: hss
+          bootstrap:
+            n: 1000
+            seed: 0
+            level: 0.95
+          ablation:
+            cal_start: '2025-11-01'
+            cal_end: '2025-11-30'
+            train_stride: 1
+            min_positive_episodes: 30
+    outs:
+    - path: models_final
+      hash: md5
+      md5: 0744aa7c3a1bfb0690f57fa89df68c59.dir
+      size: 6372664
+      nfiles: 16
+    - path: reports/final/freeze.json
+      hash: md5
+      md5: 2a9da7d19bf2ff3126e4f44520d5d535
+      size: 7064

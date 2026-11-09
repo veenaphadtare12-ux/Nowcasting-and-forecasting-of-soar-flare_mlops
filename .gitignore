@@ -9,3 +9,4 @@ mlartifacts/
 mlflow.db
 reports/_*.txt
 /models
+/models_final

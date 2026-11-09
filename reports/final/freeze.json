@@ -1,0 +1,273 @@
+{
+  "targets": {
+    "now": {
+      "registry": "flare-nowcast",
+      "model": "xgb",
+      "ideas": [],
+      "chosen": {
+        "model": "xgb",
+        "ideas": [],
+        "n_features": 44,
+        "fit_rows": 418664,
+        "fit_positive_rate": 0.08149016872718934,
+        "block_rows": 231811,
+        "block_positives": 14766,
+        "thresholds": {
+          "A": 0.3240952789783478,
+          "B": 0.8442036509513855,
+          "C": 0.16700050234794617
+        },
+        "block_tss_A": 0.7198832213235934
+      },
+      "calibration_block": {
+        "ece_raw": 0.12150288308064902,
+        "brier_raw": 0.06009141728281975,
+        "badly_calibrated": true
+      },
+      "dates": {
+        "fit": [
+          "2025-04-09 00:04:00+00:00",
+          "2026-04-30 22:00:00+00:00"
+        ],
+        "threshold_block": [
+          "2026-05-01 00:00:00+00:00",
+          "2026-05-31 22:00:00+00:00"
+        ]
+      },
+      "runner_up": {
+        "model": "logreg",
+        "ideas": [],
+        "n_features": 44,
+        "fit_rows": 418664,
+        "fit_positive_rate": 0.08149016872718934,
+        "block_rows": 231811,
+        "block_positives": 14766,
+        "thresholds": {
+          "A": 0.4463534653186798,
+          "B": 0.824970543384552,
+          "C": 0.21002982556819916
+        },
+        "block_tss_A": 0.6965397292216718
+      },
+      "registry_version": 1
+    },
+    "c_30m": {
+      "registry": "flare-forecast-c30",
+      "model": "ensemble",
+      "ideas": [
+        "E2",
+        "E3",
+        "E5"
+      ],
+      "chosen": {
+        "model": "ensemble",
+        "ideas": [
+          "E2",
+          "E3",
+          "E5"
+        ],
+        "n_features": 67,
+        "fit_rows": 416524,
+        "fit_positive_rate": 0.14032084585762164,
+        "block_rows": 231024,
+        "block_positives": 28013,
+        "thresholds": {
+          "A": 0.44339233316059296,
+          "B": 0.48391300497676104,
+          "C": 0.5470530552110819
+        },
+        "block_tss_A": 0.17186915007695897
+      },
+      "calibration_block": {
+        "ece_raw": 0.29430392459687,
+        "brier_raw": 0.19713975874934744,
+        "badly_calibrated": true
+      },
+      "dates": {
+        "fit": [
+          "2025-04-09 00:04:00+00:00",
+          "2026-04-30 22:00:00+00:00"
+        ],
+        "threshold_block": [
+          "2026-05-01 00:00:00+00:00",
+          "2026-05-31 22:00:00+00:00"
+        ]
+      },
+      "runner_up": {
+        "model": "logreg",
+        "ideas": [],
+        "n_features": 44,
+        "fit_rows": 416524,
+        "fit_positive_rate": 0.14032084585762164,
+        "block_rows": 231024,
+        "block_positives": 28013,
+        "thresholds": {
+          "A": 0.40931394696235657,
+          "B": 0.4649279713630676,
+          "C": Infinity
+        },
+        "block_tss_A": 0.13824382576998395
+      },
+      "registry_version": 1
+    },
+    "c_60m": {
+      "registry": "flare-forecast-c60",
+      "model": "xgb",
+      "ideas": [],
+      "chosen": {
+        "model": "xgb",
+        "ideas": [],
+        "n_features": 44,
+        "fit_rows": 414333,
+        "fit_positive_rate": 0.25139199629283693,
+        "block_rows": 230214,
+        "block_positives": 51587,
+        "thresholds": {
+          "A": 0.43969959020614624,
+          "B": 0.4437044858932495,
+          "C": 0.030226754024624825
+        },
+        "block_tss_A": 0.15792741302163404
+      },
+      "calibration_block": {
+        "ece_raw": 0.19796236420491914,
+        "brier_raw": 0.21318191289901733,
+        "badly_calibrated": true
+      },
+      "dates": {
+        "fit": [
+          "2025-04-09 00:04:00+00:00",
+          "2026-04-30 22:00:00+00:00"
+        ],
+        "threshold_block": [
+          "2026-05-01 00:00:00+00:00",
+          "2026-05-31 22:00:00+00:00"
+        ]
+      },
+      "runner_up": {
+        "model": "logreg",
+        "ideas": [],
+        "n_features": 44,
+        "fit_rows": 414333,
+        "fit_positive_rate": 0.25139199629283693,
+        "block_rows": 230214,
+        "block_positives": 51587,
+        "thresholds": {
+          "A": 0.45135506987571716,
+          "B": 0.4691290855407715,
+          "C": 0.09752845019102097
+        },
+        "block_tss_A": 0.1355160895907599
+      },
+      "registry_version": 1
+    },
+    "m_30m": {
+      "registry": "flare-forecast-m30",
+      "model": "logreg",
+      "ideas": [
+        "E5",
+        "E6"
+      ],
+      "chosen": {
+        "model": "logreg",
+        "ideas": [
+          "E5",
+          "E6"
+        ],
+        "n_features": 56,
+        "fit_rows": 416524,
+        "fit_positive_rate": 0.01605189616924835,
+        "block_rows": 231024,
+        "block_positives": 1080,
+        "thresholds": {
+          "A": 0.4052099585533142,
+          "B": 0.6775847673416138,
+          "C": Infinity
+        },
+        "block_tss_A": 0.5313396111903574
+      },
+      "calibration_block": {
+        "ece_raw": 0.31294128318470815,
+        "brier_raw": 0.12878379225730896,
+        "badly_calibrated": true
+      },
+      "dates": {
+        "fit": [
+          "2025-04-09 00:04:00+00:00",
+          "2026-04-30 22:00:00+00:00"
+        ],
+        "threshold_block": [
+          "2026-05-01 00:00:00+00:00",
+          "2026-05-31 22:00:00+00:00"
+        ]
+      },
+      "runner_up": {
+        "model": "logreg",
+        "ideas": [],
+        "n_features": 44,
+        "fit_rows": 416524,
+        "fit_positive_rate": 0.01605189616924835,
+        "block_rows": 231024,
+        "block_positives": 1080,
+        "thresholds": {
+          "A": 0.34962552785873413,
+          "B": 0.6093462705612183,
+          "C": Infinity
+        },
+        "block_tss_A": 0.47627229045139496
+      },
+      "registry_version": 1
+    },
+    "m_60m": {
+      "registry": "flare-forecast-m60",
+      "model": "logreg",
+      "ideas": [],
+      "chosen": {
+        "model": "logreg",
+        "ideas": [],
+        "n_features": 44,
+        "fit_rows": 414333,
+        "fit_positive_rate": 0.030267924592055184,
+        "block_rows": 230214,
+        "block_positives": 2004,
+        "thresholds": {
+          "A": 0.37014278769493103,
+          "B": 0.670373260974884,
+          "C": Infinity
+        },
+        "block_tss_A": 0.42831431917288076
+      },
+      "calibration_block": {
+        "ece_raw": 0.260360052669486,
+        "brier_raw": 0.09559288620948792,
+        "badly_calibrated": true
+      },
+      "dates": {
+        "fit": [
+          "2025-04-09 00:04:00+00:00",
+          "2026-04-30 22:00:00+00:00"
+        ],
+        "threshold_block": [
+          "2026-05-01 00:00:00+00:00",
+          "2026-05-31 22:00:00+00:00"
+        ]
+      },
+      "runner_up": {
+        "model": "xgb",
+        "ideas": [],
+        "n_features": 44,
+        "fit_rows": 414333,
+        "fit_positive_rate": 0.030267924592055184,
+        "block_rows": 230214,
+        "block_positives": 2004,
+        "thresholds": {
+          "A": 0.368778795003891,
+          "B": 0.7087417840957642,
+          "C": Infinity
+        },
+        "block_tss_A": 0.49922102685650127
+      },
+      "registry_version": 1
+    }
+  }
+}
