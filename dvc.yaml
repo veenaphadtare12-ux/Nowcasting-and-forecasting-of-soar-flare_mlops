@@ -358,3 +358,103 @@ stages:
     outs:
       - reports/improve/final.json:
           cache: false
+
+  # ---- stage 5 close: frozen final models (docs/FINAL_CHOICE.md) and the ONE-TIME test evaluation
+  final_models:      # fit + thresholds on tune/val only (May 2026 = threshold block); registers alias "champion"
+    cmd: python -m src.final.freeze
+    deps:
+      - src/final/freeze.py
+      - src/final/features.py
+      - src/improve/features_extra.py
+      - src/improve/protocol.py
+      - src/models/train.py
+      - src/mlflow_utils.py
+      - data/processed/dataset
+      - data/processed/solexs_minute.parquet
+      - data/processed/events.parquet
+      - data/processed/solexs_spectral_minute.parquet
+      - data/processed/goes_xrs_minute.parquet
+      - reports/model_metrics.json
+    params:
+      - final
+      - models
+      - improve
+    outs:
+      - models_final
+      - reports/final/freeze.json:
+          cache: false
+
+  solexs_spectral_test:   # test-day inputs for the one-time scoring only (same code as solexs_spectral)
+    cmd: python -m src.final.test_inputs spectral
+    deps:
+      - src/final/test_inputs.py
+      - src/improve/spectral.py
+      - data/processed/solexs_qc.csv
+    params:
+      - improve.spectral
+      - periods
+    outs:
+      - data/processed/final/solexs_spectral_minute_test.parquet
+
+  goes_xrs_test_fetch:
+    cmd: python -m src.final.test_inputs goes_fetch
+    deps:
+      - src/final/test_inputs.py
+    params:
+      - improve.goes_xrs
+      - periods
+    outs:
+      - data/external/goes_xrs_test
+
+  goes_xrs_test_minute:
+    cmd: python -m src.final.test_inputs goes_process
+    deps:
+      - src/final/test_inputs.py
+      - src/improve/goes_xrs.py
+      - data/external/goes_xrs_test
+    outs:
+      - data/processed/final/goes_xrs_minute_test.parquet
+
+  evaluate_test:     # the ONLY stage that reads data/processed/dataset/test.parquet; scores the frozen models once
+    cmd: python -m src.final.evaluate_test
+    deps:
+      - src/final/evaluate_test.py
+      - src/final/features.py
+      - src/final/freeze.py
+      - src/improve/features_extra.py
+      - models_final
+      - data/processed/dataset
+      - data/processed/solexs_minute.parquet
+      - data/processed/events.parquet
+      - data/processed/solexs_spectral_minute.parquet
+      - data/processed/goes_xrs_minute.parquet
+      - data/processed/final/solexs_spectral_minute_test.parquet
+      - data/processed/final/goes_xrs_minute_test.parquet
+    params:
+      - final
+    outs:
+      - reports/final/test_metrics.json:
+          cache: false
+      - data/processed/final/test_scores.parquet
+      - data/processed/final/shap_nowcast_sample.parquet
+
+  test_analysis:     # calibration, event-based scores, NOAA M1 lead time, errors, SHAP figure (no test.parquet read)
+    cmd: python -m src.final.analysis
+    deps:
+      - src/final/analysis.py
+      - data/processed/final/test_scores.parquet
+      - data/processed/final/shap_nowcast_sample.parquet
+      - data/processed/final/goes_xrs_minute_test.parquet
+      - reports/final/test_metrics.json
+      - models_final
+      - data/processed/goes_matched.parquet
+      - data/processed/events.parquet
+      - data/processed/events_pairs.parquet
+      - data/processed/solexs_minute.parquet
+    params:
+      - final
+    outs:
+      - reports/final/analysis.json:
+          cache: false
+      - docs/final_figures:
+          cache: false
