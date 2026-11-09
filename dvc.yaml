@@ -176,3 +176,185 @@ stages:
       - paths.data_root_hel1os
     outs:
       - data/processed/hel1os
+
+  # ---- improvement experiments (src/improve); tune + val only, the test period is never read
+  solexs_spectral:   # E5: 1-min low/high band rates from the SDD2 .pi spectra
+    cmd: python -m src.improve.spectral
+    deps:
+      - src/improve/spectral.py
+      - src/solexs.py
+      - data/processed/solexs_qc.csv
+    params:
+      - improve.spectral
+      - periods
+    outs:
+      - data/processed/solexs_spectral_minute.parquet
+
+  goes_xrs_fetch:    # E6: public NOAA GOES-19 XRS 1-min daily files, only up to the last validation day
+    cmd: python -m src.improve.goes_xrs fetch
+    deps:
+      - src/improve/goes_xrs.py
+    params:
+      - improve.goes_xrs
+      - periods
+    outs:
+      - data/external/goes_xrs
+
+  goes_xrs_minute:
+    cmd: python -m src.improve.goes_xrs process
+    deps:
+      - src/improve/goes_xrs.py
+      - data/external/goes_xrs
+    outs:
+      - data/processed/goes_xrs_minute.parquet
+
+  improve_reference:   # rolling monthly protocol, current features; also derives E1 (adaptive thresholds) and E7 (ensemble)
+    cmd: python -m src.improve.run reference
+    deps:
+      - src/improve/run.py
+      - src/improve/protocol.py
+      - src/improve/features_extra.py
+      - src/models/train.py
+      - src/models/metrics.py
+      - src/mlflow_utils.py
+      - data/processed/dataset
+      - reports/model_metrics.json
+    params:
+      - improve
+      - models
+    outs:
+      - reports/improve/reference.json:
+          cache: false
+      - reports/improve/E1.json:
+          cache: false
+      - reports/improve/E7.json:
+          cache: false
+
+  improve_E2:   # long-context features
+    cmd: python -m src.improve.run E2
+    deps:
+      - src/improve/run.py
+      - src/improve/protocol.py
+      - src/improve/features_extra.py
+      - src/models/train.py
+      - src/models/metrics.py
+      - src/mlflow_utils.py
+      - data/processed/dataset
+      - reports/model_metrics.json
+      - reports/improve/reference.json
+      - data/processed/solexs_minute.parquet
+      - data/processed/events.parquet
+    params:
+      - improve
+      - models
+    outs:
+      - reports/improve/E2.json:
+          cache: false
+
+  improve_E3:   # drift-robust features
+    cmd: python -m src.improve.run E3
+    deps:
+      - src/improve/run.py
+      - src/improve/protocol.py
+      - src/improve/features_extra.py
+      - src/models/train.py
+      - src/models/metrics.py
+      - src/mlflow_utils.py
+      - data/processed/dataset
+      - reports/model_metrics.json
+      - reports/improve/reference.json
+    params:
+      - improve
+      - models
+    outs:
+      - reports/improve/E3.json:
+          cache: false
+
+  improve_E4:   # feature pruning
+    cmd: python -m src.improve.run E4
+    deps:
+      - src/improve/run.py
+      - src/improve/protocol.py
+      - src/improve/features_extra.py
+      - src/models/train.py
+      - src/models/metrics.py
+      - src/mlflow_utils.py
+      - data/processed/dataset
+      - reports/model_metrics.json
+      - reports/improve/reference.json
+    params:
+      - improve
+      - models
+    outs:
+      - reports/improve/E4.json:
+          cache: false
+
+  improve_E5:   # SoLEXS spectral features
+    cmd: python -m src.improve.run E5
+    deps:
+      - src/improve/run.py
+      - src/improve/protocol.py
+      - src/improve/features_extra.py
+      - src/models/train.py
+      - src/models/metrics.py
+      - src/mlflow_utils.py
+      - data/processed/dataset
+      - reports/model_metrics.json
+      - reports/improve/reference.json
+      - data/processed/solexs_spectral_minute.parquet
+    params:
+      - improve
+      - models
+    outs:
+      - reports/improve/E5.json:
+          cache: false
+
+  improve_E6:   # GOES XRS ablation
+    cmd: python -m src.improve.run E6
+    deps:
+      - src/improve/run.py
+      - src/improve/protocol.py
+      - src/improve/features_extra.py
+      - src/models/train.py
+      - src/models/metrics.py
+      - src/mlflow_utils.py
+      - data/processed/dataset
+      - reports/model_metrics.json
+      - reports/improve/reference.json
+      - data/processed/goes_xrs_minute.parquet
+    params:
+      - improve
+      - models
+    outs:
+      - reports/improve/E6.json:
+          cache: false
+
+  improve_final:   # only the KEPT ideas, rolling protocol + the original validation block
+    cmd: python -m src.improve.run final
+    deps:
+      - src/improve/run.py
+      - src/improve/protocol.py
+      - src/improve/features_extra.py
+      - src/models/train.py
+      - src/models/metrics.py
+      - src/mlflow_utils.py
+      - data/processed/dataset
+      - reports/model_metrics.json
+      - reports/improve/reference.json
+      - reports/improve/E1.json
+      - reports/improve/E2.json
+      - reports/improve/E3.json
+      - reports/improve/E4.json
+      - reports/improve/E5.json
+      - reports/improve/E6.json
+      - reports/improve/E7.json
+      - data/processed/solexs_minute.parquet
+      - data/processed/events.parquet
+      - data/processed/solexs_spectral_minute.parquet
+      - data/processed/goes_xrs_minute.parquet
+    params:
+      - improve
+      - models
+    outs:
+      - reports/improve/final.json:
+          cache: false

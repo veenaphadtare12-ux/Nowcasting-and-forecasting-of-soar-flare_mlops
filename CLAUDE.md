@@ -23,6 +23,9 @@ and HEL1OS (hard X-ray) Level-1 data. These rules are permanent; follow them in 
   values are copied into params.yaml by hand. Nothing is tuned on val. The test period is never evaluated,
   inspected or tuned on (its dataset summary deliberately has no label statistics).
 - Detector event catalogue fields (onset, peak, end, class, match) are label-side only, never features.
+  Exception (decided 2026-11-09, improvement task E2): causal real-time detector outputs may be features: an event
+  counts from its `trigger_time`, and its peak only from the moment its end is confirmed (same logic as
+  `src/activity.py`). Every such feature needs a future-perturbation test.
 - Positives come only from GOES-matched events; GOES class only from the match. Days with no NOAA report
   (2025-12-30, 2025-12-31) have no GOES truth: excluded from evaluation, labels marked not ok.
 - Training code must filter forecast rows on `ok_<h>m` (and nowcast rows on `ok_now`).

@@ -665,3 +665,89 @@ stages:
       hash: md5
       md5: fc27ec16deb01182d0877dca9a94badc
       size: 9918
+  solexs_spectral:
+    cmd: python -m src.improve.spectral
+    deps:
+    - path: data/processed/solexs_qc.csv
+      hash: md5
+      md5: 813af0bb1ca03ed38e52a9e398fb50b9
+      size: 32235
+    - path: src/improve/spectral.py
+      hash: md5
+      md5: 8feae7a13fa76304465461411066ac39
+      size: 3020
+    - path: src/solexs.py
+      hash: md5
+      md5: 48363970f48c546cfff24587af97940e
+      size: 4276
+    params:
+      params.yaml:
+        improve.spectral:
+          low_channels:
+          - 20
+          - 60
+          high_channels:
+          - 80
+          - 160
+        periods:
+          tune:
+            start: '2025-04-09'
+            end: '2026-01-31'
+          val:
+            start: '2026-02-01'
+            end: '2026-05-31'
+          test:
+            start: '2026-06-01'
+            end: '2026-09-12'
+    outs:
+    - path: data/processed/solexs_spectral_minute.parquet
+      hash: md5
+      md5: 331b4f50826f53243578d3035221914d
+      size: 5858686
+  goes_xrs_fetch:
+    cmd: python -m src.improve.goes_xrs fetch
+    deps:
+    - path: src/improve/goes_xrs.py
+      hash: md5
+      md5: 2e590280a0af19a52370e80b36891c3e
+      size: 3082
+    params:
+      params.yaml:
+        improve.goes_xrs:
+          base_url: 
+            https://data.ngdc.noaa.gov/platforms/solar-space-observing-satellites/goes/goes19/l2/data/xrsf-l2-avg1m_science
+          satellite: g19
+          version: v2-2-2
+        periods:
+          tune:
+            start: '2025-04-09'
+            end: '2026-01-31'
+          val:
+            start: '2026-02-01'
+            end: '2026-05-31'
+          test:
+            start: '2026-06-01'
+            end: '2026-09-12'
+    outs:
+    - path: data/external/goes_xrs
+      hash: md5
+      md5: ccd3712f2e17c9409866cd7478e547a2.dir
+      size: 122987526
+      nfiles: 418
+  goes_xrs_minute:
+    cmd: python -m src.improve.goes_xrs process
+    deps:
+    - path: data/external/goes_xrs
+      hash: md5
+      md5: ccd3712f2e17c9409866cd7478e547a2.dir
+      size: 122987526
+      nfiles: 418
+    - path: src/improve/goes_xrs.py
+      hash: md5
+      md5: 2e590280a0af19a52370e80b36891c3e
+      size: 3082
+    outs:
+    - path: data/processed/goes_xrs_minute.parquet
+      hash: md5
+      md5: 4773180905ce1f7abedff853afc3032f
+      size: 9749689

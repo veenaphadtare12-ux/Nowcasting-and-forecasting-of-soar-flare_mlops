@@ -113,3 +113,27 @@ models:
     cal_end: "2025-11-30"
     train_stride: 1           # HEL1OS rows are few: use every row
     min_positive_episodes: 30 # below this, results are flagged 'too few positives'
+
+# --- improvement experiments (src/improve). Rolling monthly evaluation over tune + val; the test period is never read.
+improve:
+  months: ["2025-08", "2025-09", "2025-10", "2025-11", "2025-12", "2026-01", "2026-02", "2026-03", "2026-04", "2026-05"]
+  # for month m: fit on rows before month m-1 (minus purge), thresholds on month m-1 (minus purge), score month m
+  targets: [c_60m, m_60m, now, c_30m, m_30m]   # first two are the primary targets
+  purge_min: 120              # gap before each block: no label window may reach the next block
+  seed: 42                    # one seed (seed spread was ~0.001 TSS in the main training)
+  train_stride: 6
+  acceptance: {min_months_improved: 6}         # and the mean monthly TSS must rise
+  rolling_days: 30            # E1: thresholds from the previous 30 days, refreshed daily
+  far_cap: 0.80               # E1: operating point C = lowest threshold with FAR <= far_cap
+  long_windows_h: [3, 6, 12, 24]               # E2
+  event_windows_h: [6, 24]                     # E2
+  since_event_cap_h: 48                        # E2: time since last event is capped
+  drift_days: 7                                # E3: trailing median window
+  prune_r: 0.95                                # E4
+  spectral:                                    # E5: SoLEXS SDD2 .pi spectra (340 PI channels, 1 s)
+    low_channels: [20, 60]                     # dominant quiet-Sun band (no EBOUNDS in the files: chosen by channel)
+    high_channels: [80, 160]                   # band that rises 9-24x during an M flare
+  goes_xrs:                                    # E6: NOAA GOES-19 XRS L2 1-minute averages, daily files
+    base_url: "https://data.ngdc.noaa.gov/platforms/solar-space-observing-satellites/goes/goes19/l2/data/xrsf-l2-avg1m_science"
+    satellite: g19
+    version: v2-2-2
