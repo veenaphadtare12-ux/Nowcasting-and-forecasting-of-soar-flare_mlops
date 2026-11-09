@@ -137,3 +137,29 @@ improve:
     base_url: "https://data.ngdc.noaa.gov/platforms/solar-space-observing-satellites/goes/goes19/l2/data/xrsf-l2-avg1m_science"
     satellite: g19
     version: v2-2-2
+
+# --- final choice (docs/FINAL_CHOICE.md), frozen BEFORE the test period is opened. src/final/
+final:
+  fit_end: "2026-05-01"        # fit on 2025-04-09 .. fit_end minus purge (tune + val except the last month)
+  threshold_block: ["2026-05-01", "2026-06-01"]   # thresholds A/B/C chosen here (minus purge at its end); = month m-1 of the test
+  purge_min: 120
+  seed: 42
+  train_stride: 6
+  far_cap: 0.80                # operating point C
+  operating_points: {A: tss, B: hss, C: far_cap}
+  targets:                     # chosen model, features (improvement ideas) and runner-up (for the paired test)
+    now:    {registry: flare-nowcast,      model: xgb,      ideas: [],                 runner_up: {model: logreg, ideas: []}}
+    c_30m:  {registry: flare-forecast-c30, model: ensemble, ideas: [E2, E3, E5],       runner_up: {model: logreg, ideas: []}}
+    c_60m:  {registry: flare-forecast-c60, model: xgb,      ideas: [],                 runner_up: {model: logreg, ideas: []}}
+    m_30m:  {registry: flare-forecast-m30, model: logreg,   ideas: [E5, E6],           runner_up: {model: logreg, ideas: []}}
+    m_60m:  {registry: flare-forecast-m60, model: logreg,   ideas: [],                 runner_up: {model: xgb,    ideas: []}}
+  registry_alias: champion
+  bootstrap: {n: 1000, seed: 0, level: 0.95}
+  event_eval:                  # per-flare evaluation (defined before the test is opened)
+    min_coverage: 0.5          # a flare is scored only if >= 50 % of its look-back window has usable rows
+    false_alarm_merge_min: 10  # alerts closer than this form one alert episode
+  lead_time:                   # NOAA-style alert: first GOES-19 XRS-B 1-min flux >= m1_flux (known at the minute end)
+    m1_flux: 1.0e-5
+    window_before_min: 120     # our first alert in [t_M1 - 120 min, t_M1 + 30 min]
+    window_after_min: 30
+    models: [m_30m, m_60m, now]
