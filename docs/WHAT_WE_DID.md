@@ -31,6 +31,7 @@ params, `dvc.yaml`, MLflow runs or git history.
 | 6. Serve | **Not started** | — | (Would be: an API that returns a flare forecast.) **Not done.** |
 | 7. Deploy | **Not started** | — | (Would be: package the API in Docker and run it.) **Not done.** |
 | 8. Monitor | **Not started** | — | (Would be: watch live data and model quality over time.) **Not done.** The EDA only *shows* that the data drift. |
+| Improvement experiments | **Done** | `src/improve/` (stages `solexs_spectral`, `goes_xrs_fetch`, `goes_xrs_minute`, `improve_reference`, `improve_E2` … `improve_final`), `docs/IMPROVEMENTS.md` | Rolling 10-month evaluation and 7 experiments judged by a rule fixed in advance. Only ≥C in 30 min improves clearly (validation block TSS 0.208 → 0.290); M gains are borderline. Nothing registered. |
 | EDA | **Done** | `notebooks/01_eda.ipynb`, `notebooks/build_eda_notebook.py`, `src/eda.py`, `docs/EDA_SUMMARY.md` | Looks at the data from 9 angles before modelling, using tuning and validation data only. |
 
 ### 1b. The planned tools
@@ -43,15 +44,15 @@ params, `dvc.yaml`, MLflow runs or git history.
 | Tool | Status | Where it is used |
 |---|---|---|
 | Git | used | Whole project; 19 commits *(source: `git log`)* |
-| DVC | used | `dvc.yaml` (9 stages), `dvc.lock`, cache on `D:/dvc-cache` *(source: `dvc.yaml`, `.dvc/config`)* |
-| MLflow | used | `src/detection/tune.py`, `src/models/train.py`; data in `mlflow.db` (686 runs) *(source: `mlflow.db`)* |
+| DVC | used | `dvc.yaml` (19 stages: 9 pipeline + 3 improvement data + 7 improvement experiments), `dvc.lock`, cache on `D:/dvc-cache` *(source: `dvc.yaml`, `.dvc/config`)* |
+| MLflow | used | `src/detection/tune.py`, `src/models/train.py`, `src/improve/run.py`; data in `mlflow.db` (740 runs) *(source: `mlflow.db`)* |
 | params.yaml | used | Every setting; read through `src/config.py` |
-| pytest | used | `tests/` (59 tests in 6 files: 58 pass, 1 skipped) *(source: `pytest --collect-only`)* |
+| pytest | used | `tests/` (67 tests in 7 files: 66 pass, 1 skipped) *(source: `pytest --collect-only`)* |
 | pandera | installed but unused | In `requirements.txt` (0.34.0); no code imports it |
 | Prefect | installed but unused | In `requirements.txt` (3.8.7); no code imports it |
 | XGBoost | used | `src/models/train.py`, `src/models/ablation.py` |
 | scikit-learn | used | Logistic regression, imputer and scaler, AUC/AP metrics (`src/models/train.py`, `src/models/metrics.py`) |
-| PyTorch / tsai | not installed | — |
+| PyTorch / tsai | not installed | — (E8 InceptionTime was not run; see `docs/IMPROVEMENTS.md`) |
 | Optuna | not installed | — (a grid search was used instead; see below) |
 | FastAPI | installed but unused | Comes with MLflow (0.142.2 in `requirements.txt`); no project code |
 | Streamlit | not installed | — |
@@ -286,9 +287,10 @@ model). Later you can sort, compare and reopen any attempt. We store everything 
 | `flare-models` | 105 | One model (rule / LogReg / XGBoost) for one target, first training version; 5 training runs × 21 | 2026-10-21 18:47 | 2026-10-21 19:57 |
 | `flare-models-v2` | 170 | Parent = one target; children = its 5 models (climatology, persistence, rule, LogReg, XGBoost). Older training runs: 2 × (7 parents + 35 children) + 1 ablation = 85. **Newest training run (2026-10-22 ~20:00):** 7 parents + 35 model children + 42 per-seed grandchildren (LogReg and XGBoost × 3 seeds) + 1 ablation = 85 | 2026-10-21 20:11 | 2026-10-22 20:29 |
 | `eda` | 1 | `eda-figures`: all EDA figures, slide figures 01–06, `eda_numbers.json`, `FIGURE_NOTES.md` | 2026-10-22 | 2026-10-22 |
+| `flare-improve` | 54 | One parent per improvement experiment (reference, E1–E7, final) + one child per target with mean/std monthly TSS, months improved and KEPT flag; `*_month_tss` per month as steps | 2026-11-09 | 2026-11-09 |
 | `Default` | 0 | (unused) | — | — |
 
-**Total 686 runs.** The newest training run reproduced every one of the 10,952 numbers in `reports/model_metrics.json`
+**Total 740 runs** (686 before the improvement experiments). The newest training run reproduced every one of the 10,952 numbers in `reports/model_metrics.json`
 exactly (only the fit times differ) *(source: comparison with the committed file)*.
 
 ### What is now recorded in MLflow *(added 2026-10-22; source: `src/models/train.py`, `src/mlflow_utils.py`, `src/mlflow_figures.py`)*
@@ -465,7 +467,7 @@ Then open **http://127.0.0.1:5000** in a browser.
 
 ## 5. Tests
 
-**59 tests** in 6 files *(source: `pytest --collect-only -q`)*. **58 pass and 1 is skipped**: the real-registry check in
+**67 tests** in 7 files *(source: `pytest --collect-only -q`)*. **66 pass and 1 is skipped**: the real-registry check in
 `test_load_production.py` waits until a model is registered. (The line-ending check failed once, on the notebook's
 working copy, until the audit fixed it; see the top of this file.)
 
@@ -476,6 +478,7 @@ working copy, until the audit fixed it; see the top of this file.)
 | **Leakage** (`test_leakage.py`, 27) ⭐ | See below; these protect against "seeing the future". |
 | **Models** (`test_models.py`, 12) | TSS/HSS formulas; best-threshold search; baselines; time-ordered CV folds; bootstrap intervals; ablation helpers; **test period locked**. |
 | **Pipeline** (`test_pipeline.py`, 8) | UTC time conversion; GOES text parser; time-unit-safe masks; GOES class only from GOES; HEL1OS newest-version rule; HEL1OS sub-second bug; HEL1OS optional; Unix line endings. |
+| **Improvement experiments** (`test_improve.py`, 8) | Rolling protocol never fits or sets thresholds with month m; adaptive-threshold windows stay in the past; FAR-cap threshold matches brute force; loader returns no test rows; future-perturbation for long-context, spectral, GOES and drift features; as-of join uses only past grid points. |
 | **Production loader** (`test_load_production.py`, 2) | `load_production` registers, aliases and reloads a toy model on a throwaway registry; models in the real registry with alias `production` load and return probabilities (skipped while the registry is empty). |
 
 **Leakage tests ⭐** (a "leak" means the model accidentally sees future information):
@@ -507,7 +510,7 @@ working copy, until the audit fixed it; see the top of this file.)
 7. Forecasting an M-class flare within 30 minutes reaches **TSS 0.468** (interval 0.33–0.57), but **97%** of those alarms are false (FAR 0.97). *(source: `reports/model_metrics.json`, `m_30m`)*
 8. Forecast skill stays almost the same when no flare is already happening (quiet-start ≥M 30 min: TSS **0.465**), so the models don't just copy "a flare is going on". *(source: `reports/model_metrics.json`, quiet subset)*
 9. Hard X-rays (HEL1OS) overlap only **215.6 h** of tuning and **143.5 h** of validation, and the Neupert lag is a **median of 0 s** over 71 flares. *(source: `reports/eda_numbers.json`, `hel1os`)*
-10. The pipeline has **9 DVC stages**, **59 tests** (58 pass, 1 skipped until a model is registered), **686 MLflow runs** and **11 data versions**, and the test period has **never been evaluated**. *(source: `dvc.yaml`, `pytest`, `mlflow.db`, `git log -- dvc.lock`)*
+10. The pipeline has **19 DVC stages** (9 core + 10 for the improvement experiments), **67 tests** (66 pass, 1 skipped until a model is registered), **740 MLflow runs** and **12 data versions**, and the test period has **never been evaluated**. *(source: `dvc.yaml`, `pytest`, `mlflow.db`, `git log -- dvc.lock`)*
 
 ---
 

@@ -411,6 +411,31 @@ def write_facts() -> None:
          "says nothing about HEL1OS value (see 09)."),
     ]:
         a(f"- `{name}` — {desc}")
+    # ---- K. improvement experiments
+    imp = R / "reports" / "improve"
+    if (imp / "final.json").exists():
+        ref = _j("reports/improve/reference.json")["summary"]
+        fin = _j("reports/improve/final.json")
+        a("")
+        a("## K. Improvement experiments (rolling monthly protocol; details in `docs/IMPROVEMENTS.md`)")
+        a("")
+        a("- Protocol: for each month 2025-08 … 2026-05, fit on months before m−1, thresholds on m−1, score m (tune + val; "
+          "test never read). Rule fixed in advance: keep an idea only if mean monthly TSS rises AND ≥ 6 of 10 months improve "
+          "— `docs/IMPROVEMENTS.md` §1, `params.yaml` (`improve`).")
+        rl = {t: max(("logreg", "xgb"), key=lambda k: ref[t][k]["all_mean"]) for t in ref}
+        a("- Reference under this protocol (best learner, mean ± std of monthly TSS): " + "; ".join(
+            f"{t} {ref[t][rl[t]]['all_mean']:.3f} ± {ref[t][rl[t]]['all_std']:.3f}" for t in ref) +
+          " — lower than the reused validation block, as expected — `reports/improve/reference.json`")
+        a("- Kept ideas per target: " + "; ".join(f"{t}: {', '.join(v) or 'none'}" for t, v in fin["kept_ideas"].items()) +
+          " — `reports/improve/E*.json`")
+        for t, v in fin["validation_block"].items():
+            c = fin["comparison"][t]
+            r_, f_ = v["reference"]["all"], v["final"]["all"]
+            a(f"- `{t}` final candidate: rolling {c['ref_mean']:.3f} → {c['exp_mean']:.3f} ({c['months_improved']}/10 months); "
+              f"original validation block {r_['tss']:.3f} [{r_['ci_low']:.2f}, {r_['ci_high']:.2f}] → {f_['tss']:.3f} "
+              f"[{f_['ci_low']:.2f}, {f_['ci_high']:.2f}] — `reports/improve/final.json`")
+        a("- Plain reading: only **≥C in 30 min** improves clearly; M-flare gains are borderline (spectral temperature proxy, "
+          "E5); GOES XRS adds almost nothing (correlation 0.98 with SoLEXS); nothing has been registered or promoted.")
     OUT.write_text("\n".join(L) + "\n", encoding="utf-8", newline="\n")
     print("wrote", OUT)
 

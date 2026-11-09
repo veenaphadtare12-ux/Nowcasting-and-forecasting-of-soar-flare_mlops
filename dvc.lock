@@ -751,3 +751,1124 @@ stages:
       hash: md5
       md5: 4773180905ce1f7abedff853afc3032f
       size: 9749689
+  improve_reference:
+    cmd: python -m src.improve.run reference
+    deps:
+    - path: data/processed/dataset
+      hash: md5
+      md5: 7a59987aeb8410528bcedbdc116f7e42.dir
+      size: 221276527
+      nfiles: 3
+    - path: reports/model_metrics.json
+      hash: md5
+      md5: ddb2ceaf673111587fe1d4c4e0fe2e6c
+      size: 511561
+    - path: src/improve/features_extra.py
+      hash: md5
+      md5: 791b70ce270e16bec67385b997082cea
+      size: 7706
+    - path: src/improve/protocol.py
+      hash: md5
+      md5: d603af56f21252ee58f2295b746f1827
+      size: 5708
+    - path: src/improve/run.py
+      hash: md5
+      md5: 4cf66a8c4301b3269d630d9d8c0530b9
+      size: 20269
+    - path: src/mlflow_utils.py
+      hash: md5
+      md5: cdc42dbcd30296b06cd7597ff71eabb8
+      size: 2573
+    - path: src/models/metrics.py
+      hash: md5
+      md5: c0fe753278e9e7cc0c666e5326b780a4
+      size: 5030
+    - path: src/models/train.py
+      hash: md5
+      md5: e9fa5f443d439904a58a8fc34397726a
+      size: 18491
+    params:
+      params.yaml:
+        improve:
+          months:
+          - 2025-08
+          - 2025-09
+          - 2025-10
+          - 2025-11
+          - 2025-12
+          - 2026-01
+          - 2026-02
+          - 2026-03
+          - 2026-04
+          - 2026-05
+          targets:
+          - c_60m
+          - m_60m
+          - now
+          - c_30m
+          - m_30m
+          purge_min: 120
+          seed: 42
+          train_stride: 6
+          acceptance:
+            min_months_improved: 6
+          rolling_days: 30
+          far_cap: 0.8
+          long_windows_h:
+          - 3
+          - 6
+          - 12
+          - 24
+          event_windows_h:
+          - 6
+          - 24
+          since_event_cap_h: 48
+          drift_days: 7
+          prune_r: 0.95
+          spectral:
+            low_channels:
+            - 20
+            - 60
+            high_channels:
+            - 80
+            - 160
+          goes_xrs:
+            base_url: 
+              https://data.ngdc.noaa.gov/platforms/solar-space-observing-satellites/goes/goes19/l2/data/xrsf-l2-avg1m_science
+            satellite: g19
+            version: v2-2-2
+        models:
+          targets:
+          - now
+          - c_30m
+          - c_60m
+          - c_120m
+          - m_30m
+          - m_60m
+          - m_120m
+          inner_split: '2025-12-01'
+          purge_min: 120
+          train_stride: 6
+          seeds:
+          - 42
+          - 43
+          - 44
+          rule_feature: ratio_1m_bg
+          logreg:
+            C: 1.0
+            max_iter: 2000
+          xgb:
+            learning_rate: 0.05
+            subsample: 0.8
+            colsample_bytree: 0.8
+          cv:
+            fold_months:
+            - 2025-08
+            - 2025-09
+            - 2025-10
+            - 2025-11
+            stride: 30
+            n_estimators:
+            - 100
+            - 300
+            - 600
+            max_depth:
+            - 3
+            - 5
+            min_child_weight:
+            - 5
+            - 50
+            reg_lambda:
+            - 1
+            - 10
+          operating_points:
+            A: tss
+            B: hss
+          bootstrap:
+            n: 1000
+            seed: 0
+            level: 0.95
+          ablation:
+            cal_start: '2025-11-01'
+            cal_end: '2025-11-30'
+            train_stride: 1
+            min_positive_episodes: 30
+    outs:
+    - path: reports/improve/E1.json
+      hash: md5
+      md5: ab913a53de73deab07a24444e4afdbdd
+      size: 11140
+    - path: reports/improve/E7.json
+      hash: md5
+      md5: a04018574069664c67785509108c70ab
+      size: 4484
+    - path: reports/improve/reference.json
+      hash: md5
+      md5: 4d0f2e348fceeb96b62f49c47f6c769c
+      size: 267443
+  improve_E2:
+    cmd: python -m src.improve.run E2
+    deps:
+    - path: data/processed/dataset
+      hash: md5
+      md5: 7a59987aeb8410528bcedbdc116f7e42.dir
+      size: 221276527
+      nfiles: 3
+    - path: data/processed/events.parquet
+      hash: md5
+      md5: 3f988b232e058661f3285af5e85dbe94
+      size: 188968
+    - path: data/processed/solexs_minute.parquet
+      hash: md5
+      md5: 909cdc962a62700281ad3b2c4ae51543
+      size: 6050846
+    - path: reports/improve/reference.json
+      hash: md5
+      md5: 4d0f2e348fceeb96b62f49c47f6c769c
+      size: 267443
+    - path: reports/model_metrics.json
+      hash: md5
+      md5: ddb2ceaf673111587fe1d4c4e0fe2e6c
+      size: 511561
+    - path: src/improve/features_extra.py
+      hash: md5
+      md5: 791b70ce270e16bec67385b997082cea
+      size: 7706
+    - path: src/improve/protocol.py
+      hash: md5
+      md5: d603af56f21252ee58f2295b746f1827
+      size: 5708
+    - path: src/improve/run.py
+      hash: md5
+      md5: 4cf66a8c4301b3269d630d9d8c0530b9
+      size: 20269
+    - path: src/mlflow_utils.py
+      hash: md5
+      md5: cdc42dbcd30296b06cd7597ff71eabb8
+      size: 2573
+    - path: src/models/metrics.py
+      hash: md5
+      md5: c0fe753278e9e7cc0c666e5326b780a4
+      size: 5030
+    - path: src/models/train.py
+      hash: md5
+      md5: e9fa5f443d439904a58a8fc34397726a
+      size: 18491
+    params:
+      params.yaml:
+        improve:
+          months:
+          - 2025-08
+          - 2025-09
+          - 2025-10
+          - 2025-11
+          - 2025-12
+          - 2026-01
+          - 2026-02
+          - 2026-03
+          - 2026-04
+          - 2026-05
+          targets:
+          - c_60m
+          - m_60m
+          - now
+          - c_30m
+          - m_30m
+          purge_min: 120
+          seed: 42
+          train_stride: 6
+          acceptance:
+            min_months_improved: 6
+          rolling_days: 30
+          far_cap: 0.8
+          long_windows_h:
+          - 3
+          - 6
+          - 12
+          - 24
+          event_windows_h:
+          - 6
+          - 24
+          since_event_cap_h: 48
+          drift_days: 7
+          prune_r: 0.95
+          spectral:
+            low_channels:
+            - 20
+            - 60
+            high_channels:
+            - 80
+            - 160
+          goes_xrs:
+            base_url: 
+              https://data.ngdc.noaa.gov/platforms/solar-space-observing-satellites/goes/goes19/l2/data/xrsf-l2-avg1m_science
+            satellite: g19
+            version: v2-2-2
+        models:
+          targets:
+          - now
+          - c_30m
+          - c_60m
+          - c_120m
+          - m_30m
+          - m_60m
+          - m_120m
+          inner_split: '2025-12-01'
+          purge_min: 120
+          train_stride: 6
+          seeds:
+          - 42
+          - 43
+          - 44
+          rule_feature: ratio_1m_bg
+          logreg:
+            C: 1.0
+            max_iter: 2000
+          xgb:
+            learning_rate: 0.05
+            subsample: 0.8
+            colsample_bytree: 0.8
+          cv:
+            fold_months:
+            - 2025-08
+            - 2025-09
+            - 2025-10
+            - 2025-11
+            stride: 30
+            n_estimators:
+            - 100
+            - 300
+            - 600
+            max_depth:
+            - 3
+            - 5
+            min_child_weight:
+            - 5
+            - 50
+            reg_lambda:
+            - 1
+            - 10
+          operating_points:
+            A: tss
+            B: hss
+          bootstrap:
+            n: 1000
+            seed: 0
+            level: 0.95
+          ablation:
+            cal_start: '2025-11-01'
+            cal_end: '2025-11-30'
+            train_stride: 1
+            min_positive_episodes: 30
+    outs:
+    - path: reports/improve/E2.json
+      hash: md5
+      md5: 5cd6224b5841818cd9041f998d5b585e
+      size: 8166
+  improve_E3:
+    cmd: python -m src.improve.run E3
+    deps:
+    - path: data/processed/dataset
+      hash: md5
+      md5: 7a59987aeb8410528bcedbdc116f7e42.dir
+      size: 221276527
+      nfiles: 3
+    - path: reports/improve/reference.json
+      hash: md5
+      md5: 4d0f2e348fceeb96b62f49c47f6c769c
+      size: 267443
+    - path: reports/model_metrics.json
+      hash: md5
+      md5: ddb2ceaf673111587fe1d4c4e0fe2e6c
+      size: 511561
+    - path: src/improve/features_extra.py
+      hash: md5
+      md5: 791b70ce270e16bec67385b997082cea
+      size: 7706
+    - path: src/improve/protocol.py
+      hash: md5
+      md5: d603af56f21252ee58f2295b746f1827
+      size: 5708
+    - path: src/improve/run.py
+      hash: md5
+      md5: 4cf66a8c4301b3269d630d9d8c0530b9
+      size: 20269
+    - path: src/mlflow_utils.py
+      hash: md5
+      md5: cdc42dbcd30296b06cd7597ff71eabb8
+      size: 2573
+    - path: src/models/metrics.py
+      hash: md5
+      md5: c0fe753278e9e7cc0c666e5326b780a4
+      size: 5030
+    - path: src/models/train.py
+      hash: md5
+      md5: e9fa5f443d439904a58a8fc34397726a
+      size: 18491
+    params:
+      params.yaml:
+        improve:
+          months:
+          - 2025-08
+          - 2025-09
+          - 2025-10
+          - 2025-11
+          - 2025-12
+          - 2026-01
+          - 2026-02
+          - 2026-03
+          - 2026-04
+          - 2026-05
+          targets:
+          - c_60m
+          - m_60m
+          - now
+          - c_30m
+          - m_30m
+          purge_min: 120
+          seed: 42
+          train_stride: 6
+          acceptance:
+            min_months_improved: 6
+          rolling_days: 30
+          far_cap: 0.8
+          long_windows_h:
+          - 3
+          - 6
+          - 12
+          - 24
+          event_windows_h:
+          - 6
+          - 24
+          since_event_cap_h: 48
+          drift_days: 7
+          prune_r: 0.95
+          spectral:
+            low_channels:
+            - 20
+            - 60
+            high_channels:
+            - 80
+            - 160
+          goes_xrs:
+            base_url: 
+              https://data.ngdc.noaa.gov/platforms/solar-space-observing-satellites/goes/goes19/l2/data/xrsf-l2-avg1m_science
+            satellite: g19
+            version: v2-2-2
+        models:
+          targets:
+          - now
+          - c_30m
+          - c_60m
+          - c_120m
+          - m_30m
+          - m_60m
+          - m_120m
+          inner_split: '2025-12-01'
+          purge_min: 120
+          train_stride: 6
+          seeds:
+          - 42
+          - 43
+          - 44
+          rule_feature: ratio_1m_bg
+          logreg:
+            C: 1.0
+            max_iter: 2000
+          xgb:
+            learning_rate: 0.05
+            subsample: 0.8
+            colsample_bytree: 0.8
+          cv:
+            fold_months:
+            - 2025-08
+            - 2025-09
+            - 2025-10
+            - 2025-11
+            stride: 30
+            n_estimators:
+            - 100
+            - 300
+            - 600
+            max_depth:
+            - 3
+            - 5
+            min_child_weight:
+            - 5
+            - 50
+            reg_lambda:
+            - 1
+            - 10
+          operating_points:
+            A: tss
+            B: hss
+          bootstrap:
+            n: 1000
+            seed: 0
+            level: 0.95
+          ablation:
+            cal_start: '2025-11-01'
+            cal_end: '2025-11-30'
+            train_stride: 1
+            min_positive_episodes: 30
+    outs:
+    - path: reports/improve/E3.json
+      hash: md5
+      md5: 2a35cee0f29c442d5df09cb7317b8df5
+      size: 7939
+  improve_E4:
+    cmd: python -m src.improve.run E4
+    deps:
+    - path: data/processed/dataset
+      hash: md5
+      md5: 7a59987aeb8410528bcedbdc116f7e42.dir
+      size: 221276527
+      nfiles: 3
+    - path: reports/improve/reference.json
+      hash: md5
+      md5: 4d0f2e348fceeb96b62f49c47f6c769c
+      size: 267443
+    - path: reports/model_metrics.json
+      hash: md5
+      md5: ddb2ceaf673111587fe1d4c4e0fe2e6c
+      size: 511561
+    - path: src/improve/features_extra.py
+      hash: md5
+      md5: 791b70ce270e16bec67385b997082cea
+      size: 7706
+    - path: src/improve/protocol.py
+      hash: md5
+      md5: d603af56f21252ee58f2295b746f1827
+      size: 5708
+    - path: src/improve/run.py
+      hash: md5
+      md5: 4cf66a8c4301b3269d630d9d8c0530b9
+      size: 20269
+    - path: src/mlflow_utils.py
+      hash: md5
+      md5: cdc42dbcd30296b06cd7597ff71eabb8
+      size: 2573
+    - path: src/models/metrics.py
+      hash: md5
+      md5: c0fe753278e9e7cc0c666e5326b780a4
+      size: 5030
+    - path: src/models/train.py
+      hash: md5
+      md5: e9fa5f443d439904a58a8fc34397726a
+      size: 18491
+    params:
+      params.yaml:
+        improve:
+          months:
+          - 2025-08
+          - 2025-09
+          - 2025-10
+          - 2025-11
+          - 2025-12
+          - 2026-01
+          - 2026-02
+          - 2026-03
+          - 2026-04
+          - 2026-05
+          targets:
+          - c_60m
+          - m_60m
+          - now
+          - c_30m
+          - m_30m
+          purge_min: 120
+          seed: 42
+          train_stride: 6
+          acceptance:
+            min_months_improved: 6
+          rolling_days: 30
+          far_cap: 0.8
+          long_windows_h:
+          - 3
+          - 6
+          - 12
+          - 24
+          event_windows_h:
+          - 6
+          - 24
+          since_event_cap_h: 48
+          drift_days: 7
+          prune_r: 0.95
+          spectral:
+            low_channels:
+            - 20
+            - 60
+            high_channels:
+            - 80
+            - 160
+          goes_xrs:
+            base_url: 
+              https://data.ngdc.noaa.gov/platforms/solar-space-observing-satellites/goes/goes19/l2/data/xrsf-l2-avg1m_science
+            satellite: g19
+            version: v2-2-2
+        models:
+          targets:
+          - now
+          - c_30m
+          - c_60m
+          - c_120m
+          - m_30m
+          - m_60m
+          - m_120m
+          inner_split: '2025-12-01'
+          purge_min: 120
+          train_stride: 6
+          seeds:
+          - 42
+          - 43
+          - 44
+          rule_feature: ratio_1m_bg
+          logreg:
+            C: 1.0
+            max_iter: 2000
+          xgb:
+            learning_rate: 0.05
+            subsample: 0.8
+            colsample_bytree: 0.8
+          cv:
+            fold_months:
+            - 2025-08
+            - 2025-09
+            - 2025-10
+            - 2025-11
+            stride: 30
+            n_estimators:
+            - 100
+            - 300
+            - 600
+            max_depth:
+            - 3
+            - 5
+            min_child_weight:
+            - 5
+            - 50
+            reg_lambda:
+            - 1
+            - 10
+          operating_points:
+            A: tss
+            B: hss
+          bootstrap:
+            n: 1000
+            seed: 0
+            level: 0.95
+          ablation:
+            cal_start: '2025-11-01'
+            cal_end: '2025-11-30'
+            train_stride: 1
+            min_positive_episodes: 30
+    outs:
+    - path: reports/improve/E4.json
+      hash: md5
+      md5: d9d3626238f4050c85de89b4af09dae1
+      size: 7933
+  improve_E5:
+    cmd: python -m src.improve.run E5
+    deps:
+    - path: data/processed/dataset
+      hash: md5
+      md5: 7a59987aeb8410528bcedbdc116f7e42.dir
+      size: 221276527
+      nfiles: 3
+    - path: data/processed/solexs_spectral_minute.parquet
+      hash: md5
+      md5: 331b4f50826f53243578d3035221914d
+      size: 5858686
+    - path: reports/improve/reference.json
+      hash: md5
+      md5: 4d0f2e348fceeb96b62f49c47f6c769c
+      size: 267443
+    - path: reports/model_metrics.json
+      hash: md5
+      md5: ddb2ceaf673111587fe1d4c4e0fe2e6c
+      size: 511561
+    - path: src/improve/features_extra.py
+      hash: md5
+      md5: 791b70ce270e16bec67385b997082cea
+      size: 7706
+    - path: src/improve/protocol.py
+      hash: md5
+      md5: d603af56f21252ee58f2295b746f1827
+      size: 5708
+    - path: src/improve/run.py
+      hash: md5
+      md5: 4cf66a8c4301b3269d630d9d8c0530b9
+      size: 20269
+    - path: src/mlflow_utils.py
+      hash: md5
+      md5: cdc42dbcd30296b06cd7597ff71eabb8
+      size: 2573
+    - path: src/models/metrics.py
+      hash: md5
+      md5: c0fe753278e9e7cc0c666e5326b780a4
+      size: 5030
+    - path: src/models/train.py
+      hash: md5
+      md5: e9fa5f443d439904a58a8fc34397726a
+      size: 18491
+    params:
+      params.yaml:
+        improve:
+          months:
+          - 2025-08
+          - 2025-09
+          - 2025-10
+          - 2025-11
+          - 2025-12
+          - 2026-01
+          - 2026-02
+          - 2026-03
+          - 2026-04
+          - 2026-05
+          targets:
+          - c_60m
+          - m_60m
+          - now
+          - c_30m
+          - m_30m
+          purge_min: 120
+          seed: 42
+          train_stride: 6
+          acceptance:
+            min_months_improved: 6
+          rolling_days: 30
+          far_cap: 0.8
+          long_windows_h:
+          - 3
+          - 6
+          - 12
+          - 24
+          event_windows_h:
+          - 6
+          - 24
+          since_event_cap_h: 48
+          drift_days: 7
+          prune_r: 0.95
+          spectral:
+            low_channels:
+            - 20
+            - 60
+            high_channels:
+            - 80
+            - 160
+          goes_xrs:
+            base_url: 
+              https://data.ngdc.noaa.gov/platforms/solar-space-observing-satellites/goes/goes19/l2/data/xrsf-l2-avg1m_science
+            satellite: g19
+            version: v2-2-2
+        models:
+          targets:
+          - now
+          - c_30m
+          - c_60m
+          - c_120m
+          - m_30m
+          - m_60m
+          - m_120m
+          inner_split: '2025-12-01'
+          purge_min: 120
+          train_stride: 6
+          seeds:
+          - 42
+          - 43
+          - 44
+          rule_feature: ratio_1m_bg
+          logreg:
+            C: 1.0
+            max_iter: 2000
+          xgb:
+            learning_rate: 0.05
+            subsample: 0.8
+            colsample_bytree: 0.8
+          cv:
+            fold_months:
+            - 2025-08
+            - 2025-09
+            - 2025-10
+            - 2025-11
+            stride: 30
+            n_estimators:
+            - 100
+            - 300
+            - 600
+            max_depth:
+            - 3
+            - 5
+            min_child_weight:
+            - 5
+            - 50
+            reg_lambda:
+            - 1
+            - 10
+          operating_points:
+            A: tss
+            B: hss
+          bootstrap:
+            n: 1000
+            seed: 0
+            level: 0.95
+          ablation:
+            cal_start: '2025-11-01'
+            cal_end: '2025-11-30'
+            train_stride: 1
+            min_positive_episodes: 30
+    outs:
+    - path: reports/improve/E5.json
+      hash: md5
+      md5: c93e4d1f2bb961db748648fa92f75167
+      size: 8024
+  improve_E6:
+    cmd: python -m src.improve.run E6
+    deps:
+    - path: data/processed/dataset
+      hash: md5
+      md5: 7a59987aeb8410528bcedbdc116f7e42.dir
+      size: 221276527
+      nfiles: 3
+    - path: data/processed/goes_xrs_minute.parquet
+      hash: md5
+      md5: 4773180905ce1f7abedff853afc3032f
+      size: 9749689
+    - path: reports/improve/reference.json
+      hash: md5
+      md5: 4d0f2e348fceeb96b62f49c47f6c769c
+      size: 267443
+    - path: reports/model_metrics.json
+      hash: md5
+      md5: ddb2ceaf673111587fe1d4c4e0fe2e6c
+      size: 511561
+    - path: src/improve/features_extra.py
+      hash: md5
+      md5: 791b70ce270e16bec67385b997082cea
+      size: 7706
+    - path: src/improve/protocol.py
+      hash: md5
+      md5: d603af56f21252ee58f2295b746f1827
+      size: 5708
+    - path: src/improve/run.py
+      hash: md5
+      md5: 4cf66a8c4301b3269d630d9d8c0530b9
+      size: 20269
+    - path: src/mlflow_utils.py
+      hash: md5
+      md5: cdc42dbcd30296b06cd7597ff71eabb8
+      size: 2573
+    - path: src/models/metrics.py
+      hash: md5
+      md5: c0fe753278e9e7cc0c666e5326b780a4
+      size: 5030
+    - path: src/models/train.py
+      hash: md5
+      md5: e9fa5f443d439904a58a8fc34397726a
+      size: 18491
+    params:
+      params.yaml:
+        improve:
+          months:
+          - 2025-08
+          - 2025-09
+          - 2025-10
+          - 2025-11
+          - 2025-12
+          - 2026-01
+          - 2026-02
+          - 2026-03
+          - 2026-04
+          - 2026-05
+          targets:
+          - c_60m
+          - m_60m
+          - now
+          - c_30m
+          - m_30m
+          purge_min: 120
+          seed: 42
+          train_stride: 6
+          acceptance:
+            min_months_improved: 6
+          rolling_days: 30
+          far_cap: 0.8
+          long_windows_h:
+          - 3
+          - 6
+          - 12
+          - 24
+          event_windows_h:
+          - 6
+          - 24
+          since_event_cap_h: 48
+          drift_days: 7
+          prune_r: 0.95
+          spectral:
+            low_channels:
+            - 20
+            - 60
+            high_channels:
+            - 80
+            - 160
+          goes_xrs:
+            base_url: 
+              https://data.ngdc.noaa.gov/platforms/solar-space-observing-satellites/goes/goes19/l2/data/xrsf-l2-avg1m_science
+            satellite: g19
+            version: v2-2-2
+        models:
+          targets:
+          - now
+          - c_30m
+          - c_60m
+          - c_120m
+          - m_30m
+          - m_60m
+          - m_120m
+          inner_split: '2025-12-01'
+          purge_min: 120
+          train_stride: 6
+          seeds:
+          - 42
+          - 43
+          - 44
+          rule_feature: ratio_1m_bg
+          logreg:
+            C: 1.0
+            max_iter: 2000
+          xgb:
+            learning_rate: 0.05
+            subsample: 0.8
+            colsample_bytree: 0.8
+          cv:
+            fold_months:
+            - 2025-08
+            - 2025-09
+            - 2025-10
+            - 2025-11
+            stride: 30
+            n_estimators:
+            - 100
+            - 300
+            - 600
+            max_depth:
+            - 3
+            - 5
+            min_child_weight:
+            - 5
+            - 50
+            reg_lambda:
+            - 1
+            - 10
+          operating_points:
+            A: tss
+            B: hss
+          bootstrap:
+            n: 1000
+            seed: 0
+            level: 0.95
+          ablation:
+            cal_start: '2025-11-01'
+            cal_end: '2025-11-30'
+            train_stride: 1
+            min_positive_episodes: 30
+    outs:
+    - path: reports/improve/E6.json
+      hash: md5
+      md5: cf1400f57dcd3f8c51b0fb7581a4c3d1
+      size: 8020
+  improve_final:
+    cmd: python -m src.improve.run final
+    deps:
+    - path: data/processed/dataset
+      hash: md5
+      md5: 7a59987aeb8410528bcedbdc116f7e42.dir
+      size: 221276527
+      nfiles: 3
+    - path: data/processed/events.parquet
+      hash: md5
+      md5: 3f988b232e058661f3285af5e85dbe94
+      size: 188968
+    - path: data/processed/goes_xrs_minute.parquet
+      hash: md5
+      md5: 4773180905ce1f7abedff853afc3032f
+      size: 9749689
+    - path: data/processed/solexs_minute.parquet
+      hash: md5
+      md5: 909cdc962a62700281ad3b2c4ae51543
+      size: 6050846
+    - path: data/processed/solexs_spectral_minute.parquet
+      hash: md5
+      md5: 331b4f50826f53243578d3035221914d
+      size: 5858686
+    - path: reports/improve/E1.json
+      hash: md5
+      md5: ab913a53de73deab07a24444e4afdbdd
+      size: 11140
+    - path: reports/improve/E2.json
+      hash: md5
+      md5: 5cd6224b5841818cd9041f998d5b585e
+      size: 8166
+    - path: reports/improve/E3.json
+      hash: md5
+      md5: 2a35cee0f29c442d5df09cb7317b8df5
+      size: 7939
+    - path: reports/improve/E4.json
+      hash: md5
+      md5: d9d3626238f4050c85de89b4af09dae1
+      size: 7933
+    - path: reports/improve/E5.json
+      hash: md5
+      md5: c93e4d1f2bb961db748648fa92f75167
+      size: 8024
+    - path: reports/improve/E6.json
+      hash: md5
+      md5: cf1400f57dcd3f8c51b0fb7581a4c3d1
+      size: 8020
+    - path: reports/improve/E7.json
+      hash: md5
+      md5: a04018574069664c67785509108c70ab
+      size: 4484
+    - path: reports/improve/reference.json
+      hash: md5
+      md5: 4d0f2e348fceeb96b62f49c47f6c769c
+      size: 267443
+    - path: reports/model_metrics.json
+      hash: md5
+      md5: ddb2ceaf673111587fe1d4c4e0fe2e6c
+      size: 511561
+    - path: src/improve/features_extra.py
+      hash: md5
+      md5: 791b70ce270e16bec67385b997082cea
+      size: 7706
+    - path: src/improve/protocol.py
+      hash: md5
+      md5: d603af56f21252ee58f2295b746f1827
+      size: 5708
+    - path: src/improve/run.py
+      hash: md5
+      md5: 4cf66a8c4301b3269d630d9d8c0530b9
+      size: 20269
+    - path: src/mlflow_utils.py
+      hash: md5
+      md5: cdc42dbcd30296b06cd7597ff71eabb8
+      size: 2573
+    - path: src/models/metrics.py
+      hash: md5
+      md5: c0fe753278e9e7cc0c666e5326b780a4
+      size: 5030
+    - path: src/models/train.py
+      hash: md5
+      md5: e9fa5f443d439904a58a8fc34397726a
+      size: 18491
+    params:
+      params.yaml:
+        improve:
+          months:
+          - 2025-08
+          - 2025-09
+          - 2025-10
+          - 2025-11
+          - 2025-12
+          - 2026-01
+          - 2026-02
+          - 2026-03
+          - 2026-04
+          - 2026-05
+          targets:
+          - c_60m
+          - m_60m
+          - now
+          - c_30m
+          - m_30m
+          purge_min: 120
+          seed: 42
+          train_stride: 6
+          acceptance:
+            min_months_improved: 6
+          rolling_days: 30
+          far_cap: 0.8
+          long_windows_h:
+          - 3
+          - 6
+          - 12
+          - 24
+          event_windows_h:
+          - 6
+          - 24
+          since_event_cap_h: 48
+          drift_days: 7
+          prune_r: 0.95
+          spectral:
+            low_channels:
+            - 20
+            - 60
+            high_channels:
+            - 80
+            - 160
+          goes_xrs:
+            base_url: 
+              https://data.ngdc.noaa.gov/platforms/solar-space-observing-satellites/goes/goes19/l2/data/xrsf-l2-avg1m_science
+            satellite: g19
+            version: v2-2-2
+        models:
+          targets:
+          - now
+          - c_30m
+          - c_60m
+          - c_120m
+          - m_30m
+          - m_60m
+          - m_120m
+          inner_split: '2025-12-01'
+          purge_min: 120
+          train_stride: 6
+          seeds:
+          - 42
+          - 43
+          - 44
+          rule_feature: ratio_1m_bg
+          logreg:
+            C: 1.0
+            max_iter: 2000
+          xgb:
+            learning_rate: 0.05
+            subsample: 0.8
+            colsample_bytree: 0.8
+          cv:
+            fold_months:
+            - 2025-08
+            - 2025-09
+            - 2025-10
+            - 2025-11
+            stride: 30
+            n_estimators:
+            - 100
+            - 300
+            - 600
+            max_depth:
+            - 3
+            - 5
+            min_child_weight:
+            - 5
+            - 50
+            reg_lambda:
+            - 1
+            - 10
+          operating_points:
+            A: tss
+            B: hss
+          bootstrap:
+            n: 1000
+            seed: 0
+            level: 0.95
+          ablation:
+            cal_start: '2025-11-01'
+            cal_end: '2025-11-30'
+            train_stride: 1
+            min_positive_episodes: 30
+    outs:
+    - path: reports/improve/final.json
+      hash: md5
+      md5: 733f663e195b4f058c0341a5030bf187
+      size: 8308

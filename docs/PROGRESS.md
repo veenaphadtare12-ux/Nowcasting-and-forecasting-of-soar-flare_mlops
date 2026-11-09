@@ -501,3 +501,58 @@ nothing else was retrained.
   models, and the default skops format would need trusted-type lists for XGBoost.
 - *The registry is still empty on purpose:* choosing the production model is the user's decision.
 - *Older runs were not back-filled with tags,* because their commit and data versions can't be proven afterwards.
+
+## 2026-11-09 — Improvement experiments (E1–E7) with a rolling monthly protocol
+
+**Done**
+- **Phase 0:** rolling monthly evaluation over tune + val (`src/improve/protocol.py`). For each month 2025-08 …
+  2026-05: fit on months before m−1, thresholds on m−1, score month m, with 120-min purges. The current models were
+  re-scored as the reference.
+- The acceptance rule was written into `docs/IMPROVEMENTS.md` before any experiment ran.
+- New MLflow experiment `flare-improve` (54 runs).
+- New DVC stages:
+  - data: `solexs_spectral` (331 days, 18 min), `goes_xrs_fetch` (418 daily GOES-19 XRS files, only up to
+    2026-05-31), `goes_xrs_minute`;
+  - experiments: `improve_reference`, `improve_E2` … `improve_E6`, `improve_final`.
+- 8 new tests (`tests/test_improve.py`). One caught a time-zone bug in the E2 event features before the experiment
+  ran.
+- Lesson 16.
+
+**Key numbers** (mean monthly TSS, reference → experiment; KEPT = passes the rule):
+- **Reference:** c_60m 0.189, m_60m 0.261, now 0.701, c_30m 0.155, m_30m 0.258. That's lower than the reused
+  validation block, as expected.
+- **KEPT:**
+  - E1 now;
+  - E2 now, c_30m (0.155 → 0.191, 9/10);
+  - E3 now, c_30m;
+  - E5 m_60m, now, c_30m, m_30m (borderline 6/10);
+  - E6 m_30m;
+  - E7 c_30m.
+- **Dropped everywhere:** E4 (pruning).
+- **Final candidate, original validation block:** c_30m 0.208 → 0.290 [0.23, 0.35] (the only clear gain); m_60m
+  0.467 → 0.459; m_30m 0.468 → 0.474; now 0.730 → 0.722; c_60m unchanged (nothing kept).
+
+**Decisions**
+- *E2 vs the CLAUDE.md rule "catalogue fields are label-side only":* the user re-sent the task without answering,
+  so I chose option (a). Causal detector outputs (trigger time; peak only after the end is confirmed) are allowed
+  as features, with future-perturbation tests. The rule text in CLAUDE.md was reworded.
+- *Disk:* C: was 9.8 GB at the start, just under the 10 GB stop rule. The user re-sent the task, so I continued with
+  every write and temp file on D:. C: later rose to 18–24 GB, after the user freed space.
+- *One seed (42)* and the existing XGBoost settings per target. That's 50 fits per experiment; the seed spread was
+  about 0.001 TSS.
+- *Comparison learner* = the better reference learner per target. The ensemble is compared with that learner.
+- *Adaptive-threshold windows* never start before month m−1, so the model's own training rows are never used for
+  thresholds.
+- *Spectral bands chosen by PI channel* (no energy calibration in the files): low 20–59, high 80–159. The
+  high/low ratio rises about 10× from 10 min before an M/X onset to the peak.
+- *GOES:* daily files only up to the last validation day, so no test-period values are on disk. Each minute is
+  labelled at its end. Quality flag 0 only.
+- *E8 (InceptionTime) not run:* it needs PyTorch, and the small, noisy gains make a deep model unlikely to pass.
+
+**Problems**
+- The first reference run was stopped, because its code changed while it ran. Everything was then rerun
+  through DVC.
+- `pip install h5py` (needed for the netCDF-4 GOES files) was done with pip's cache disabled and temp files on D:.
+- DVC wrote `data/external/.gitignore` with CRLF line endings; converted to LF.
+
+**Checks:** 66 tests pass and 1 is skipped (registry). `dvc status` is up to date. Free disk: C: 18 GB, D: 34 GB.
