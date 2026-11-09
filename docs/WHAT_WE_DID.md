@@ -510,7 +510,7 @@ working copy, until the audit fixed it; see the top of this file.)
 7. Forecasting an M-class flare within 30 minutes reaches **TSS 0.468** (interval 0.33–0.57), but **97%** of those alarms are false (FAR 0.97). *(source: `reports/model_metrics.json`, `m_30m`)*
 8. Forecast skill stays almost the same when no flare is already happening (quiet-start ≥M 30 min: TSS **0.465**), so the models don't just copy "a flare is going on". *(source: `reports/model_metrics.json`, quiet subset)*
 9. Hard X-rays (HEL1OS) overlap only **215.6 h** of tuning and **143.5 h** of validation, and the Neupert lag is a **median of 0 s** over 71 flares. *(source: `reports/eda_numbers.json`, `hel1os`)*
-10. The pipeline has **19 DVC stages** (9 core + 10 for the improvement experiments), **67 tests** (66 pass, 1 skipped until a model is registered), **740 MLflow runs** and **12 data versions**, and the test period has **never been evaluated**. *(source: `dvc.yaml`, `pytest`, `mlflow.db`, `git log -- dvc.lock`)*
+10. The pipeline has **19 DVC stages** (9 core + 10 for the improvement experiments), **67 tests** (66 pass, 1 skipped until a model is registered), **740 MLflow runs** and **13 data versions**, and the test period has **never been evaluated**. *(source: `dvc.yaml`, `pytest`, `mlflow.db`, `git log -- dvc.lock`)*
 
 ---
 
