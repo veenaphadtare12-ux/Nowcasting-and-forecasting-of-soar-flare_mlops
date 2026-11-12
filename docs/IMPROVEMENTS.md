@@ -219,3 +219,14 @@ Decision needed from the user: download new SoLEXS/GOES data, or redefine the ev
 - SoLEXS is the required input; HEL1OS is optional. With no SoLEXS after 2026-09-13 there are still no usable
   holdout2 days, so nothing was ingested, locked or scored.
 - Needed: SoLEXS L1 day zips for 2026-09-14 .. the latest available day (about 60 zips of ~4.5 MB).
+
+**Addendum 2, 2026-11-13: data check after the user's second download. Still stopped, waiting for a decision.**
+- New: `solexs_2026Nov13T044625368.zip` and `solexs_2026Nov13T044730160.zip`, both valid, the **same 10 days**
+  (2026-10-30, 10-31, 11-01, 11-02, 11-05 .. 11-10). Every day has SDD2 `.lc` and `.pi`. The earlier 7.5 MB bundle
+  is truncated and is superseded.
+- **SoLEXS still missing:** 2026-09-14 .. 10-29 (46 days), 11-03, 11-04, 11-11, 11-12.
+- **GOES flares (NOAA event reports, fetched to a scratch folder outside the repo; no model run):**
+  - 2026-09-13 .. 11-12, all days: Sep 0 M, Oct 9 M, Nov (1-12) 8 M; **17 M, 0 X** in total.
+  - On the 10 SoLEXS days only: 29 B, 117 C, **7 M** (11-05: 1, 11-07: 3, 11-08: 3).
+- So with the current files every M result on holdout2 would be UNDERPOWERED (7 < 15). Even with every missing day,
+  holdout2 would hold only 17 M flares, a quiet stretch of the cycle.
