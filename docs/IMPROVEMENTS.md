@@ -209,3 +209,13 @@ Source: `reports/improve/final.json` (`comparison`, `validation_block`).
 
 **Not done:** holdout2 ingest, lock, R1-R4, FINAL_CHOICE_2.md, holdout2 scoring. No code, data or model was changed.
 Decision needed from the user: download new SoLEXS/GOES data, or redefine the evaluation (see the report to the user).
+
+**Addendum, 2026-11-13 (later): the new downloads still do not give a holdout2. Still stopped.**
+- Found in the user's `OneDrive\ドキュメント\Downloads`, not copied, not extracted:
+  - `solexs_2026Nov13T025703771.zip` (7.5 MB): **truncated**, no zip directory (the download was cut off). Its local
+    headers name only 2026-11-09 and 2026-11-10.
+  - `hel1os_2026Nov13T032230627.zip` (20 sessions) and `hel1os_2026Nov13T042414593.zip` (10 sessions): HEL1OS
+    2026-11-02 .. 2026-11-11 only.
+- SoLEXS is the required input; HEL1OS is optional. With no SoLEXS after 2026-09-13 there are still no usable
+  holdout2 days, so nothing was ingested, locked or scored.
+- Needed: SoLEXS L1 day zips for 2026-09-14 .. the latest available day (about 60 zips of ~4.5 MB).
