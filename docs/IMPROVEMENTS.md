@@ -185,3 +185,27 @@ Source: `reports/improve/final.json` (`comparison`, `validation_block`).
 - **Worth trying later:** adaptive thresholds with a longer window for rare M flares (E1 had the largest M gain in
   the mean, but not consistently), and magnetic or active-region inputs, which none of these experiments touch.
 
+
+---
+
+## 7. Holdout2 task STOPPED at setup (2026-11-13)
+
+**A0 gate (read-only audit): passed. Nothing is invalid, nothing was refitted.**
+- Isotonic calibrators: fitted in `src/final/freeze.py` on the **threshold block only** (2026-05-01 .. 2026-05-31 minus
+  120 min), on the chosen model's scores. Not on the old test period.
+- Thresholds A/B/C (and rule/persistence baselines): same May 2026 block (`params.yaml` -> `final.threshold_block`).
+- Models: fitted on 2025-04-09 .. 2026-04-30 minus 120 min.
+- Feature and model choices: the rolling monthly protocol (2025-08..2026-05) plus the validation block, frozen in
+  `docs/FINAL_CHOICE.md` (commit d31d6ab) before any code read the test period. The later read-only sanity check
+  (`docs/TEST_SANITY.md`) changed nothing.
+
+**BLOCKER (STOP RULE): there is no holdout2 data.**
+- SoLEXS on disk ends at **2026-09-13** (`AL1_SLX_L1_20260913_v1.0`): one day after the cut-off. The newest
+  download bundle is dated 2026-09-16.
+- GOES XRS 1-min files end at **2026-09-12**. GOES event files exist up to 2026-09-14.
+- HEL1OS sessions extracted: none after 2026-09 (and extraction is partial anyway).
+- Holdout2 would be 1-2 days. That cannot support a ≥15 M-flare check, a per-month table or a day-bootstrap, and
+  R1-R4 cannot be scored on it. The prompt assumed about two months of new data.
+
+**Not done:** holdout2 ingest, lock, R1-R4, FINAL_CHOICE_2.md, holdout2 scoring. No code, data or model was changed.
+Decision needed from the user: download new SoLEXS/GOES data, or redefine the evaluation (see the report to the user).
