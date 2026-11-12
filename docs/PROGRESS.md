@@ -616,3 +616,23 @@ test TSS. Signature and input example included. 46 MLflow runs added in total (6
   still unused, hence 1 skip.
 
 **Checks:** 75 tests pass, 1 skipped. `dvc status` is up to date. 25 DVC stages.
+
+## 2026-11-13 — Read-only sanity check of the test results (`docs/TEST_SANITY.md`)
+**Done:** `src/final/sanity.py` → `reports/final/sanity.json`, using only the frozen test scores and thresholds.
+Nothing was retrained, re-tuned or re-scored, and the test dataset file is not read.
+
+**Findings**
+- **Aggregation:** the rolling figure is a mean of monthly TSS, while the test figure is pooled. Measured the same
+  way, the M targets agree: test mean-of-months 0.28 vs rolling 0.26–0.31; m_60m pooled rolling 0.40 vs test 0.49.
+- **Ordinary causes for the rest:**
+  - the final models had about 1.8× more training rows;
+  - the test had more M rows (m_60m base rate 3.5% vs 2.4–3.0%);
+  - July held 53 of the 80 test M flares. Without July, the m_60m TSS is 0.32.
+- **No leakage signs:**
+  - the baselines stayed ≤ 0.08;
+  - quiet-start skill equals all-row skill;
+  - GOES XRS (m_30m only) is causal: future perturbation at 20 test cut times changed nothing, and the newest
+    value used is 0–50 s old;
+  - "already rising" rows (GOES begin ≤ t < label start; 2.9% of m_30m positives) don't drive the score: removing
+    them gives 0.518 → 0.526.
+- **Doc fix:** c_30m uses 67 features, not 64. Fixed in MODEL_CARD.md; dated erratum added to FINAL_CHOICE.md.

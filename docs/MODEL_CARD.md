@@ -4,7 +4,7 @@
 | Registry name (alias `champion`) | Target | Model | Inputs |
 |---|---|---|---|
 | `flare-nowcast` | GOES-listed flare in progress now | XGBoost | 44 base features |
-| `flare-forecast-c30` | ≥C flare starts within 30 min | LogReg + XGBoost probability average | 44 base + long-context (E2) + drift-normalised (E3) + spectral (E5) = 64 |
+| `flare-forecast-c30` | ≥C flare starts within 30 min | LogReg + XGBoost probability average | 44 base + long-context (E2) + drift-normalised (E3) + spectral (E5) = 67 |
 | `flare-forecast-c60` | ≥C flare starts within 60 min | XGBoost | 44 base |
 | `flare-forecast-m30` | ≥M flare starts within 30 min | Logistic regression | 44 base + spectral (E5) + GOES XRS (E6) = 56 |
 | `flare-forecast-m60` | ≥M flare starts within 60 min | Logistic regression | 44 base |

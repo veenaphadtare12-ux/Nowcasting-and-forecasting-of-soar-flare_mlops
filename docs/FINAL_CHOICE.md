@@ -131,3 +131,8 @@ Sources:
   rolling mean includes months with almost no skill (`docs/MODEL_CARD.md`). They are close to the original
   validation block for M targets.
 - **Nothing was changed after these results.** The champions stay as registered (version 1).
+
+### Erratum — 2026-11-13 (wording only; no model, threshold or result changed)
+Section 1 states that the c_30m features number 64. The frozen model actually uses **67** (44 base + 17 long-context
++ 6 spectral; E3 rescales existing columns). It is the same pre-registered configuration (E2 + E3 + E5); only the
+count in the text was wrong. Found in the read-only check `docs/TEST_SANITY.md`.
