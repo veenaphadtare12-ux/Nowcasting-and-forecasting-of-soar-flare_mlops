@@ -448,3 +448,26 @@ R1 on holdout2: 112 triggers (7 reach ≥M — UNDERPOWERED, 96 ≥C, 12 false t
 **Bottom line.** The pipeline, the locks and the protocol work, and the nowcast generalises. The forecasts' apparent skill
 is mostly the activity level, which a one-number baseline captures just as well; R1 shows the most promising real-time
 information (shape and temperature of a rise in its first minutes). Holdout2 is too short and too M-poor to say more.
+
+## 11. Repeated holdout2 request STOPPED (2026-11-13): holdout2 is already closed
+
+The same task (A0 gate, holdout2 ingest + lock, development protocol 2, R1–R4, FINAL_CHOICE_2, one-time holdout2
+scoring) was requested again. It was already completed and committed:
+- `3a6140c`: ingest + lock;
+- `9c14741`: causal-ordering fix;
+- `b5e2044`: FINAL_CHOICE_2 frozen;
+- `2aca10f`: holdout2 scored once (sections 9–10).
+
+**Read-only checks made now:**
+- No new commits.
+- No new SoLEXS, HEL1OS or GOES downloads (no zip in Downloads newer than 2026-11-13 10:30); the newest SoLEXS day
+  on disk is still 2026-11-10.
+- All 494 holdout2 files still match `reports/holdout2/lock_sha256.txt`.
+
+**Why nothing was re-run (STOP RULE):**
+- Re-running the task would re-ingest, re-choose and re-score holdout2. That is the same violation the lock
+  exists to prevent: a second scoring would make the holdout2 numbers no longer independent.
+- There is no new unseen data from which a fresh holdout could be built.
+
+**Needed to continue:** new SoLEXS L1 day zips that have never been used, i.e. days after 2026-11-10 or the
+missing 2026-09-14 … 10-29. Those would become a new, separately locked "holdout3". Nothing else was changed.
