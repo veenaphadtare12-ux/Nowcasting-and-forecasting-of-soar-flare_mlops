@@ -9,8 +9,17 @@ $Distro = if ($env:FLARE_WSL_DISTRO) { $env:FLARE_WSL_DISTRO } else { "Ubuntu" }
 function Test-NativeDocker {
     if ($env:FLARE_WSL_DISTRO) { return $false }
     if (-not (Get-Command docker -ErrorAction SilentlyContinue)) { return $false }
-    docker version --format "{{.Server.Version}}" *> $null
-    return ($LASTEXITCODE -eq 0)
+    # Windows PowerShell 5.1 turns a native command's stderr into a terminating error under "Stop": probe leniently.
+    $prev = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        docker version --format "{{.Server.Version}}" 2>&1 | Out-Null
+        return ($LASTEXITCODE -eq 0)
+    } catch {
+        return $false
+    } finally {
+        $ErrorActionPreference = $prev
+    }
 }
 $script:Native = Test-NativeDocker
 
