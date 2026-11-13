@@ -1,4 +1,5 @@
-import { NavLink, Navigate, Route, Routes } from "react-router-dom";
+import { Suspense, lazy } from "react";
+import { Link, NavLink, Navigate, Route, Routes } from "react-router-dom";
 import type { Health } from "./api";
 import { useApi } from "./hooks";
 import About from "./pages/About";
@@ -7,6 +8,8 @@ import Latest from "./pages/Latest";
 import ModelsPipeline from "./pages/ModelsPipeline";
 import Performance from "./pages/Performance";
 import Replay from "./pages/Replay";
+
+const Landing = lazy(() => import("./landing/Landing"));
 
 const NAV = [
   { to: "/latest", label: "Latest" },
@@ -17,13 +20,13 @@ const NAV = [
   { to: "/about", label: "About" },
 ];
 
-export default function App() {
+function Shell() {
   const health = useApi<Health>("/health", 30000);
   return (
     <div className="flex min-h-full flex-col">
       <header className="sticky top-0 z-20 border-b border-ink-700 bg-ink-950/90 backdrop-blur">
         <div className="mx-auto flex max-w-[1800px] flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2.5">
-          <div className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2" title="Back to the story">
             <svg viewBox="0 0 32 32" className="h-7 w-7" aria-hidden>
               <circle cx="16" cy="16" r="8" fill="#E07A1F" />
               <g stroke="#E07A1F" strokeWidth="2" strokeLinecap="round">
@@ -34,7 +37,7 @@ export default function App() {
               <div className="text-sm font-semibold text-slate-100">Aditya-L1 Flare Watch</div>
               <div className="text-[11px] text-slate-500">SoLEXS + HEL1OS nowcasts and forecasts</div>
             </div>
-          </div>
+          </Link>
           <nav className="flex flex-wrap gap-1" aria-label="main">
             {NAV.map((n) => (
               <NavLink
@@ -64,7 +67,6 @@ export default function App() {
       </header>
       <main className="mx-auto w-full max-w-[1800px] flex-1 px-4 py-5">
         <Routes>
-          <Route path="/" element={<Navigate to="/latest" replace />} />
           <Route path="/latest" element={<Latest />} />
           <Route path="/replay" element={<Replay />} />
           <Route path="/performance" element={<Performance />} />
@@ -78,5 +80,21 @@ export default function App() {
         Research and teaching system, not an operational alert service · data: ISRO Aditya-L1, NOAA SWPC GOES flare list
       </footer>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route
+        path="/"
+        element={
+          <Suspense fallback={<div className="grid h-screen place-items-center bg-[#03050b] text-sm text-slate-500">Approaching the Sun…</div>}>
+            <Landing />
+          </Suspense>
+        }
+      />
+      <Route path="*" element={<Shell />} />
+    </Routes>
   );
 }
