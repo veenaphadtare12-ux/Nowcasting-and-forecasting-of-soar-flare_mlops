@@ -1,0 +1,2 @@
+# Extra packages for running the Prefect flows inside the same image (docker compose run worker ...).
+prefect==3.8.7

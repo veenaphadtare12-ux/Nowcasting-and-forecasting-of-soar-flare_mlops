@@ -105,3 +105,50 @@ def store(pred: pd.DataFrame, out_dir: Path | None = None, tag: str = "") -> dic
         )
         con.execute("DROP TABLE predictions_staging")
     return {"parquet": str(pq), "sqlite": str(db), "rows": int(len(pred))}
+
+
+def score_bundle_day(day: str, bundle_dir: Path | None = None, targets: list[str] | None = None) -> pd.DataFrame:
+    """Score one bundle replay day with the bundle's champion models and the bundle's stored model inputs (the
+    pipeline's features). Works on any machine: no DVC data, no MLflow registry."""
+    from src.serving import bundle as B
+
+    b = B.load(str(bundle_dir) if bundle_dir else None)
+    d0 = pd.Timestamp(day, tz="UTC")
+    check_window(d0, d0 + pd.Timedelta(days=1), kind="score")
+    rows = []
+    for target in targets or list(b.manifest["models"]):
+        m = b.model_meta(target)
+        X = b.model_input(day, target)
+        p1 = b.model(target).predict_proba(X)[:, 1].astype(float)
+        thr = float(m["thresholds"]["A"])
+        rows.append(
+            pd.DataFrame(
+                {
+                    "time": X.index,
+                    "target": target,
+                    "model": m["registry_name"],
+                    "model_version": m["version"],
+                    "p_flare": p1.clip(0, 1),
+                    "threshold": thr,
+                    "alert": p1 >= thr,
+                }
+            )
+        )
+    return S.validate(pd.concat(rows, ignore_index=True), S.PREDICTIONS, f"score_replay bundle day {day}")
+
+
+def read_store(day: str, out_dir: Path | None = None) -> pd.DataFrame | None:
+    """Predictions for one UTC day from the SQLite store (None if the store has none)."""
+    db = (Path(out_dir) if out_dir else OUT_DIR) / "predictions.db"
+    if not db.exists():
+        return None
+    a = f"{day}T00:00:00Z"
+    b = (pd.Timestamp(day) + pd.Timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    with sqlite3.connect(db) as con:
+        q = "SELECT * FROM predictions WHERE time > ? AND time <= ? ORDER BY target, time"
+        df = pd.read_sql_query(q, con, params=(a, b))
+    if df.empty:
+        return None
+    df["time"] = pd.to_datetime(df["time"], utc=True)
+    df["alert"] = df["alert"].astype(bool)
+    return df

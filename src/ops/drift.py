@@ -88,4 +88,12 @@ def run_default(out_dir: Path | None = None) -> dict:
     d = protocol.load(feats)  # development periods only
     sel = lambda a, b: d[(d.index >= a) & (d.index < b)]  # noqa: E731
     name = f"drift_{w['current'][0]:%Y%m%d}_{w['current'][1]:%Y%m%d}"
-    return drift_report(sel(*w["reference"]), sel(*w["current"]), feats, out_dir, name)
+    s = drift_report(sel(*w["reference"]), sel(*w["current"]), feats, out_dir, name)
+    s |= {
+        "reference_window": [str(x) for x in w["reference"]],
+        "current_window": [str(x) for x in w["current"]],
+        "html": f"reports/drift/{name}.html",
+    }
+    latest = (Path(out_dir) if out_dir else OUT) / "latest.json"
+    latest.write_text(json.dumps(s, indent=1, default=str), encoding="utf-8", newline="\n")
+    return s

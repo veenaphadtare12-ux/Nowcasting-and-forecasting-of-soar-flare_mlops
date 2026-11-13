@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from prefect import flow, get_run_logger, task
 
-from src.ops import drift
+from src.ops import drift, runs
 
 
 @task
@@ -23,6 +23,11 @@ def check_drift() -> dict:
     s = run_report()
     msg = f"drifted features: {len(s['drifted_features'])}/{s['features_checked']} (share {s['drifted_share']:.2f})"
     (log.warning if s["drift_flag"] else log.info)(("DRIFT FLAGGED - " if s["drift_flag"] else "no dataset drift - ") + msg)
+    runs.record(
+        "check_drift",
+        "Completed",
+        {"drifted_share": s["drifted_share"], "drift_flag": s["drift_flag"], "features_checked": s["features_checked"]},
+    )
     return s
 
 

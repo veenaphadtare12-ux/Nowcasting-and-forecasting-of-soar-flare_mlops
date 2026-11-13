@@ -12,7 +12,7 @@ import sys
 
 from prefect import flow, get_run_logger, task
 
-from src.ops import retrain
+from src.ops import retrain, runs
 
 
 @task(retries=1, retry_delay_seconds=60)
@@ -30,6 +30,7 @@ def retrain_candidate(target: str, start: str, end: str, block_start: str) -> di
         out["challenger_version"],
         out["thresholds"],
     )
+    runs.record("retrain_candidate", "Completed", {k: out[k] for k in ("target", "registry", "challenger_version")})
     return out
 
 

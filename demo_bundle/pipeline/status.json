@@ -1,0 +1,946 @@
+{
+ "dvc": {
+  "stages": [
+   {
+    "name": "fetch_goes",
+    "frozen": false,
+    "deps": 2,
+    "outs": [
+     "data/external/goes_events"
+    ]
+   },
+   {
+    "name": "solexs_clean",
+    "frozen": false,
+    "deps": 5,
+    "outs": [
+     "data/processed/solexs_clean",
+     "data/processed/solexs_minute.parquet",
+     "data/processed/solexs_qc.csv"
+    ]
+   },
+   {
+    "name": "detect_events",
+    "frozen": false,
+    "deps": 3,
+    "outs": [
+     "data/processed/events_raw.parquet"
+    ]
+   },
+   {
+    "name": "legacy_events",
+    "frozen": false,
+    "deps": 3,
+    "outs": [
+     "data/processed/legacy_events_raw.parquet"
+    ]
+   },
+   {
+    "name": "match_goes",
+    "frozen": false,
+    "deps": 8,
+    "outs": [
+     "data/processed/events.parquet",
+     "data/processed/events_pairs.parquet",
+     "data/processed/legacy_events.parquet",
+     "data/processed/legacy_events_pairs.parquet",
+     "data/processed/goes_matched.parquet"
+    ]
+   },
+   {
+    "name": "evaluate_detector",
+    "frozen": false,
+    "deps": 9,
+    "outs": [
+     "docs/figures/before_after_examples.png",
+     "docs/figures/duration_histogram.png",
+     "docs/figures/example_1.png",
+     "docs/figures/example_2.png",
+     "docs/figures/example_3.png",
+     "docs/figures/example_4.png",
+     "docs/figures/example_5.png",
+     "docs/figures/example_6.png",
+     "docs/figures/examples.json"
+    ]
+   },
+   {
+    "name": "build_dataset",
+    "frozen": false,
+    "deps": 14,
+    "outs": [
+     "data/processed/dataset"
+    ]
+   },
+   {
+    "name": "train",
+    "frozen": true,
+    "deps": 9,
+    "outs": [
+     "docs/model_figures",
+     "models",
+     "reports/validation_table.md",
+     "reports/xgb_cv.csv"
+    ]
+   },
+   {
+    "name": "hel1os_index",
+    "frozen": false,
+    "deps": 4,
+    "outs": [
+     "data/processed/hel1os"
+    ]
+   },
+   {
+    "name": "solexs_spectral",
+    "frozen": false,
+    "deps": 3,
+    "outs": [
+     "data/processed/solexs_spectral_minute.parquet"
+    ]
+   },
+   {
+    "name": "goes_xrs_fetch",
+    "frozen": false,
+    "deps": 1,
+    "outs": [
+     "data/external/goes_xrs"
+    ]
+   },
+   {
+    "name": "goes_xrs_minute",
+    "frozen": false,
+    "deps": 2,
+    "outs": [
+     "data/processed/goes_xrs_minute.parquet"
+    ]
+   },
+   {
+    "name": "improve_reference",
+    "frozen": true,
+    "deps": 8,
+    "outs": [
+     "reports/improve/E1.json",
+     "reports/improve/E7.json",
+     "reports/improve/reference.json"
+    ]
+   },
+   {
+    "name": "improve_E2",
+    "frozen": true,
+    "deps": 11,
+    "outs": [
+     "reports/improve/E2.json"
+    ]
+   },
+   {
+    "name": "improve_E3",
+    "frozen": true,
+    "deps": 9,
+    "outs": [
+     "reports/improve/E3.json"
+    ]
+   },
+   {
+    "name": "improve_E4",
+    "frozen": true,
+    "deps": 9,
+    "outs": [
+     "reports/improve/E4.json"
+    ]
+   },
+   {
+    "name": "improve_E5",
+    "frozen": true,
+    "deps": 10,
+    "outs": [
+     "reports/improve/E5.json"
+    ]
+   },
+   {
+    "name": "improve_E6",
+    "frozen": true,
+    "deps": 10,
+    "outs": [
+     "reports/improve/E6.json"
+    ]
+   },
+   {
+    "name": "improve_final",
+    "frozen": true,
+    "deps": 20,
+    "outs": [
+     "reports/improve/final.json"
+    ]
+   },
+   {
+    "name": "final_models",
+    "frozen": true,
+    "deps": 12,
+    "outs": [
+     "models_final",
+     "reports/final/freeze.json"
+    ]
+   },
+   {
+    "name": "solexs_spectral_test",
+    "frozen": true,
+    "deps": 3,
+    "outs": [
+     "data/processed/final/solexs_spectral_minute_test.parquet"
+    ]
+   },
+   {
+    "name": "goes_xrs_test_fetch",
+    "frozen": true,
+    "deps": 1,
+    "outs": [
+     "data/external/goes_xrs_test"
+    ]
+   },
+   {
+    "name": "goes_xrs_test_minute",
+    "frozen": true,
+    "deps": 3,
+    "outs": [
+     "data/processed/final/goes_xrs_minute_test.parquet"
+    ]
+   },
+   {
+    "name": "evaluate_test",
+    "frozen": true,
+    "deps": 12,
+    "outs": [
+     "data/processed/final/shap_nowcast_sample.parquet",
+     "data/processed/final/test_scores.parquet",
+     "reports/final/test_metrics.json"
+    ]
+   },
+   {
+    "name": "test_analysis",
+    "frozen": true,
+    "deps": 10,
+    "outs": [
+     "docs/final_figures",
+     "reports/final/analysis.json"
+    ]
+   },
+   {
+    "name": "srs_fetch",
+    "frozen": false,
+    "deps": 2,
+    "outs": [
+     "data/external/srs"
+    ]
+   },
+   {
+    "name": "r3_fetch",
+    "frozen": false,
+    "deps": 1,
+    "outs": [
+     "data/external/goes16_xrs",
+     "data/external/goes_events_hist"
+    ]
+   },
+   {
+    "name": "dev2_ref",
+    "frozen": true,
+    "deps": 16,
+    "outs": [
+     "reports/dev2/ref.json"
+    ]
+   },
+   {
+    "name": "dev2_e6",
+    "frozen": true,
+    "deps": 16,
+    "outs": [
+     "reports/dev2/e6.json"
+    ]
+   },
+   {
+    "name": "dev2_r2a",
+    "frozen": true,
+    "deps": 16,
+    "outs": [
+     "reports/dev2/r2a.json"
+    ]
+   },
+   {
+    "name": "dev2_r2b",
+    "frozen": true,
+    "deps": 16,
+    "outs": [
+     "reports/dev2/r2b.json"
+    ]
+   },
+   {
+    "name": "dev2_champ",
+    "frozen": true,
+    "deps": 16,
+    "outs": [
+     "reports/dev2/champ.json"
+    ]
+   },
+   {
+    "name": "dev2_r1",
+    "frozen": true,
+    "deps": 11,
+    "outs": [
+     "reports/dev2/r1.json"
+    ]
+   },
+   {
+    "name": "dev2_r3_mapping",
+    "frozen": true,
+    "deps": 4,
+    "outs": [
+     "reports/dev2/r3_mapping.json"
+    ]
+   },
+   {
+    "name": "dev2_r3",
+    "frozen": true,
+    "deps": 9,
+    "outs": [
+     "reports/dev2/r3.json"
+    ]
+   },
+   {
+    "name": "dev2_final",
+    "frozen": true,
+    "deps": 19,
+    "outs": [
+     "models_final2",
+     "reports/dev2/final_freeze.json"
+    ]
+   },
+   {
+    "name": "evaluate_holdout2",
+    "frozen": true,
+    "deps": 13,
+    "outs": [
+     "reports/holdout2/metrics.json",
+     "reports/holdout2/results.md"
+    ]
+   }
+  ],
+  "edges": [
+   [
+    "build_dataset",
+    "dev2_champ"
+   ],
+   [
+    "build_dataset",
+    "dev2_e6"
+   ],
+   [
+    "build_dataset",
+    "dev2_final"
+   ],
+   [
+    "build_dataset",
+    "dev2_r1"
+   ],
+   [
+    "build_dataset",
+    "dev2_r2a"
+   ],
+   [
+    "build_dataset",
+    "dev2_r2b"
+   ],
+   [
+    "build_dataset",
+    "dev2_r3"
+   ],
+   [
+    "build_dataset",
+    "dev2_ref"
+   ],
+   [
+    "build_dataset",
+    "evaluate_holdout2"
+   ],
+   [
+    "build_dataset",
+    "evaluate_test"
+   ],
+   [
+    "build_dataset",
+    "final_models"
+   ],
+   [
+    "build_dataset",
+    "improve_E2"
+   ],
+   [
+    "build_dataset",
+    "improve_E3"
+   ],
+   [
+    "build_dataset",
+    "improve_E4"
+   ],
+   [
+    "build_dataset",
+    "improve_E5"
+   ],
+   [
+    "build_dataset",
+    "improve_E6"
+   ],
+   [
+    "build_dataset",
+    "improve_final"
+   ],
+   [
+    "build_dataset",
+    "improve_reference"
+   ],
+   [
+    "build_dataset",
+    "train"
+   ],
+   [
+    "detect_events",
+    "match_goes"
+   ],
+   [
+    "dev2_final",
+    "evaluate_holdout2"
+   ],
+   [
+    "dev2_r3_mapping",
+    "dev2_r3"
+   ],
+   [
+    "dev2_ref",
+    "dev2_r3"
+   ],
+   [
+    "evaluate_test",
+    "test_analysis"
+   ],
+   [
+    "fetch_goes",
+    "build_dataset"
+   ],
+   [
+    "fetch_goes",
+    "dev2_champ"
+   ],
+   [
+    "fetch_goes",
+    "dev2_e6"
+   ],
+   [
+    "fetch_goes",
+    "dev2_final"
+   ],
+   [
+    "fetch_goes",
+    "dev2_r2a"
+   ],
+   [
+    "fetch_goes",
+    "dev2_r2b"
+   ],
+   [
+    "fetch_goes",
+    "dev2_ref"
+   ],
+   [
+    "fetch_goes",
+    "match_goes"
+   ],
+   [
+    "final_models",
+    "evaluate_test"
+   ],
+   [
+    "final_models",
+    "test_analysis"
+   ],
+   [
+    "goes_xrs_fetch",
+    "goes_xrs_minute"
+   ],
+   [
+    "goes_xrs_minute",
+    "dev2_champ"
+   ],
+   [
+    "goes_xrs_minute",
+    "dev2_e6"
+   ],
+   [
+    "goes_xrs_minute",
+    "dev2_final"
+   ],
+   [
+    "goes_xrs_minute",
+    "dev2_r1"
+   ],
+   [
+    "goes_xrs_minute",
+    "dev2_r2a"
+   ],
+   [
+    "goes_xrs_minute",
+    "dev2_r2b"
+   ],
+   [
+    "goes_xrs_minute",
+    "dev2_r3_mapping"
+   ],
+   [
+    "goes_xrs_minute",
+    "dev2_ref"
+   ],
+   [
+    "goes_xrs_minute",
+    "evaluate_test"
+   ],
+   [
+    "goes_xrs_minute",
+    "final_models"
+   ],
+   [
+    "goes_xrs_minute",
+    "improve_E6"
+   ],
+   [
+    "goes_xrs_minute",
+    "improve_final"
+   ],
+   [
+    "goes_xrs_test_fetch",
+    "goes_xrs_test_minute"
+   ],
+   [
+    "goes_xrs_test_minute",
+    "dev2_champ"
+   ],
+   [
+    "goes_xrs_test_minute",
+    "dev2_e6"
+   ],
+   [
+    "goes_xrs_test_minute",
+    "dev2_final"
+   ],
+   [
+    "goes_xrs_test_minute",
+    "dev2_r1"
+   ],
+   [
+    "goes_xrs_test_minute",
+    "dev2_r2a"
+   ],
+   [
+    "goes_xrs_test_minute",
+    "dev2_r2b"
+   ],
+   [
+    "goes_xrs_test_minute",
+    "dev2_r3_mapping"
+   ],
+   [
+    "goes_xrs_test_minute",
+    "dev2_ref"
+   ],
+   [
+    "goes_xrs_test_minute",
+    "evaluate_test"
+   ],
+   [
+    "goes_xrs_test_minute",
+    "test_analysis"
+   ],
+   [
+    "hel1os_index",
+    "build_dataset"
+   ],
+   [
+    "improve_E2",
+    "improve_final"
+   ],
+   [
+    "improve_E3",
+    "improve_final"
+   ],
+   [
+    "improve_E4",
+    "improve_final"
+   ],
+   [
+    "improve_E5",
+    "improve_final"
+   ],
+   [
+    "improve_E6",
+    "improve_final"
+   ],
+   [
+    "improve_reference",
+    "improve_E2"
+   ],
+   [
+    "improve_reference",
+    "improve_E3"
+   ],
+   [
+    "improve_reference",
+    "improve_E4"
+   ],
+   [
+    "improve_reference",
+    "improve_E5"
+   ],
+   [
+    "improve_reference",
+    "improve_E6"
+   ],
+   [
+    "improve_reference",
+    "improve_final"
+   ],
+   [
+    "legacy_events",
+    "match_goes"
+   ],
+   [
+    "match_goes",
+    "build_dataset"
+   ],
+   [
+    "match_goes",
+    "dev2_champ"
+   ],
+   [
+    "match_goes",
+    "dev2_e6"
+   ],
+   [
+    "match_goes",
+    "dev2_final"
+   ],
+   [
+    "match_goes",
+    "dev2_r1"
+   ],
+   [
+    "match_goes",
+    "dev2_r2a"
+   ],
+   [
+    "match_goes",
+    "dev2_r2b"
+   ],
+   [
+    "match_goes",
+    "dev2_r3_mapping"
+   ],
+   [
+    "match_goes",
+    "dev2_ref"
+   ],
+   [
+    "match_goes",
+    "evaluate_detector"
+   ],
+   [
+    "match_goes",
+    "evaluate_holdout2"
+   ],
+   [
+    "match_goes",
+    "evaluate_test"
+   ],
+   [
+    "match_goes",
+    "final_models"
+   ],
+   [
+    "match_goes",
+    "improve_E2"
+   ],
+   [
+    "match_goes",
+    "improve_final"
+   ],
+   [
+    "match_goes",
+    "test_analysis"
+   ],
+   [
+    "r3_fetch",
+    "dev2_r3"
+   ],
+   [
+    "solexs_clean",
+    "build_dataset"
+   ],
+   [
+    "solexs_clean",
+    "detect_events"
+   ],
+   [
+    "solexs_clean",
+    "dev2_champ"
+   ],
+   [
+    "solexs_clean",
+    "dev2_e6"
+   ],
+   [
+    "solexs_clean",
+    "dev2_final"
+   ],
+   [
+    "solexs_clean",
+    "dev2_r1"
+   ],
+   [
+    "solexs_clean",
+    "dev2_r2a"
+   ],
+   [
+    "solexs_clean",
+    "dev2_r2b"
+   ],
+   [
+    "solexs_clean",
+    "dev2_r3"
+   ],
+   [
+    "solexs_clean",
+    "dev2_ref"
+   ],
+   [
+    "solexs_clean",
+    "evaluate_detector"
+   ],
+   [
+    "solexs_clean",
+    "evaluate_holdout2"
+   ],
+   [
+    "solexs_clean",
+    "evaluate_test"
+   ],
+   [
+    "solexs_clean",
+    "final_models"
+   ],
+   [
+    "solexs_clean",
+    "improve_E2"
+   ],
+   [
+    "solexs_clean",
+    "improve_final"
+   ],
+   [
+    "solexs_clean",
+    "legacy_events"
+   ],
+   [
+    "solexs_clean",
+    "solexs_spectral"
+   ],
+   [
+    "solexs_clean",
+    "solexs_spectral_test"
+   ],
+   [
+    "solexs_clean",
+    "test_analysis"
+   ],
+   [
+    "solexs_spectral",
+    "dev2_champ"
+   ],
+   [
+    "solexs_spectral",
+    "dev2_e6"
+   ],
+   [
+    "solexs_spectral",
+    "dev2_final"
+   ],
+   [
+    "solexs_spectral",
+    "dev2_r1"
+   ],
+   [
+    "solexs_spectral",
+    "dev2_r2a"
+   ],
+   [
+    "solexs_spectral",
+    "dev2_r2b"
+   ],
+   [
+    "solexs_spectral",
+    "dev2_ref"
+   ],
+   [
+    "solexs_spectral",
+    "evaluate_test"
+   ],
+   [
+    "solexs_spectral",
+    "final_models"
+   ],
+   [
+    "solexs_spectral",
+    "improve_E5"
+   ],
+   [
+    "solexs_spectral",
+    "improve_final"
+   ],
+   [
+    "solexs_spectral_test",
+    "dev2_champ"
+   ],
+   [
+    "solexs_spectral_test",
+    "dev2_e6"
+   ],
+   [
+    "solexs_spectral_test",
+    "dev2_final"
+   ],
+   [
+    "solexs_spectral_test",
+    "dev2_r1"
+   ],
+   [
+    "solexs_spectral_test",
+    "dev2_r2a"
+   ],
+   [
+    "solexs_spectral_test",
+    "dev2_r2b"
+   ],
+   [
+    "solexs_spectral_test",
+    "dev2_ref"
+   ],
+   [
+    "solexs_spectral_test",
+    "evaluate_test"
+   ],
+   [
+    "srs_fetch",
+    "dev2_champ"
+   ],
+   [
+    "srs_fetch",
+    "dev2_e6"
+   ],
+   [
+    "srs_fetch",
+    "dev2_final"
+   ],
+   [
+    "srs_fetch",
+    "dev2_r2a"
+   ],
+   [
+    "srs_fetch",
+    "dev2_r2b"
+   ],
+   [
+    "srs_fetch",
+    "dev2_ref"
+   ]
+  ],
+  "frozen": 24,
+  "total": 37
+ },
+ "registry": {
+  "now": {
+   "name": "flare-nowcast",
+   "champion": "1",
+   "challenger": null
+  },
+  "c_30m": {
+   "name": "flare-forecast-c30",
+   "champion": "1",
+   "challenger": null
+  },
+  "c_60m": {
+   "name": "flare-forecast-c60",
+   "champion": "1",
+   "challenger": null
+  },
+  "m_30m": {
+   "name": "flare-forecast-m30",
+   "champion": "1",
+   "challenger": null
+  },
+  "m_60m": {
+   "name": "flare-forecast-m60",
+   "champion": "1",
+   "challenger": null
+  }
+ },
+ "flow_runs": {},
+ "tools": [
+  {
+   "tool": "Git + GitHub",
+   "status": "used"
+  },
+  {
+   "tool": "DVC",
+   "status": "used"
+  },
+  {
+   "tool": "MLflow",
+   "status": "used"
+  },
+  {
+   "tool": "pandera",
+   "status": "used"
+  },
+  {
+   "tool": "Prefect",
+   "status": "used"
+  },
+  {
+   "tool": "Evidently",
+   "status": "used"
+  },
+  {
+   "tool": "pytest + ruff",
+   "status": "used"
+  },
+  {
+   "tool": "GitHub Actions",
+   "status": "used"
+  },
+  {
+   "tool": "FastAPI",
+   "status": "used"
+  },
+  {
+   "tool": "Docker / Compose",
+   "status": "used"
+  },
+  {
+   "tool": "Prometheus + Grafana",
+   "status": "used"
+  },
+  {
+   "tool": "Kubernetes (kind)",
+   "status": "used"
+  },
+  {
+   "tool": "Terraform (AWS)",
+   "status": "prepared, not applied"
+  }
+ ]
+}

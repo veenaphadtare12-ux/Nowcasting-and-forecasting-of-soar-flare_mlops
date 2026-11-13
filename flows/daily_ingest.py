@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from prefect import flow, get_run_logger, task
 
-from src.ops import ingest
+from src.ops import ingest, runs
 from src.validation import check
 
 
@@ -49,7 +49,18 @@ def daily_ingest(dry_run: bool = False) -> dict:
         for s in todo:
             repro_stage(s)
         validate(["solexs_minute", "hel1os", "goes_events", "dataset"])
-    return {"discovered": found, "stages": todo, "dry_run": dry_run}
+    out = {"discovered": found, "stages": todo, "dry_run": dry_run}
+    runs.record(
+        "daily_ingest",
+        "Completed",
+        {
+            "new_days": len(found["new_in_development"]),
+            "locked_days": len(found["locked_after_development_end"]),
+            "stages_rerun": todo,
+            "dry_run": dry_run,
+        },
+    )
+    return out
 
 
 if __name__ == "__main__":

@@ -1,0 +1,41 @@
+# One connected product (docs/ARCHITECTURE.md). Start: scripts\up.ps1   Stop: scripts\down.ps1   Check: scripts\smoke_test.ps1
+# Images are tagged with the git SHA (FLARE_TAG); the same images run in CI and in Kubernetes.
+name: flare
+
+x-api-env: &api-env
+  FLARE_ENVIRONMENT: compose
+  FLARE_PREDICTIONS_DIR: /data/predictions
+  FLARE_DRIFT_FILE: /data/drift/latest.json
+  FLARE_CORS_ORIGINS: "http://localhost:8080,http://127.0.0.1:8080"
+  FLARE_LOG_LEVEL: INFO
+  FLARE_MAX_REPLAY_SPEED: "600"
+  PREFECT_HOME: /data/prefect
+
+services:
+  api:
+    image: ghcr.io/veenaphadtare12-ux/flare-api:${FLARE_TAG:-local}
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+      args:
+        GIT_SHA: ${FLARE_TAG:-local}
+    environment:
+      <<: *api-env
+    volumes:
+      - predictions:/data/predictions
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  # Runs a Prefect flow with the same image, e.g.  docker compose run --rm worker python -m flows.score_replay --day 2026-04-24
+  worker:
+    image: ghcr.io/veenaphadtare12-ux/flare-api:${FLARE_TAG:-local}
+    profiles: ["tools"]
+    environment:
+      <<: *api-env
+    volumes:
+      - predictions:/data/predictions
+    command: ["python", "-m", "flows.score_replay", "--day", "2026-04-24"]
+
+volumes:
+  predictions:
