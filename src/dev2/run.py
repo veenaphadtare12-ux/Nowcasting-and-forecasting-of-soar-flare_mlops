@@ -222,7 +222,8 @@ def run_feature(name: str) -> None:
     else:
         cmp_vs = None
     write(name, {"description": spec["desc"], "blocks": spec["blocks"], "aditya_only": not (GOES_BLOCKS & set(spec["blocks"])),
-                 "features": feats, "summary": summ, "comparison_vs_ref": cmp, f"comparison_vs_{spec['vs']}": cmp_vs,
+                 "features": feats, "summary": summ, "comparison_vs_ref": cmp,
+                 **({f"comparison_vs_{spec['vs']}": cmp_vs} if cmp_vs is not None else {}),
                  "months": res, "seconds": time.time() - t0})
     log_mlflow(name, spec["desc"], summ, cmp, {"blocks": ",".join(spec["blocks"]), "n_features": len(feats)})
     print(f"{name} done in {time.time() - t0:.0f}s")

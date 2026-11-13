@@ -203,3 +203,51 @@ dev2:
     stride_min: 5                      # pretraining rows: one per 5 minutes
     bg_window_min: 60                  # background = trailing 60-min 20 % quantile (same as the detector)
     bg_quantile: 0.2
+  final:                               # FINAL_CHOICE_2 (src/dev2/choose.py fills targets/r1 from the dev results)
+    calibration_start: "2026-08-01"    # fit < this minus purge; isotonic on August 2026
+    threshold_start: "2026-09-01"      # thresholds on 2026-09-01 .. 2026-09-12 (minus purge)
+    bootstrap: {n: 1000, seed: 0, level: 0.95}
+    targets:
+      now:
+        learner: xgb
+        blocks: []
+        goes_blocks: [goes]
+        choice: aditya
+        idea: base
+      c_30m:
+        learner: ensemble
+        blocks: [long, drift, spectral]
+        goes_blocks: [goes]
+        choice: aditya
+        idea: champ_c30
+      c_60m:
+        learner: xgb
+        blocks: []
+        goes_blocks: [goes, gc, srs]
+        choice: aditya
+        idea: base
+      c_120m:
+        learner: xgb
+        blocks: []
+        goes_blocks: [goes, gc, srs]
+        choice: aditya
+        idea: base
+      m_30m:
+        learner: logreg
+        blocks: []
+        goes_blocks: [goes]
+        choice: aditya
+        idea: base
+      m_60m:
+        learner: logreg
+        blocks: []
+        goes_blocks: [goes, gc, srs]
+        choice: aditya
+        idea: base
+      m_120m:
+        learner: xgb
+        blocks: []
+        goes_blocks: [goes, gc, srs]
+        choice: aditya
+        idea: base
+    r1: {aditya: logreg, with_goes: logreg}

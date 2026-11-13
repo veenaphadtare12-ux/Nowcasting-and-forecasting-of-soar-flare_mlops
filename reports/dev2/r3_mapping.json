@@ -1,0 +1,10 @@
+{
+ "n_flares": 2356,
+ "n_c_or_more": 2297,
+ "power_law_slope_excess_vs_goes_flux": 1.417633911272948,
+ "eda_power_law_slope": 1.34,
+ "ratio_slope_solexs_vs_goes": 1.323225171753108,
+ "ratio_intercept": 0.20401705501155404,
+ "ratio_corr": 0.9716833394492559,
+ "median_ratio_solexs_over_goes": 1.8727518737326294
+}

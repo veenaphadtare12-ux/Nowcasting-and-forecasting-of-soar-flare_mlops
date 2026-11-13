@@ -1,0 +1,627 @@
+{
+ "targets": {
+  "now": {
+   "learner": "xgb",
+   "blocks": [],
+   "idea": "base",
+   "goes_blocks": [
+    "goes"
+   ],
+   "choice": "aditya",
+   "candidates": {},
+   "goes_tests": {},
+   "reference": {
+    "mean_monthly_tss": 0.7191980058629632,
+    "std_monthly_tss": 0.04440490388667952,
+    "worst_month": "2025-08",
+    "worst_month_tss": 0.640732934687575,
+    "pooled_tss": 0.721989988300099,
+    "pooled_quietstart_tss": 0.45863026693458653,
+    "mean_monthly_quietstart_tss": 0.4468493767032756,
+    "active_days_tss": 0.708974069463144,
+    "quiet_days_tss": 0.7258679242148853,
+    "active_days_positives": 143666,
+    "quiet_days_positives": 81239,
+    "monthly_tss": [
+     0.6407,
+     0.6729,
+     0.7237,
+     0.7091,
+     0.6967,
+     0.6442,
+     0.7329,
+     0.7205,
+     0.7443,
+     0.7215,
+     0.7568,
+     0.7217,
+     0.7816,
+     0.8023
+    ],
+    "C_pooled": {
+     "tss": 0.5994188494174286,
+     "pod": 0.9193348302616661,
+     "far": 0.8036110499000783,
+     "mean_monthly_tss": 0.6065783245970005
+    },
+    "K10_pooled": {
+     "tss": 0.7192193544698158,
+     "pod": 0.8014628398657211,
+     "far": 0.5468263286378366,
+     "mean_monthly_tss": 0.7191219542949471
+    },
+    "K5_pooled": {
+     "tss": 0.6926855846839923,
+     "pod": 0.7390587136791089,
+     "far": 0.4245684730905843,
+     "mean_monthly_tss": 0.6950363524247477
+    },
+    "K20_pooled": {
+     "tss": 0.7116949610535476,
+     "pod": 0.8572908561392588,
+     "far": 0.6663378655965058,
+     "mean_monthly_tss": 0.7111751146155002
+    }
+   }
+  },
+  "c_30m": {
+   "learner": "ensemble",
+   "blocks": [
+    "long",
+    "drift",
+    "spectral"
+   ],
+   "idea": "champ_c30",
+   "goes_blocks": [
+    "goes"
+   ],
+   "choice": "aditya",
+   "candidates": {
+    "champ_c30": {
+     "ref_mean": 0.16789029886379195,
+     "exp_mean": 0.21820673600404517,
+     "months_better": 13,
+     "need": 9,
+     "decision": "KEPT"
+    }
+   },
+   "goes_tests": {},
+   "reference": {
+    "mean_monthly_tss": 0.16789029886379195,
+    "std_monthly_tss": 0.08982993147870375,
+    "worst_month": "2025-09",
+    "worst_month_tss": -0.003351544949185159,
+    "pooled_tss": 0.1942043320210688,
+    "pooled_quietstart_tss": 0.20225300007943198,
+    "mean_monthly_quietstart_tss": 0.1745453092165701,
+    "active_days_tss": 0.16681700461444182,
+    "quiet_days_tss": 0.15898800110820732,
+    "active_days_positives": 247980,
+    "quiet_days_positives": 131832,
+    "monthly_tss": [
+     0.137,
+     -0.0034,
+     0.1159,
+     0.1449,
+     0.1351,
+     0.0492,
+     0.2933,
+     0.1863,
+     0.3607,
+     0.1297,
+     0.2155,
+     0.2476,
+     0.1918,
+     0.1468
+    ],
+    "C_pooled": {
+     "tss": 0.09095643567163314,
+     "pod": 0.46181005339483744,
+     "far": 0.8396745613241307,
+     "mean_monthly_tss": 0.1060710060167791
+    },
+    "K10_pooled": {
+     "tss": 0.15608307662200638,
+     "pod": 0.8763177572061968,
+     "far": 0.8427724977998561,
+     "mean_monthly_tss": 0.13373750393741063
+    },
+    "K5_pooled": {
+     "tss": 0.10906299819040222,
+     "pod": 0.416966815161185,
+     "far": 0.8280593832377197,
+     "mean_monthly_tss": 0.10565213842883066
+    },
+    "K20_pooled": {
+     "tss": 0.06429046001888317,
+     "pod": 0.971825534738239,
+     "far": 0.8589638758063197,
+     "mean_monthly_tss": 0.06578672259236404
+    }
+   }
+  },
+  "c_60m": {
+   "learner": "xgb",
+   "blocks": [],
+   "idea": "base",
+   "goes_blocks": [
+    "goes",
+    "gc",
+    "srs"
+   ],
+   "choice": "aditya",
+   "candidates": {
+    "r2a": {
+     "ref_mean": 0.21384969940957735,
+     "exp_mean": 0.15777650573295632,
+     "months_better": 3,
+     "need": 9,
+     "decision": "DROPPED"
+    },
+    "r3_stack": {
+     "ref_mean": 0.21384969940957735,
+     "exp_mean": 0.2116140403070451,
+     "months_better": 7,
+     "need": 9,
+     "decision": "DROPPED"
+    }
+   },
+   "goes_tests": {
+    "e6": {
+     "ref_mean": 0.21384969940957735,
+     "exp_mean": 0.18420065721299814,
+     "months_better": 3,
+     "need": 9,
+     "decision": "DROPPED"
+    },
+    "r2b_vs_r2a": {
+     "ref_mean": 0.15777650573295632,
+     "exp_mean": 0.1671498684934436,
+     "months_better": 8,
+     "need": 9,
+     "decision": "DROPPED"
+    }
+   },
+   "reference": {
+    "mean_monthly_tss": 0.21384969940957735,
+    "std_monthly_tss": 0.09577401127956649,
+    "worst_month": "2025-09",
+    "worst_month_tss": 0.02938865527657175,
+    "pooled_tss": 0.22930422735975098,
+    "pooled_quietstart_tss": 0.2391969621935836,
+    "mean_monthly_quietstart_tss": 0.22175633071727646,
+    "active_days_tss": 0.2209104684602729,
+    "quiet_days_tss": 0.1845677793861205,
+    "active_days_positives": 437530,
+    "quiet_days_positives": 239079,
+    "monthly_tss": [
+     0.1279,
+     0.0294,
+     0.2025,
+     0.1717,
+     0.1835,
+     0.0991,
+     0.2354,
+     0.2473,
+     0.4341,
+     0.1571,
+     0.2693,
+     0.2846,
+     0.3069,
+     0.245
+    ],
+    "C_pooled": {
+     "tss": 0.04328082839359815,
+     "pod": 0.9146139055200271,
+     "far": 0.7532027340738682,
+     "mean_monthly_tss": 0.06238914724882109
+    },
+    "K10_pooled": {
+     "tss": 0.07088459895903365,
+     "pod": 0.9584486756753162,
+     "far": 0.7478936223397907,
+     "mean_monthly_tss": 0.07792135830527422
+    },
+    "K5_pooled": {
+     "tss": 0.18615997949334595,
+     "pod": 0.8644386935438341,
+     "far": 0.7153930111349059,
+     "mean_monthly_tss": 0.16732069266574365
+    },
+    "K20_pooled": {
+     "tss": 0.028264460544977887,
+     "pod": 0.9870708193358351,
+     "far": 0.7567958393236643,
+     "mean_monthly_tss": 0.03336064742935515
+    }
+   }
+  },
+  "c_120m": {
+   "learner": "xgb",
+   "blocks": [],
+   "idea": "base",
+   "goes_blocks": [
+    "goes",
+    "gc",
+    "srs"
+   ],
+   "choice": "aditya",
+   "candidates": {
+    "r2a": {
+     "ref_mean": 0.22217230302441776,
+     "exp_mean": 0.16062536584582207,
+     "months_better": 3,
+     "need": 9,
+     "decision": "DROPPED"
+    },
+    "r3_stack": {
+     "ref_mean": 0.22217230302441776,
+     "exp_mean": 0.2081183490200078,
+     "months_better": 6,
+     "need": 9,
+     "decision": "DROPPED"
+    }
+   },
+   "goes_tests": {
+    "e6": {
+     "ref_mean": 0.22217230302441776,
+     "exp_mean": 0.21591913446708041,
+     "months_better": 8,
+     "need": 9,
+     "decision": "DROPPED"
+    },
+    "r2b_vs_r2a": {
+     "ref_mean": 0.16062536584582207,
+     "exp_mean": 0.18031151062666678,
+     "months_better": 8,
+     "need": 9,
+     "decision": "DROPPED"
+    }
+   },
+   "reference": {
+    "mean_monthly_tss": 0.22217230302441776,
+    "std_monthly_tss": 0.12699766227309817,
+    "worst_month": "2025-09",
+    "worst_month_tss": 0.006321620086292001,
+    "pooled_tss": 0.2394657799067933,
+    "pooled_quietstart_tss": 0.24285076861428367,
+    "mean_monthly_quietstart_tss": 0.22378718392497948,
+    "active_days_tss": 0.23306970077792372,
+    "quiet_days_tss": 0.1943552025994843,
+    "active_days_positives": 686454,
+    "quiet_days_positives": 400811,
+    "monthly_tss": [
+     0.0817,
+     0.0063,
+     0.17,
+     0.1777,
+     0.1752,
+     0.0972,
+     0.3288,
+     0.2619,
+     0.5196,
+     0.1313,
+     0.339,
+     0.2354,
+     0.3345,
+     0.2517
+    ],
+    "C_pooled": {
+     "tss": 0.003650725148665823,
+     "pod": 0.9997433928251163,
+     "far": 0.6135299674571687,
+     "mean_monthly_tss": 0.0032104421519839055
+    },
+    "K10_pooled": {
+     "tss": 0.04338945311727871,
+     "pod": 0.9843101727729671,
+     "far": 0.6036629309521147,
+     "mean_monthly_tss": 0.05068515927585029
+    },
+    "K5_pooled": {
+     "tss": 0.08284127513095263,
+     "pod": 0.9580525446878176,
+     "far": 0.5927621499074031,
+     "mean_monthly_tss": 0.09264770945830716
+    },
+    "K20_pooled": {
+     "tss": 0.021950463385048025,
+     "pod": 0.9926751987785867,
+     "far": 0.6090861577946004,
+     "mean_monthly_tss": 0.023877681951079872
+    }
+   }
+  },
+  "m_30m": {
+   "learner": "logreg",
+   "blocks": [],
+   "idea": "base",
+   "goes_blocks": [
+    "goes"
+   ],
+   "choice": "aditya",
+   "candidates": {
+    "champ_m30_E5": {
+     "ref_mean": 0.2397765037261064,
+     "exp_mean": 0.2841727488250957,
+     "months_better": 8,
+     "need": 9,
+     "decision": "DROPPED"
+    }
+   },
+   "goes_tests": {
+    "e6": {
+     "ref_mean": 0.2397765037261064,
+     "exp_mean": 0.24802164658448628,
+     "months_better": 8,
+     "need": 9,
+     "decision": "DROPPED"
+    },
+    "m30_E6_vs_E5": {
+     "ref_mean": 0.2841727488250957,
+     "exp_mean": 0.28052156616817375,
+     "months_better": 5,
+     "need": 9,
+     "decision": "DROPPED"
+    }
+   },
+   "reference": {
+    "mean_monthly_tss": 0.2397765037261064,
+    "std_monthly_tss": 0.19809088271535544,
+    "worst_month": "2026-09",
+    "worst_month_tss": -0.13694505686619204,
+    "pooled_tss": 0.38721097712916,
+    "pooled_quietstart_tss": 0.3982120875966649,
+    "mean_monthly_quietstart_tss": 0.25336085696750305,
+    "active_days_tss": 0.3027727255903194,
+    "quiet_days_tss": 0.3773030040212871,
+    "active_days_positives": 37238,
+    "quiet_days_positives": 7557,
+    "monthly_tss": [
+     0.0434,
+     0.2844,
+     0.3969,
+     0.4062,
+     0.0988,
+     0.13,
+     0.4122,
+     -0.059,
+     0.4467,
+     0.4246,
+     0.3141,
+     0.4905,
+     0.105,
+     -0.1369
+    ],
+    "C_pooled": {
+     "tss": -0.002604472267206622,
+     "pod": 0.0,
+     "far": 1.0,
+     "mean_monthly_tss": -0.002101870101902244
+    },
+    "K10_pooled": {
+     "tss": -0.0019300461208713675,
+     "pod": 0.002745842169885032,
+     "far": 0.9907323688969258,
+     "mean_monthly_tss": 0.0004965238062451359
+    },
+    "K5_pooled": {
+     "tss": -0.001389360069357765,
+     "pod": 0.0,
+     "far": 1.0,
+     "mean_monthly_tss": -0.0011568306454178047
+    },
+    "K20_pooled": {
+     "tss": 0.1283674446201446,
+     "pod": 0.16048666145775198,
+     "far": 0.9262749843607387,
+     "mean_monthly_tss": 0.05730879095180974
+    }
+   }
+  },
+  "m_60m": {
+   "learner": "logreg",
+   "blocks": [],
+   "idea": "base",
+   "goes_blocks": [
+    "goes",
+    "gc",
+    "srs"
+   ],
+   "choice": "aditya",
+   "candidates": {
+    "r2a": {
+     "ref_mean": 0.24210047969763432,
+     "exp_mean": 0.16531564396876033,
+     "months_better": 6,
+     "need": 9,
+     "decision": "DROPPED"
+    },
+    "r3_stack": {
+     "ref_mean": 0.24210047969763432,
+     "exp_mean": 0.23305489008110225,
+     "months_better": 6,
+     "need": 9,
+     "decision": "DROPPED"
+    }
+   },
+   "goes_tests": {
+    "e6": {
+     "ref_mean": 0.24210047969763432,
+     "exp_mean": 0.22995599867842517,
+     "months_better": 6,
+     "need": 9,
+     "decision": "DROPPED"
+    },
+    "r2b_vs_r2a": {
+     "ref_mean": 0.16531564396876033,
+     "exp_mean": 0.11630472750104662,
+     "months_better": 6,
+     "need": 9,
+     "decision": "DROPPED"
+    }
+   },
+   "reference": {
+    "mean_monthly_tss": 0.24210047969763432,
+    "std_monthly_tss": 0.19451771559748893,
+    "worst_month": "2026-09",
+    "worst_month_tss": -0.07011113357075348,
+    "pooled_tss": 0.40919032363515573,
+    "pooled_quietstart_tss": 0.4143734696326773,
+    "mean_monthly_quietstart_tss": 0.25334308643959785,
+    "active_days_tss": 0.3255763482811722,
+    "quiet_days_tss": 0.36733158962261236,
+    "active_days_positives": 69879,
+    "quiet_days_positives": 14553,
+    "monthly_tss": [
+     0.0069,
+     0.247,
+     0.4004,
+     0.4174,
+     0.2084,
+     0.1626,
+     0.5167,
+     -0.0536,
+     0.3285,
+     0.3714,
+     0.2589,
+     0.5427,
+     0.0523,
+     -0.0701
+    ],
+    "C_pooled": {
+     "tss": 0.0018677620875169852,
+     "pod": 0.017753932158423347,
+     "far": 0.9669386854874283,
+     "mean_monthly_tss": 0.016188109504766245
+    },
+    "K10_pooled": {
+     "tss": 0.007856086558081229,
+     "pod": 0.037296285768429034,
+     "far": 0.9626873629954381,
+     "mean_monthly_tss": 0.03820904121628251
+    },
+    "K5_pooled": {
+     "tss": -0.0017241619301124637,
+     "pod": 0.0020016107636914916,
+     "far": 0.9838292986317099,
+     "mean_monthly_tss": -0.00012090026233028193
+    },
+    "K20_pooled": {
+     "tss": 0.16376811546971554,
+     "pod": 0.3202103467879477,
+     "far": 0.941068380819105,
+     "mean_monthly_tss": 0.13000455622946058
+    }
+   }
+  },
+  "m_120m": {
+   "learner": "xgb",
+   "blocks": [],
+   "idea": "base",
+   "goes_blocks": [
+    "goes",
+    "gc",
+    "srs"
+   ],
+   "choice": "aditya",
+   "candidates": {
+    "r2a": {
+     "ref_mean": 0.23322757626969695,
+     "exp_mean": 0.188564838514886,
+     "months_better": 7,
+     "need": 9,
+     "decision": "DROPPED"
+    },
+    "r3_stack": {
+     "ref_mean": 0.23322757626969695,
+     "exp_mean": 0.22552874538009698,
+     "months_better": 5,
+     "need": 9,
+     "decision": "DROPPED"
+    }
+   },
+   "goes_tests": {
+    "e6": {
+     "ref_mean": 0.23322757626969695,
+     "exp_mean": 0.21070478508876703,
+     "months_better": 6,
+     "need": 9,
+     "decision": "DROPPED"
+    },
+    "r2b_vs_r2a": {
+     "ref_mean": 0.188564838514886,
+     "exp_mean": 0.14212717115703377,
+     "months_better": 6,
+     "need": 9,
+     "decision": "DROPPED"
+    }
+   },
+   "reference": {
+    "mean_monthly_tss": 0.23322757626969695,
+    "std_monthly_tss": 0.1457220358744973,
+    "worst_month": "2026-03",
+    "worst_month_tss": -0.07877851837898275,
+    "pooled_tss": 0.35943796253475135,
+    "pooled_quietstart_tss": 0.3546718181796501,
+    "mean_monthly_quietstart_tss": 0.23310407329558402,
+    "active_days_tss": 0.3189652505286034,
+    "quiet_days_tss": 0.2640177451597782,
+    "active_days_positives": 124453,
+    "quiet_days_positives": 27984,
+    "monthly_tss": [
+     0.2643,
+     0.0931,
+     0.3316,
+     0.3763,
+     0.2024,
+     0.1169,
+     0.4636,
+     -0.0788,
+     0.4013,
+     0.268,
+     0.1837,
+     0.3735,
+     0.2078,
+     0.0616
+    ],
+    "C_pooled": {
+     "tss": -0.005313584122914432,
+     "pod": 0.052710299992783906,
+     "far": 0.950644053637352,
+     "mean_monthly_tss": 0.048166435493194514
+    },
+    "K10_pooled": {
+     "tss": 0.16270586598009734,
+     "pod": 0.28119813431122365,
+     "far": 0.8805686120994458,
+     "mean_monthly_tss": 0.09791131221256254
+    },
+    "K5_pooled": {
+     "tss": 0.017942751338497258,
+     "pod": 0.04908913190367168,
+     "far": 0.917366962244774,
+     "mean_monthly_tss": 0.038087680828423766
+    },
+    "K20_pooled": {
+     "tss": 0.13001939511154825,
+     "pod": 0.4838326652977952,
+     "far": 0.9275108629523445,
+     "mean_monthly_tss": 0.11950317068147176
+    }
+   }
+  }
+ },
+ "r1": {
+  "aditya": "logreg",
+  "aditya_mean_pooled_tss": {
+   "logreg": 0.581764728940457,
+   "xgb": 0.5386965213641857
+  },
+  "with_goes": "logreg",
+  "with_goes_mean_pooled_tss": {
+   "logreg": 0.5721971596225328,
+   "xgb": 0.5434446862649189
+  }
+ }
+}

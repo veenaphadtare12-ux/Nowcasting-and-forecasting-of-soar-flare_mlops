@@ -471,3 +471,195 @@ stages:
     - reports/final/analysis.json:
         cache: false
     frozen: true
+
+  # ---- task of 2026-11-13: development protocol 2 (14 months; the old test period is development data now),
+  # R1-R4, FINAL_CHOICE_2 and the ONE holdout2 stage. Only evaluate_holdout2 reads holdout2 (tests/test_holdout2_lock.py).
+  srs_fetch:
+    cmd: python -m src.dev2.context fetch_srs
+    deps:
+    - src/dev2/context.py
+    - src/noaa.py
+    outs:
+    - data/external/srs
+
+  r3_fetch:
+    cmd: python -m src.dev2.pretrain fetch
+    deps:
+    - src/noaa.py
+    params:
+    - dev2.r3
+    outs:
+    - data/external/goes16_xrs
+    - data/external/goes_events_hist
+
+  dev2_ref:
+    cmd: python -m src.dev2.run ref
+    deps: &dev2deps
+    - src/dev2/run.py
+    - src/dev2/protocol.py
+    - src/dev2/context.py
+    - src/final/features.py
+    - src/improve/features_extra.py
+    - src/models/train.py
+    - data/processed/dataset
+    - data/processed/events.parquet
+    - data/processed/solexs_minute.parquet
+    - data/processed/solexs_spectral_minute.parquet
+    - data/processed/goes_xrs_minute.parquet
+    - data/processed/final/solexs_spectral_minute_test.parquet
+    - data/processed/final/goes_xrs_minute_test.parquet
+    - data/external/goes_events
+    - data/external/srs
+    - reports/model_metrics.json
+    params:
+    - dev2
+    - models
+    outs:
+    - reports/dev2/ref.json:
+        cache: false
+
+  dev2_e6:
+    cmd: python -m src.dev2.run e6
+    deps: *dev2deps
+    params:
+    - dev2
+    - models
+    outs:
+    - reports/dev2/e6.json:
+        cache: false
+
+  dev2_r2a:
+    cmd: python -m src.dev2.run r2a
+    deps: *dev2deps
+    params:
+    - dev2
+    - models
+    outs:
+    - reports/dev2/r2a.json:
+        cache: false
+
+  dev2_r2b:
+    cmd: python -m src.dev2.run r2b
+    deps: *dev2deps
+    params:
+    - dev2
+    - models
+    outs:
+    - reports/dev2/r2b.json:
+        cache: false
+
+  dev2_champ:
+    cmd: python -m src.dev2.run champ
+    deps: *dev2deps
+    params:
+    - dev2
+    - models
+    outs:
+    - reports/dev2/champ.json:
+        cache: false
+
+  dev2_r1:
+    cmd: python -m src.dev2.early run
+    deps:
+    - src/dev2/early.py
+    - src/dev2/protocol.py
+    - data/processed/dataset
+    - data/processed/events.parquet
+    - data/processed/events_pairs.parquet
+    - data/processed/goes_matched.parquet
+    - data/processed/solexs_minute.parquet
+    - data/processed/solexs_spectral_minute.parquet
+    - data/processed/goes_xrs_minute.parquet
+    - data/processed/final/solexs_spectral_minute_test.parquet
+    - data/processed/final/goes_xrs_minute_test.parquet
+    params:
+    - dev2
+    outs:
+    - reports/dev2/r1.json:
+        cache: false
+
+  dev2_r3_mapping:
+    cmd: python -m src.dev2.pretrain mapping
+    deps:
+    - src/dev2/pretrain.py
+    - data/processed/events.parquet
+    - data/processed/goes_xrs_minute.parquet
+    - data/processed/final/goes_xrs_minute_test.parquet
+    outs:
+    - reports/dev2/r3_mapping.json:
+        cache: false
+
+  dev2_r3:
+    cmd: python -m src.dev2.pretrain run
+    deps:
+    - src/dev2/pretrain.py
+    - src/dev2/run.py
+    - src/dev2/protocol.py
+    - data/processed/dataset
+    - data/processed/solexs_minute.parquet
+    - data/external/goes16_xrs
+    - data/external/goes_events_hist
+    - reports/dev2/r3_mapping.json
+    - reports/dev2/ref.json
+    params:
+    - dev2
+    - models
+    outs:
+    - reports/dev2/r3.json:
+        cache: false
+
+  # src/dev2/choose.py (the mechanical choice) writes params.yaml dev2.final.targets/r1 by hand-run, like detector tuning.
+  dev2_final:        # FINAL_CHOICE_2 models: fit < 2026-08-01, isotonic on Aug 2026, thresholds on 2026-09-01..12
+    cmd: python -m src.dev2.final
+    deps:
+    - src/dev2/final.py
+    - src/dev2/run.py
+    - src/dev2/early.py
+    - src/dev2/protocol.py
+    - src/dev2/context.py
+    - src/final/features.py
+    - src/improve/features_extra.py
+    - data/processed/dataset
+    - data/processed/events.parquet
+    - data/processed/events_pairs.parquet
+    - data/processed/goes_matched.parquet
+    - data/processed/solexs_minute.parquet
+    - data/processed/solexs_spectral_minute.parquet
+    - data/processed/goes_xrs_minute.parquet
+    - data/processed/final/solexs_spectral_minute_test.parquet
+    - data/processed/final/goes_xrs_minute_test.parquet
+    - data/external/goes_events
+    - data/external/srs
+    - reports/model_metrics.json
+    params:
+    - dev2
+    - models
+    outs:
+    - models_final2
+    - reports/dev2/final_freeze.json:
+        cache: false
+
+  evaluate_holdout2:   # the ONLY stage that builds/reads holdout2; refuses to run before FINAL_CHOICE_2.md is committed
+    cmd: python -m src.holdout2.evaluate
+    deps:
+    - src/holdout2/evaluate.py
+    - src/holdout2/ingest.py
+    - src/dev2/early.py
+    - src/dev2/context.py
+    - models_final2
+    - docs/FINAL_CHOICE_2.md
+    - docs/HOLDOUT2_LOCK.md
+    - reports/holdout2/ingest.json
+    - reports/holdout2/lock_sha256.txt
+    - data/external/holdout2
+    - data/processed/dataset
+    - data/processed/events.parquet
+    - data/processed/solexs_minute.parquet
+    params:
+    - holdout2
+    - dev2.final
+    outs:
+    - reports/holdout2/metrics.json:
+        cache: false
+    - reports/holdout2/results.md:
+        cache: false

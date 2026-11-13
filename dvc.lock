@@ -2464,3 +2464,2073 @@ stages:
       hash: md5
       md5: 9be5c6c1b8461f2ab1c5601add9ac46f
       size: 42589
+  srs_fetch:
+    cmd: python -m src.dev2.context fetch_srs
+    deps:
+    - path: src/dev2/context.py
+      hash: md5
+      md5: 41d28dc89b8bc769c3c4299922fdbb1e
+      size: 7058
+    - path: src/noaa.py
+      hash: md5
+      md5: f29528f42b59b2856e9357dd27e5b7f4
+      size: 2120
+    outs:
+    - path: data/external/srs
+      hash: md5
+      md5: f52d885e6d24108a02eb8e01516f95c3.dir
+      size: 466473
+      nfiles: 516
+  r3_fetch:
+    cmd: python -m src.dev2.pretrain fetch
+    deps:
+    - path: src/noaa.py
+      hash: md5
+      md5: f29528f42b59b2856e9357dd27e5b7f4
+      size: 2120
+    params:
+      params.yaml:
+        dev2.r3:
+          satellite: goes16
+          start: '2017-02-07'
+          end: '2025-03-28'
+          xrs_dir: data/external/goes16_xrs
+          events_dir: data/external/goes_events_hist
+          old_sat_scale: 0.7
+          stride_min: 5
+          bg_window_min: 60
+          bg_quantile: 0.2
+    outs:
+    - path: data/external/goes16_xrs
+      hash: md5
+      md5: 8f234014cdd2df104aabc935014009a5.dir
+      size: 862776057
+      nfiles: 2972
+    - path: data/external/goes_events_hist
+      hash: md5
+      md5: 7512f7d84200387a74110a7415db1c91.dir
+      size: 5929671
+      nfiles: 2975
+  dev2_ref:
+    cmd: python -m src.dev2.run ref
+    deps:
+    - path: data/external/goes_events
+      hash: md5
+      md5: ac6abf0151d4ebf0d2e54717f0e82cd5.dir
+      size: 1550929
+      nfiles: 523
+    - path: data/external/srs
+      hash: md5
+      md5: f52d885e6d24108a02eb8e01516f95c3.dir
+      size: 466473
+      nfiles: 516
+    - path: data/processed/dataset
+      hash: md5
+      md5: 194ca35bab9353da7cb8f2969e15de6a.dir
+      size: 221276527
+      nfiles: 3
+    - path: data/processed/events.parquet
+      hash: md5
+      md5: 2b45af31c2e52392d34af193823356bf
+      size: 216275
+    - path: data/processed/final/goes_xrs_minute_test.parquet
+      hash: md5
+      md5: ab76036c7d8409e9dbfc013bf2286272
+      size: 2943780
+    - path: data/processed/final/solexs_spectral_minute_test.parquet
+      hash: md5
+      md5: 977cbd2376751dd3decb9a0c9fc8a7a1
+      size: 1872976
+    - path: data/processed/goes_xrs_minute.parquet
+      hash: md5
+      md5: 4773180905ce1f7abedff853afc3032f
+      size: 9749689
+    - path: data/processed/solexs_minute.parquet
+      hash: md5
+      md5: 909cdc962a62700281ad3b2c4ae51543
+      size: 6050846
+    - path: data/processed/solexs_spectral_minute.parquet
+      hash: md5
+      md5: 331b4f50826f53243578d3035221914d
+      size: 5858686
+    - path: reports/model_metrics.json
+      hash: md5
+      md5: ddb2ceaf673111587fe1d4c4e0fe2e6c
+      size: 511561
+    - path: src/dev2/context.py
+      hash: md5
+      md5: 41d28dc89b8bc769c3c4299922fdbb1e
+      size: 7058
+    - path: src/dev2/protocol.py
+      hash: md5
+      md5: 9519ddec35e32e8a1aecfbc4f4825a88
+      size: 7879
+    - path: src/dev2/run.py
+      hash: md5
+      md5: 51c4eae54f6ab44391843db8ed64b112
+      size: 12218
+    - path: src/final/features.py
+      hash: md5
+      md5: 2dee12f867fccc958cc3abf7c5bab4a6
+      size: 3238
+    - path: src/improve/features_extra.py
+      hash: md5
+      md5: 54331491c1f84b0f2da4aeff1d3ecf67
+      size: 7724
+    - path: src/models/train.py
+      hash: md5
+      md5: e9fa5f443d439904a58a8fc34397726a
+      size: 18491
+    params:
+      params.yaml:
+        dev2:
+          months:
+          - 2025-08
+          - 2025-09
+          - 2025-10
+          - 2025-11
+          - 2025-12
+          - 2026-01
+          - 2026-02
+          - 2026-03
+          - 2026-04
+          - 2026-05
+          - 2026-06
+          - 2026-07
+          - 2026-08
+          - 2026-09
+          targets:
+          - now
+          - c_30m
+          - c_60m
+          - c_120m
+          - m_30m
+          - m_60m
+          - m_120m
+          r2_targets:
+          - c_60m
+          - c_120m
+          - m_60m
+          - m_120m
+          purge_min: 120
+          seed: 42
+          train_stride: 6
+          acceptance:
+            min_share_months_improved: 0.6
+          active_lookback_h: 72
+          far_cap: 0.8
+          cost_fn_fp: 10
+          cost_sensitivity:
+          - 5
+          - 20
+          context_windows_h:
+          - 24
+          - 48
+          - 72
+          goes_count_latency_h: 24
+          srs_available_after_min: 60
+          srs_dir: data/external/srs
+          r3:
+            satellite: goes16
+            start: '2017-02-07'
+            end: '2025-03-28'
+            xrs_dir: data/external/goes16_xrs
+            events_dir: data/external/goes_events_hist
+            old_sat_scale: 0.7
+            stride_min: 5
+            bg_window_min: 60
+            bg_quantile: 0.2
+          final:
+            calibration_start: '2026-08-01'
+            threshold_start: '2026-09-01'
+            bootstrap:
+              n: 1000
+              seed: 0
+              level: 0.95
+            targets:
+              now:
+                learner: xgb
+                blocks: []
+                goes_blocks:
+                - goes
+                choice: aditya
+                idea: base
+              c_30m:
+                learner: ensemble
+                blocks:
+                - long
+                - drift
+                - spectral
+                goes_blocks:
+                - goes
+                choice: aditya
+                idea: champ_c30
+              c_60m:
+                learner: xgb
+                blocks: []
+                goes_blocks:
+                - goes
+                - gc
+                - srs
+                choice: aditya
+                idea: base
+              c_120m:
+                learner: xgb
+                blocks: []
+                goes_blocks:
+                - goes
+                - gc
+                - srs
+                choice: aditya
+                idea: base
+              m_30m:
+                learner: logreg
+                blocks: []
+                goes_blocks:
+                - goes
+                choice: aditya
+                idea: base
+              m_60m:
+                learner: logreg
+                blocks: []
+                goes_blocks:
+                - goes
+                - gc
+                - srs
+                choice: aditya
+                idea: base
+              m_120m:
+                learner: xgb
+                blocks: []
+                goes_blocks:
+                - goes
+                - gc
+                - srs
+                choice: aditya
+                idea: base
+            r1:
+              aditya: logreg
+              with_goes: logreg
+        models:
+          targets:
+          - now
+          - c_30m
+          - c_60m
+          - c_120m
+          - m_30m
+          - m_60m
+          - m_120m
+          inner_split: '2025-12-01'
+          purge_min: 120
+          train_stride: 6
+          seeds:
+          - 42
+          - 43
+          - 44
+          rule_feature: ratio_1m_bg
+          logreg:
+            C: 1.0
+            max_iter: 2000
+          xgb:
+            learning_rate: 0.05
+            subsample: 0.8
+            colsample_bytree: 0.8
+          cv:
+            fold_months:
+            - 2025-08
+            - 2025-09
+            - 2025-10
+            - 2025-11
+            stride: 30
+            n_estimators:
+            - 100
+            - 300
+            - 600
+            max_depth:
+            - 3
+            - 5
+            min_child_weight:
+            - 5
+            - 50
+            reg_lambda:
+            - 1
+            - 10
+          operating_points:
+            A: tss
+            B: hss
+          bootstrap:
+            n: 1000
+            seed: 0
+            level: 0.95
+          ablation:
+            cal_start: '2025-11-01'
+            cal_end: '2025-11-30'
+            train_stride: 1
+            min_positive_episodes: 30
+    outs:
+    - path: reports/dev2/ref.json
+      hash: md5
+      md5: e17abb23e26e39f398978b32f355a577
+      size: 485145
+  dev2_e6:
+    cmd: python -m src.dev2.run e6
+    deps:
+    - path: data/external/goes_events
+      hash: md5
+      md5: ac6abf0151d4ebf0d2e54717f0e82cd5.dir
+      size: 1550929
+      nfiles: 523
+    - path: data/external/srs
+      hash: md5
+      md5: f52d885e6d24108a02eb8e01516f95c3.dir
+      size: 466473
+      nfiles: 516
+    - path: data/processed/dataset
+      hash: md5
+      md5: 194ca35bab9353da7cb8f2969e15de6a.dir
+      size: 221276527
+      nfiles: 3
+    - path: data/processed/events.parquet
+      hash: md5
+      md5: 2b45af31c2e52392d34af193823356bf
+      size: 216275
+    - path: data/processed/final/goes_xrs_minute_test.parquet
+      hash: md5
+      md5: ab76036c7d8409e9dbfc013bf2286272
+      size: 2943780
+    - path: data/processed/final/solexs_spectral_minute_test.parquet
+      hash: md5
+      md5: 977cbd2376751dd3decb9a0c9fc8a7a1
+      size: 1872976
+    - path: data/processed/goes_xrs_minute.parquet
+      hash: md5
+      md5: 4773180905ce1f7abedff853afc3032f
+      size: 9749689
+    - path: data/processed/solexs_minute.parquet
+      hash: md5
+      md5: 909cdc962a62700281ad3b2c4ae51543
+      size: 6050846
+    - path: data/processed/solexs_spectral_minute.parquet
+      hash: md5
+      md5: 331b4f50826f53243578d3035221914d
+      size: 5858686
+    - path: reports/model_metrics.json
+      hash: md5
+      md5: ddb2ceaf673111587fe1d4c4e0fe2e6c
+      size: 511561
+    - path: src/dev2/context.py
+      hash: md5
+      md5: 41d28dc89b8bc769c3c4299922fdbb1e
+      size: 7058
+    - path: src/dev2/protocol.py
+      hash: md5
+      md5: 9519ddec35e32e8a1aecfbc4f4825a88
+      size: 7879
+    - path: src/dev2/run.py
+      hash: md5
+      md5: 51c4eae54f6ab44391843db8ed64b112
+      size: 12218
+    - path: src/final/features.py
+      hash: md5
+      md5: 2dee12f867fccc958cc3abf7c5bab4a6
+      size: 3238
+    - path: src/improve/features_extra.py
+      hash: md5
+      md5: 54331491c1f84b0f2da4aeff1d3ecf67
+      size: 7724
+    - path: src/models/train.py
+      hash: md5
+      md5: e9fa5f443d439904a58a8fc34397726a
+      size: 18491
+    params:
+      params.yaml:
+        dev2:
+          months:
+          - 2025-08
+          - 2025-09
+          - 2025-10
+          - 2025-11
+          - 2025-12
+          - 2026-01
+          - 2026-02
+          - 2026-03
+          - 2026-04
+          - 2026-05
+          - 2026-06
+          - 2026-07
+          - 2026-08
+          - 2026-09
+          targets:
+          - now
+          - c_30m
+          - c_60m
+          - c_120m
+          - m_30m
+          - m_60m
+          - m_120m
+          r2_targets:
+          - c_60m
+          - c_120m
+          - m_60m
+          - m_120m
+          purge_min: 120
+          seed: 42
+          train_stride: 6
+          acceptance:
+            min_share_months_improved: 0.6
+          active_lookback_h: 72
+          far_cap: 0.8
+          cost_fn_fp: 10
+          cost_sensitivity:
+          - 5
+          - 20
+          context_windows_h:
+          - 24
+          - 48
+          - 72
+          goes_count_latency_h: 24
+          srs_available_after_min: 60
+          srs_dir: data/external/srs
+          r3:
+            satellite: goes16
+            start: '2017-02-07'
+            end: '2025-03-28'
+            xrs_dir: data/external/goes16_xrs
+            events_dir: data/external/goes_events_hist
+            old_sat_scale: 0.7
+            stride_min: 5
+            bg_window_min: 60
+            bg_quantile: 0.2
+          final:
+            calibration_start: '2026-08-01'
+            threshold_start: '2026-09-01'
+            bootstrap:
+              n: 1000
+              seed: 0
+              level: 0.95
+            targets:
+              now:
+                learner: xgb
+                blocks: []
+                goes_blocks:
+                - goes
+                choice: aditya
+                idea: base
+              c_30m:
+                learner: ensemble
+                blocks:
+                - long
+                - drift
+                - spectral
+                goes_blocks:
+                - goes
+                choice: aditya
+                idea: champ_c30
+              c_60m:
+                learner: xgb
+                blocks: []
+                goes_blocks:
+                - goes
+                - gc
+                - srs
+                choice: aditya
+                idea: base
+              c_120m:
+                learner: xgb
+                blocks: []
+                goes_blocks:
+                - goes
+                - gc
+                - srs
+                choice: aditya
+                idea: base
+              m_30m:
+                learner: logreg
+                blocks: []
+                goes_blocks:
+                - goes
+                choice: aditya
+                idea: base
+              m_60m:
+                learner: logreg
+                blocks: []
+                goes_blocks:
+                - goes
+                - gc
+                - srs
+                choice: aditya
+                idea: base
+              m_120m:
+                learner: xgb
+                blocks: []
+                goes_blocks:
+                - goes
+                - gc
+                - srs
+                choice: aditya
+                idea: base
+            r1:
+              aditya: logreg
+              with_goes: logreg
+        models:
+          targets:
+          - now
+          - c_30m
+          - c_60m
+          - c_120m
+          - m_30m
+          - m_60m
+          - m_120m
+          inner_split: '2025-12-01'
+          purge_min: 120
+          train_stride: 6
+          seeds:
+          - 42
+          - 43
+          - 44
+          rule_feature: ratio_1m_bg
+          logreg:
+            C: 1.0
+            max_iter: 2000
+          xgb:
+            learning_rate: 0.05
+            subsample: 0.8
+            colsample_bytree: 0.8
+          cv:
+            fold_months:
+            - 2025-08
+            - 2025-09
+            - 2025-10
+            - 2025-11
+            stride: 30
+            n_estimators:
+            - 100
+            - 300
+            - 600
+            max_depth:
+            - 3
+            - 5
+            min_child_weight:
+            - 5
+            - 50
+            reg_lambda:
+            - 1
+            - 10
+          operating_points:
+            A: tss
+            B: hss
+          bootstrap:
+            n: 1000
+            seed: 0
+            level: 0.95
+          ablation:
+            cal_start: '2025-11-01'
+            cal_end: '2025-11-30'
+            train_stride: 1
+            min_positive_episodes: 30
+    outs:
+    - path: reports/dev2/e6.json
+      hash: md5
+      md5: 5e6fbb4b4dd24fbbe7a437666b4e4688
+      size: 77217
+  dev2_r2a:
+    cmd: python -m src.dev2.run r2a
+    deps:
+    - path: data/external/goes_events
+      hash: md5
+      md5: ac6abf0151d4ebf0d2e54717f0e82cd5.dir
+      size: 1550929
+      nfiles: 523
+    - path: data/external/srs
+      hash: md5
+      md5: f52d885e6d24108a02eb8e01516f95c3.dir
+      size: 466473
+      nfiles: 516
+    - path: data/processed/dataset
+      hash: md5
+      md5: 194ca35bab9353da7cb8f2969e15de6a.dir
+      size: 221276527
+      nfiles: 3
+    - path: data/processed/events.parquet
+      hash: md5
+      md5: 2b45af31c2e52392d34af193823356bf
+      size: 216275
+    - path: data/processed/final/goes_xrs_minute_test.parquet
+      hash: md5
+      md5: ab76036c7d8409e9dbfc013bf2286272
+      size: 2943780
+    - path: data/processed/final/solexs_spectral_minute_test.parquet
+      hash: md5
+      md5: 977cbd2376751dd3decb9a0c9fc8a7a1
+      size: 1872976
+    - path: data/processed/goes_xrs_minute.parquet
+      hash: md5
+      md5: 4773180905ce1f7abedff853afc3032f
+      size: 9749689
+    - path: data/processed/solexs_minute.parquet
+      hash: md5
+      md5: 909cdc962a62700281ad3b2c4ae51543
+      size: 6050846
+    - path: data/processed/solexs_spectral_minute.parquet
+      hash: md5
+      md5: 331b4f50826f53243578d3035221914d
+      size: 5858686
+    - path: reports/model_metrics.json
+      hash: md5
+      md5: ddb2ceaf673111587fe1d4c4e0fe2e6c
+      size: 511561
+    - path: src/dev2/context.py
+      hash: md5
+      md5: 41d28dc89b8bc769c3c4299922fdbb1e
+      size: 7058
+    - path: src/dev2/protocol.py
+      hash: md5
+      md5: 9519ddec35e32e8a1aecfbc4f4825a88
+      size: 7879
+    - path: src/dev2/run.py
+      hash: md5
+      md5: 51c4eae54f6ab44391843db8ed64b112
+      size: 12218
+    - path: src/final/features.py
+      hash: md5
+      md5: 2dee12f867fccc958cc3abf7c5bab4a6
+      size: 3238
+    - path: src/improve/features_extra.py
+      hash: md5
+      md5: 54331491c1f84b0f2da4aeff1d3ecf67
+      size: 7724
+    - path: src/models/train.py
+      hash: md5
+      md5: e9fa5f443d439904a58a8fc34397726a
+      size: 18491
+    params:
+      params.yaml:
+        dev2:
+          months:
+          - 2025-08
+          - 2025-09
+          - 2025-10
+          - 2025-11
+          - 2025-12
+          - 2026-01
+          - 2026-02
+          - 2026-03
+          - 2026-04
+          - 2026-05
+          - 2026-06
+          - 2026-07
+          - 2026-08
+          - 2026-09
+          targets:
+          - now
+          - c_30m
+          - c_60m
+          - c_120m
+          - m_30m
+          - m_60m
+          - m_120m
+          r2_targets:
+          - c_60m
+          - c_120m
+          - m_60m
+          - m_120m
+          purge_min: 120
+          seed: 42
+          train_stride: 6
+          acceptance:
+            min_share_months_improved: 0.6
+          active_lookback_h: 72
+          far_cap: 0.8
+          cost_fn_fp: 10
+          cost_sensitivity:
+          - 5
+          - 20
+          context_windows_h:
+          - 24
+          - 48
+          - 72
+          goes_count_latency_h: 24
+          srs_available_after_min: 60
+          srs_dir: data/external/srs
+          r3:
+            satellite: goes16
+            start: '2017-02-07'
+            end: '2025-03-28'
+            xrs_dir: data/external/goes16_xrs
+            events_dir: data/external/goes_events_hist
+            old_sat_scale: 0.7
+            stride_min: 5
+            bg_window_min: 60
+            bg_quantile: 0.2
+          final:
+            calibration_start: '2026-08-01'
+            threshold_start: '2026-09-01'
+            bootstrap:
+              n: 1000
+              seed: 0
+              level: 0.95
+            targets:
+              now:
+                learner: xgb
+                blocks: []
+                goes_blocks:
+                - goes
+                choice: aditya
+                idea: base
+              c_30m:
+                learner: ensemble
+                blocks:
+                - long
+                - drift
+                - spectral
+                goes_blocks:
+                - goes
+                choice: aditya
+                idea: champ_c30
+              c_60m:
+                learner: xgb
+                blocks: []
+                goes_blocks:
+                - goes
+                - gc
+                - srs
+                choice: aditya
+                idea: base
+              c_120m:
+                learner: xgb
+                blocks: []
+                goes_blocks:
+                - goes
+                - gc
+                - srs
+                choice: aditya
+                idea: base
+              m_30m:
+                learner: logreg
+                blocks: []
+                goes_blocks:
+                - goes
+                choice: aditya
+                idea: base
+              m_60m:
+                learner: logreg
+                blocks: []
+                goes_blocks:
+                - goes
+                - gc
+                - srs
+                choice: aditya
+                idea: base
+              m_120m:
+                learner: xgb
+                blocks: []
+                goes_blocks:
+                - goes
+                - gc
+                - srs
+                choice: aditya
+                idea: base
+            r1:
+              aditya: logreg
+              with_goes: logreg
+        models:
+          targets:
+          - now
+          - c_30m
+          - c_60m
+          - c_120m
+          - m_30m
+          - m_60m
+          - m_120m
+          inner_split: '2025-12-01'
+          purge_min: 120
+          train_stride: 6
+          seeds:
+          - 42
+          - 43
+          - 44
+          rule_feature: ratio_1m_bg
+          logreg:
+            C: 1.0
+            max_iter: 2000
+          xgb:
+            learning_rate: 0.05
+            subsample: 0.8
+            colsample_bytree: 0.8
+          cv:
+            fold_months:
+            - 2025-08
+            - 2025-09
+            - 2025-10
+            - 2025-11
+            stride: 30
+            n_estimators:
+            - 100
+            - 300
+            - 600
+            max_depth:
+            - 3
+            - 5
+            min_child_weight:
+            - 5
+            - 50
+            reg_lambda:
+            - 1
+            - 10
+          operating_points:
+            A: tss
+            B: hss
+          bootstrap:
+            n: 1000
+            seed: 0
+            level: 0.95
+          ablation:
+            cal_start: '2025-11-01'
+            cal_end: '2025-11-30'
+            train_stride: 1
+            min_positive_episodes: 30
+    outs:
+    - path: reports/dev2/r2a.json
+      hash: md5
+      md5: 39fbaa712711635c52ab0ea1c344f9d2
+      size: 62533
+  dev2_r2b:
+    cmd: python -m src.dev2.run r2b
+    deps:
+    - path: data/external/goes_events
+      hash: md5
+      md5: ac6abf0151d4ebf0d2e54717f0e82cd5.dir
+      size: 1550929
+      nfiles: 523
+    - path: data/external/srs
+      hash: md5
+      md5: f52d885e6d24108a02eb8e01516f95c3.dir
+      size: 466473
+      nfiles: 516
+    - path: data/processed/dataset
+      hash: md5
+      md5: 194ca35bab9353da7cb8f2969e15de6a.dir
+      size: 221276527
+      nfiles: 3
+    - path: data/processed/events.parquet
+      hash: md5
+      md5: 2b45af31c2e52392d34af193823356bf
+      size: 216275
+    - path: data/processed/final/goes_xrs_minute_test.parquet
+      hash: md5
+      md5: ab76036c7d8409e9dbfc013bf2286272
+      size: 2943780
+    - path: data/processed/final/solexs_spectral_minute_test.parquet
+      hash: md5
+      md5: 977cbd2376751dd3decb9a0c9fc8a7a1
+      size: 1872976
+    - path: data/processed/goes_xrs_minute.parquet
+      hash: md5
+      md5: 4773180905ce1f7abedff853afc3032f
+      size: 9749689
+    - path: data/processed/solexs_minute.parquet
+      hash: md5
+      md5: 909cdc962a62700281ad3b2c4ae51543
+      size: 6050846
+    - path: data/processed/solexs_spectral_minute.parquet
+      hash: md5
+      md5: 331b4f50826f53243578d3035221914d
+      size: 5858686
+    - path: reports/model_metrics.json
+      hash: md5
+      md5: ddb2ceaf673111587fe1d4c4e0fe2e6c
+      size: 511561
+    - path: src/dev2/context.py
+      hash: md5
+      md5: 41d28dc89b8bc769c3c4299922fdbb1e
+      size: 7058
+    - path: src/dev2/protocol.py
+      hash: md5
+      md5: 9519ddec35e32e8a1aecfbc4f4825a88
+      size: 7879
+    - path: src/dev2/run.py
+      hash: md5
+      md5: 51c4eae54f6ab44391843db8ed64b112
+      size: 12218
+    - path: src/final/features.py
+      hash: md5
+      md5: 2dee12f867fccc958cc3abf7c5bab4a6
+      size: 3238
+    - path: src/improve/features_extra.py
+      hash: md5
+      md5: 54331491c1f84b0f2da4aeff1d3ecf67
+      size: 7724
+    - path: src/models/train.py
+      hash: md5
+      md5: e9fa5f443d439904a58a8fc34397726a
+      size: 18491
+    params:
+      params.yaml:
+        dev2:
+          months:
+          - 2025-08
+          - 2025-09
+          - 2025-10
+          - 2025-11
+          - 2025-12
+          - 2026-01
+          - 2026-02
+          - 2026-03
+          - 2026-04
+          - 2026-05
+          - 2026-06
+          - 2026-07
+          - 2026-08
+          - 2026-09
+          targets:
+          - now
+          - c_30m
+          - c_60m
+          - c_120m
+          - m_30m
+          - m_60m
+          - m_120m
+          r2_targets:
+          - c_60m
+          - c_120m
+          - m_60m
+          - m_120m
+          purge_min: 120
+          seed: 42
+          train_stride: 6
+          acceptance:
+            min_share_months_improved: 0.6
+          active_lookback_h: 72
+          far_cap: 0.8
+          cost_fn_fp: 10
+          cost_sensitivity:
+          - 5
+          - 20
+          context_windows_h:
+          - 24
+          - 48
+          - 72
+          goes_count_latency_h: 24
+          srs_available_after_min: 60
+          srs_dir: data/external/srs
+          r3:
+            satellite: goes16
+            start: '2017-02-07'
+            end: '2025-03-28'
+            xrs_dir: data/external/goes16_xrs
+            events_dir: data/external/goes_events_hist
+            old_sat_scale: 0.7
+            stride_min: 5
+            bg_window_min: 60
+            bg_quantile: 0.2
+          final:
+            calibration_start: '2026-08-01'
+            threshold_start: '2026-09-01'
+            bootstrap:
+              n: 1000
+              seed: 0
+              level: 0.95
+            targets:
+              now:
+                learner: xgb
+                blocks: []
+                goes_blocks:
+                - goes
+                choice: aditya
+                idea: base
+              c_30m:
+                learner: ensemble
+                blocks:
+                - long
+                - drift
+                - spectral
+                goes_blocks:
+                - goes
+                choice: aditya
+                idea: champ_c30
+              c_60m:
+                learner: xgb
+                blocks: []
+                goes_blocks:
+                - goes
+                - gc
+                - srs
+                choice: aditya
+                idea: base
+              c_120m:
+                learner: xgb
+                blocks: []
+                goes_blocks:
+                - goes
+                - gc
+                - srs
+                choice: aditya
+                idea: base
+              m_30m:
+                learner: logreg
+                blocks: []
+                goes_blocks:
+                - goes
+                choice: aditya
+                idea: base
+              m_60m:
+                learner: logreg
+                blocks: []
+                goes_blocks:
+                - goes
+                - gc
+                - srs
+                choice: aditya
+                idea: base
+              m_120m:
+                learner: xgb
+                blocks: []
+                goes_blocks:
+                - goes
+                - gc
+                - srs
+                choice: aditya
+                idea: base
+            r1:
+              aditya: logreg
+              with_goes: logreg
+        models:
+          targets:
+          - now
+          - c_30m
+          - c_60m
+          - c_120m
+          - m_30m
+          - m_60m
+          - m_120m
+          inner_split: '2025-12-01'
+          purge_min: 120
+          train_stride: 6
+          seeds:
+          - 42
+          - 43
+          - 44
+          rule_feature: ratio_1m_bg
+          logreg:
+            C: 1.0
+            max_iter: 2000
+          xgb:
+            learning_rate: 0.05
+            subsample: 0.8
+            colsample_bytree: 0.8
+          cv:
+            fold_months:
+            - 2025-08
+            - 2025-09
+            - 2025-10
+            - 2025-11
+            stride: 30
+            n_estimators:
+            - 100
+            - 300
+            - 600
+            max_depth:
+            - 3
+            - 5
+            min_child_weight:
+            - 5
+            - 50
+            reg_lambda:
+            - 1
+            - 10
+          operating_points:
+            A: tss
+            B: hss
+          bootstrap:
+            n: 1000
+            seed: 0
+            level: 0.95
+          ablation:
+            cal_start: '2025-11-01'
+            cal_end: '2025-11-30'
+            train_stride: 1
+            min_positive_episodes: 30
+    outs:
+    - path: reports/dev2/r2b.json
+      hash: md5
+      md5: 6b259da1ec9739b5a799940f3ad401c2
+      size: 65043
+  dev2_champ:
+    cmd: python -m src.dev2.run champ
+    deps:
+    - path: data/external/goes_events
+      hash: md5
+      md5: ac6abf0151d4ebf0d2e54717f0e82cd5.dir
+      size: 1550929
+      nfiles: 523
+    - path: data/external/srs
+      hash: md5
+      md5: f52d885e6d24108a02eb8e01516f95c3.dir
+      size: 466473
+      nfiles: 516
+    - path: data/processed/dataset
+      hash: md5
+      md5: 194ca35bab9353da7cb8f2969e15de6a.dir
+      size: 221276527
+      nfiles: 3
+    - path: data/processed/events.parquet
+      hash: md5
+      md5: 2b45af31c2e52392d34af193823356bf
+      size: 216275
+    - path: data/processed/final/goes_xrs_minute_test.parquet
+      hash: md5
+      md5: ab76036c7d8409e9dbfc013bf2286272
+      size: 2943780
+    - path: data/processed/final/solexs_spectral_minute_test.parquet
+      hash: md5
+      md5: 977cbd2376751dd3decb9a0c9fc8a7a1
+      size: 1872976
+    - path: data/processed/goes_xrs_minute.parquet
+      hash: md5
+      md5: 4773180905ce1f7abedff853afc3032f
+      size: 9749689
+    - path: data/processed/solexs_minute.parquet
+      hash: md5
+      md5: 909cdc962a62700281ad3b2c4ae51543
+      size: 6050846
+    - path: data/processed/solexs_spectral_minute.parquet
+      hash: md5
+      md5: 331b4f50826f53243578d3035221914d
+      size: 5858686
+    - path: reports/model_metrics.json
+      hash: md5
+      md5: ddb2ceaf673111587fe1d4c4e0fe2e6c
+      size: 511561
+    - path: src/dev2/context.py
+      hash: md5
+      md5: 41d28dc89b8bc769c3c4299922fdbb1e
+      size: 7058
+    - path: src/dev2/protocol.py
+      hash: md5
+      md5: 9519ddec35e32e8a1aecfbc4f4825a88
+      size: 7879
+    - path: src/dev2/run.py
+      hash: md5
+      md5: 51c4eae54f6ab44391843db8ed64b112
+      size: 12218
+    - path: src/final/features.py
+      hash: md5
+      md5: 2dee12f867fccc958cc3abf7c5bab4a6
+      size: 3238
+    - path: src/improve/features_extra.py
+      hash: md5
+      md5: 54331491c1f84b0f2da4aeff1d3ecf67
+      size: 7724
+    - path: src/models/train.py
+      hash: md5
+      md5: e9fa5f443d439904a58a8fc34397726a
+      size: 18491
+    params:
+      params.yaml:
+        dev2:
+          months:
+          - 2025-08
+          - 2025-09
+          - 2025-10
+          - 2025-11
+          - 2025-12
+          - 2026-01
+          - 2026-02
+          - 2026-03
+          - 2026-04
+          - 2026-05
+          - 2026-06
+          - 2026-07
+          - 2026-08
+          - 2026-09
+          targets:
+          - now
+          - c_30m
+          - c_60m
+          - c_120m
+          - m_30m
+          - m_60m
+          - m_120m
+          r2_targets:
+          - c_60m
+          - c_120m
+          - m_60m
+          - m_120m
+          purge_min: 120
+          seed: 42
+          train_stride: 6
+          acceptance:
+            min_share_months_improved: 0.6
+          active_lookback_h: 72
+          far_cap: 0.8
+          cost_fn_fp: 10
+          cost_sensitivity:
+          - 5
+          - 20
+          context_windows_h:
+          - 24
+          - 48
+          - 72
+          goes_count_latency_h: 24
+          srs_available_after_min: 60
+          srs_dir: data/external/srs
+          r3:
+            satellite: goes16
+            start: '2017-02-07'
+            end: '2025-03-28'
+            xrs_dir: data/external/goes16_xrs
+            events_dir: data/external/goes_events_hist
+            old_sat_scale: 0.7
+            stride_min: 5
+            bg_window_min: 60
+            bg_quantile: 0.2
+          final:
+            calibration_start: '2026-08-01'
+            threshold_start: '2026-09-01'
+            bootstrap:
+              n: 1000
+              seed: 0
+              level: 0.95
+            targets:
+              now:
+                learner: xgb
+                blocks: []
+                goes_blocks:
+                - goes
+                choice: aditya
+                idea: base
+              c_30m:
+                learner: ensemble
+                blocks:
+                - long
+                - drift
+                - spectral
+                goes_blocks:
+                - goes
+                choice: aditya
+                idea: champ_c30
+              c_60m:
+                learner: xgb
+                blocks: []
+                goes_blocks:
+                - goes
+                - gc
+                - srs
+                choice: aditya
+                idea: base
+              c_120m:
+                learner: xgb
+                blocks: []
+                goes_blocks:
+                - goes
+                - gc
+                - srs
+                choice: aditya
+                idea: base
+              m_30m:
+                learner: logreg
+                blocks: []
+                goes_blocks:
+                - goes
+                choice: aditya
+                idea: base
+              m_60m:
+                learner: logreg
+                blocks: []
+                goes_blocks:
+                - goes
+                - gc
+                - srs
+                choice: aditya
+                idea: base
+              m_120m:
+                learner: xgb
+                blocks: []
+                goes_blocks:
+                - goes
+                - gc
+                - srs
+                choice: aditya
+                idea: base
+            r1:
+              aditya: logreg
+              with_goes: logreg
+        models:
+          targets:
+          - now
+          - c_30m
+          - c_60m
+          - c_120m
+          - m_30m
+          - m_60m
+          - m_120m
+          inner_split: '2025-12-01'
+          purge_min: 120
+          train_stride: 6
+          seeds:
+          - 42
+          - 43
+          - 44
+          rule_feature: ratio_1m_bg
+          logreg:
+            C: 1.0
+            max_iter: 2000
+          xgb:
+            learning_rate: 0.05
+            subsample: 0.8
+            colsample_bytree: 0.8
+          cv:
+            fold_months:
+            - 2025-08
+            - 2025-09
+            - 2025-10
+            - 2025-11
+            stride: 30
+            n_estimators:
+            - 100
+            - 300
+            - 600
+            max_depth:
+            - 3
+            - 5
+            min_child_weight:
+            - 5
+            - 50
+            reg_lambda:
+            - 1
+            - 10
+          operating_points:
+            A: tss
+            B: hss
+          bootstrap:
+            n: 1000
+            seed: 0
+            level: 0.95
+          ablation:
+            cal_start: '2025-11-01'
+            cal_end: '2025-11-30'
+            train_stride: 1
+            min_positive_episodes: 30
+    outs:
+    - path: reports/dev2/champ.json
+      hash: md5
+      md5: 8e5b4df321c7bbd9a39210568f29445b
+      size: 68282
+  dev2_r1:
+    cmd: python -m src.dev2.early run
+    deps:
+    - path: data/processed/dataset
+      hash: md5
+      md5: 194ca35bab9353da7cb8f2969e15de6a.dir
+      size: 221276527
+      nfiles: 3
+    - path: data/processed/events.parquet
+      hash: md5
+      md5: 2b45af31c2e52392d34af193823356bf
+      size: 216275
+    - path: data/processed/events_pairs.parquet
+      hash: md5
+      md5: 91a562c07296b1f834221604fae2f803
+      size: 30212
+    - path: data/processed/final/goes_xrs_minute_test.parquet
+      hash: md5
+      md5: ab76036c7d8409e9dbfc013bf2286272
+      size: 2943780
+    - path: data/processed/final/solexs_spectral_minute_test.parquet
+      hash: md5
+      md5: 977cbd2376751dd3decb9a0c9fc8a7a1
+      size: 1872976
+    - path: data/processed/goes_matched.parquet
+      hash: md5
+      md5: 65777224953fa21434a59e5a9ffe10b0
+      size: 128267
+    - path: data/processed/goes_xrs_minute.parquet
+      hash: md5
+      md5: 4773180905ce1f7abedff853afc3032f
+      size: 9749689
+    - path: data/processed/solexs_minute.parquet
+      hash: md5
+      md5: 909cdc962a62700281ad3b2c4ae51543
+      size: 6050846
+    - path: data/processed/solexs_spectral_minute.parquet
+      hash: md5
+      md5: 331b4f50826f53243578d3035221914d
+      size: 5858686
+    - path: src/dev2/early.py
+      hash: md5
+      md5: 73111980ede2e664e9aa1d980f66653a
+      size: 13841
+    - path: src/dev2/protocol.py
+      hash: md5
+      md5: 9519ddec35e32e8a1aecfbc4f4825a88
+      size: 7879
+    params:
+      params.yaml:
+        dev2:
+          months:
+          - 2025-08
+          - 2025-09
+          - 2025-10
+          - 2025-11
+          - 2025-12
+          - 2026-01
+          - 2026-02
+          - 2026-03
+          - 2026-04
+          - 2026-05
+          - 2026-06
+          - 2026-07
+          - 2026-08
+          - 2026-09
+          targets:
+          - now
+          - c_30m
+          - c_60m
+          - c_120m
+          - m_30m
+          - m_60m
+          - m_120m
+          r2_targets:
+          - c_60m
+          - c_120m
+          - m_60m
+          - m_120m
+          purge_min: 120
+          seed: 42
+          train_stride: 6
+          acceptance:
+            min_share_months_improved: 0.6
+          active_lookback_h: 72
+          far_cap: 0.8
+          cost_fn_fp: 10
+          cost_sensitivity:
+          - 5
+          - 20
+          context_windows_h:
+          - 24
+          - 48
+          - 72
+          goes_count_latency_h: 24
+          srs_available_after_min: 60
+          srs_dir: data/external/srs
+          r3:
+            satellite: goes16
+            start: '2017-02-07'
+            end: '2025-03-28'
+            xrs_dir: data/external/goes16_xrs
+            events_dir: data/external/goes_events_hist
+            old_sat_scale: 0.7
+            stride_min: 5
+            bg_window_min: 60
+            bg_quantile: 0.2
+          final:
+            calibration_start: '2026-08-01'
+            threshold_start: '2026-09-01'
+            bootstrap:
+              n: 1000
+              seed: 0
+              level: 0.95
+            targets:
+              now:
+                learner: xgb
+                blocks: []
+                goes_blocks:
+                - goes
+                choice: aditya
+                idea: base
+              c_30m:
+                learner: ensemble
+                blocks:
+                - long
+                - drift
+                - spectral
+                goes_blocks:
+                - goes
+                choice: aditya
+                idea: champ_c30
+              c_60m:
+                learner: xgb
+                blocks: []
+                goes_blocks:
+                - goes
+                - gc
+                - srs
+                choice: aditya
+                idea: base
+              c_120m:
+                learner: xgb
+                blocks: []
+                goes_blocks:
+                - goes
+                - gc
+                - srs
+                choice: aditya
+                idea: base
+              m_30m:
+                learner: logreg
+                blocks: []
+                goes_blocks:
+                - goes
+                choice: aditya
+                idea: base
+              m_60m:
+                learner: logreg
+                blocks: []
+                goes_blocks:
+                - goes
+                - gc
+                - srs
+                choice: aditya
+                idea: base
+              m_120m:
+                learner: xgb
+                blocks: []
+                goes_blocks:
+                - goes
+                - gc
+                - srs
+                choice: aditya
+                idea: base
+            r1:
+              aditya: logreg
+              with_goes: logreg
+    outs:
+    - path: reports/dev2/r1.json
+      hash: md5
+      md5: 5a512b6eee787bfe47de5bc043da1cc7
+      size: 391849
+  dev2_r3_mapping:
+    cmd: python -m src.dev2.pretrain mapping
+    deps:
+    - path: data/processed/events.parquet
+      hash: md5
+      md5: 2b45af31c2e52392d34af193823356bf
+      size: 216275
+    - path: data/processed/final/goes_xrs_minute_test.parquet
+      hash: md5
+      md5: ab76036c7d8409e9dbfc013bf2286272
+      size: 2943780
+    - path: data/processed/goes_xrs_minute.parquet
+      hash: md5
+      md5: 4773180905ce1f7abedff853afc3032f
+      size: 9749689
+    - path: src/dev2/pretrain.py
+      hash: md5
+      md5: bbba17c2d09bec9dff7ca97874a0b42f
+      size: 13662
+    outs:
+    - path: reports/dev2/r3_mapping.json
+      hash: md5
+      md5: ac2c7cf78ef0736519fbfd76965bb3ee
+      size: 312
+  dev2_r3:
+    cmd: python -m src.dev2.pretrain run
+    deps:
+    - path: data/external/goes16_xrs
+      hash: md5
+      md5: 8f234014cdd2df104aabc935014009a5.dir
+      size: 862776057
+      nfiles: 2972
+    - path: data/external/goes_events_hist
+      hash: md5
+      md5: 7512f7d84200387a74110a7415db1c91.dir
+      size: 5929671
+      nfiles: 2975
+    - path: data/processed/dataset
+      hash: md5
+      md5: 194ca35bab9353da7cb8f2969e15de6a.dir
+      size: 221276527
+      nfiles: 3
+    - path: data/processed/solexs_minute.parquet
+      hash: md5
+      md5: 909cdc962a62700281ad3b2c4ae51543
+      size: 6050846
+    - path: reports/dev2/r3_mapping.json
+      hash: md5
+      md5: ac2c7cf78ef0736519fbfd76965bb3ee
+      size: 312
+    - path: reports/dev2/ref.json
+      hash: md5
+      md5: e17abb23e26e39f398978b32f355a577
+      size: 485145
+    - path: src/dev2/pretrain.py
+      hash: md5
+      md5: bbba17c2d09bec9dff7ca97874a0b42f
+      size: 13662
+    - path: src/dev2/protocol.py
+      hash: md5
+      md5: 9519ddec35e32e8a1aecfbc4f4825a88
+      size: 7879
+    - path: src/dev2/run.py
+      hash: md5
+      md5: 51c4eae54f6ab44391843db8ed64b112
+      size: 12218
+    params:
+      params.yaml:
+        dev2:
+          months:
+          - 2025-08
+          - 2025-09
+          - 2025-10
+          - 2025-11
+          - 2025-12
+          - 2026-01
+          - 2026-02
+          - 2026-03
+          - 2026-04
+          - 2026-05
+          - 2026-06
+          - 2026-07
+          - 2026-08
+          - 2026-09
+          targets:
+          - now
+          - c_30m
+          - c_60m
+          - c_120m
+          - m_30m
+          - m_60m
+          - m_120m
+          r2_targets:
+          - c_60m
+          - c_120m
+          - m_60m
+          - m_120m
+          purge_min: 120
+          seed: 42
+          train_stride: 6
+          acceptance:
+            min_share_months_improved: 0.6
+          active_lookback_h: 72
+          far_cap: 0.8
+          cost_fn_fp: 10
+          cost_sensitivity:
+          - 5
+          - 20
+          context_windows_h:
+          - 24
+          - 48
+          - 72
+          goes_count_latency_h: 24
+          srs_available_after_min: 60
+          srs_dir: data/external/srs
+          r3:
+            satellite: goes16
+            start: '2017-02-07'
+            end: '2025-03-28'
+            xrs_dir: data/external/goes16_xrs
+            events_dir: data/external/goes_events_hist
+            old_sat_scale: 0.7
+            stride_min: 5
+            bg_window_min: 60
+            bg_quantile: 0.2
+          final:
+            calibration_start: '2026-08-01'
+            threshold_start: '2026-09-01'
+            bootstrap:
+              n: 1000
+              seed: 0
+              level: 0.95
+            targets:
+              now:
+                learner: xgb
+                blocks: []
+                goes_blocks:
+                - goes
+                choice: aditya
+                idea: base
+              c_30m:
+                learner: ensemble
+                blocks:
+                - long
+                - drift
+                - spectral
+                goes_blocks:
+                - goes
+                choice: aditya
+                idea: champ_c30
+              c_60m:
+                learner: xgb
+                blocks: []
+                goes_blocks:
+                - goes
+                - gc
+                - srs
+                choice: aditya
+                idea: base
+              c_120m:
+                learner: xgb
+                blocks: []
+                goes_blocks:
+                - goes
+                - gc
+                - srs
+                choice: aditya
+                idea: base
+              m_30m:
+                learner: logreg
+                blocks: []
+                goes_blocks:
+                - goes
+                choice: aditya
+                idea: base
+              m_60m:
+                learner: logreg
+                blocks: []
+                goes_blocks:
+                - goes
+                - gc
+                - srs
+                choice: aditya
+                idea: base
+              m_120m:
+                learner: xgb
+                blocks: []
+                goes_blocks:
+                - goes
+                - gc
+                - srs
+                choice: aditya
+                idea: base
+            r1:
+              aditya: logreg
+              with_goes: logreg
+        models:
+          targets:
+          - now
+          - c_30m
+          - c_60m
+          - c_120m
+          - m_30m
+          - m_60m
+          - m_120m
+          inner_split: '2025-12-01'
+          purge_min: 120
+          train_stride: 6
+          seeds:
+          - 42
+          - 43
+          - 44
+          rule_feature: ratio_1m_bg
+          logreg:
+            C: 1.0
+            max_iter: 2000
+          xgb:
+            learning_rate: 0.05
+            subsample: 0.8
+            colsample_bytree: 0.8
+          cv:
+            fold_months:
+            - 2025-08
+            - 2025-09
+            - 2025-10
+            - 2025-11
+            stride: 30
+            n_estimators:
+            - 100
+            - 300
+            - 600
+            max_depth:
+            - 3
+            - 5
+            min_child_weight:
+            - 5
+            - 50
+            reg_lambda:
+            - 1
+            - 10
+          operating_points:
+            A: tss
+            B: hss
+          bootstrap:
+            n: 1000
+            seed: 0
+            level: 0.95
+          ablation:
+            cal_start: '2025-11-01'
+            cal_end: '2025-11-30'
+            train_stride: 1
+            min_positive_episodes: 30
+    outs:
+    - path: reports/dev2/r3.json
+      hash: md5
+      md5: fca4b4642400ca08f45173f50555587f
+      size: 224770
+  dev2_final:
+    cmd: python -m src.dev2.final
+    deps:
+    - path: data/external/goes_events
+      hash: md5
+      md5: ac6abf0151d4ebf0d2e54717f0e82cd5.dir
+      size: 1550929
+      nfiles: 523
+    - path: data/external/srs
+      hash: md5
+      md5: f52d885e6d24108a02eb8e01516f95c3.dir
+      size: 466473
+      nfiles: 516
+    - path: data/processed/dataset
+      hash: md5
+      md5: 194ca35bab9353da7cb8f2969e15de6a.dir
+      size: 221276527
+      nfiles: 3
+    - path: data/processed/events.parquet
+      hash: md5
+      md5: 2b45af31c2e52392d34af193823356bf
+      size: 216275
+    - path: data/processed/events_pairs.parquet
+      hash: md5
+      md5: 91a562c07296b1f834221604fae2f803
+      size: 30212
+    - path: data/processed/final/goes_xrs_minute_test.parquet
+      hash: md5
+      md5: ab76036c7d8409e9dbfc013bf2286272
+      size: 2943780
+    - path: data/processed/final/solexs_spectral_minute_test.parquet
+      hash: md5
+      md5: 977cbd2376751dd3decb9a0c9fc8a7a1
+      size: 1872976
+    - path: data/processed/goes_matched.parquet
+      hash: md5
+      md5: 65777224953fa21434a59e5a9ffe10b0
+      size: 128267
+    - path: data/processed/goes_xrs_minute.parquet
+      hash: md5
+      md5: 4773180905ce1f7abedff853afc3032f
+      size: 9749689
+    - path: data/processed/solexs_minute.parquet
+      hash: md5
+      md5: 909cdc962a62700281ad3b2c4ae51543
+      size: 6050846
+    - path: data/processed/solexs_spectral_minute.parquet
+      hash: md5
+      md5: 331b4f50826f53243578d3035221914d
+      size: 5858686
+    - path: reports/model_metrics.json
+      hash: md5
+      md5: ddb2ceaf673111587fe1d4c4e0fe2e6c
+      size: 511561
+    - path: src/dev2/context.py
+      hash: md5
+      md5: 41d28dc89b8bc769c3c4299922fdbb1e
+      size: 7058
+    - path: src/dev2/early.py
+      hash: md5
+      md5: 73111980ede2e664e9aa1d980f66653a
+      size: 13841
+    - path: src/dev2/final.py
+      hash: md5
+      md5: 2fd857b41830652673e6d9d526eff5c4
+      size: 9414
+    - path: src/dev2/protocol.py
+      hash: md5
+      md5: 9519ddec35e32e8a1aecfbc4f4825a88
+      size: 7879
+    - path: src/dev2/run.py
+      hash: md5
+      md5: 51c4eae54f6ab44391843db8ed64b112
+      size: 12218
+    - path: src/final/features.py
+      hash: md5
+      md5: 2dee12f867fccc958cc3abf7c5bab4a6
+      size: 3238
+    - path: src/improve/features_extra.py
+      hash: md5
+      md5: 54331491c1f84b0f2da4aeff1d3ecf67
+      size: 7724
+    params:
+      params.yaml:
+        dev2:
+          months:
+          - 2025-08
+          - 2025-09
+          - 2025-10
+          - 2025-11
+          - 2025-12
+          - 2026-01
+          - 2026-02
+          - 2026-03
+          - 2026-04
+          - 2026-05
+          - 2026-06
+          - 2026-07
+          - 2026-08
+          - 2026-09
+          targets:
+          - now
+          - c_30m
+          - c_60m
+          - c_120m
+          - m_30m
+          - m_60m
+          - m_120m
+          r2_targets:
+          - c_60m
+          - c_120m
+          - m_60m
+          - m_120m
+          purge_min: 120
+          seed: 42
+          train_stride: 6
+          acceptance:
+            min_share_months_improved: 0.6
+          active_lookback_h: 72
+          far_cap: 0.8
+          cost_fn_fp: 10
+          cost_sensitivity:
+          - 5
+          - 20
+          context_windows_h:
+          - 24
+          - 48
+          - 72
+          goes_count_latency_h: 24
+          srs_available_after_min: 60
+          srs_dir: data/external/srs
+          r3:
+            satellite: goes16
+            start: '2017-02-07'
+            end: '2025-03-28'
+            xrs_dir: data/external/goes16_xrs
+            events_dir: data/external/goes_events_hist
+            old_sat_scale: 0.7
+            stride_min: 5
+            bg_window_min: 60
+            bg_quantile: 0.2
+          final:
+            calibration_start: '2026-08-01'
+            threshold_start: '2026-09-01'
+            bootstrap:
+              n: 1000
+              seed: 0
+              level: 0.95
+            targets:
+              now:
+                learner: xgb
+                blocks: []
+                goes_blocks:
+                - goes
+                choice: aditya
+                idea: base
+              c_30m:
+                learner: ensemble
+                blocks:
+                - long
+                - drift
+                - spectral
+                goes_blocks:
+                - goes
+                choice: aditya
+                idea: champ_c30
+              c_60m:
+                learner: xgb
+                blocks: []
+                goes_blocks:
+                - goes
+                - gc
+                - srs
+                choice: aditya
+                idea: base
+              c_120m:
+                learner: xgb
+                blocks: []
+                goes_blocks:
+                - goes
+                - gc
+                - srs
+                choice: aditya
+                idea: base
+              m_30m:
+                learner: logreg
+                blocks: []
+                goes_blocks:
+                - goes
+                choice: aditya
+                idea: base
+              m_60m:
+                learner: logreg
+                blocks: []
+                goes_blocks:
+                - goes
+                - gc
+                - srs
+                choice: aditya
+                idea: base
+              m_120m:
+                learner: xgb
+                blocks: []
+                goes_blocks:
+                - goes
+                - gc
+                - srs
+                choice: aditya
+                idea: base
+            r1:
+              aditya: logreg
+              with_goes: logreg
+        models:
+          targets:
+          - now
+          - c_30m
+          - c_60m
+          - c_120m
+          - m_30m
+          - m_60m
+          - m_120m
+          inner_split: '2025-12-01'
+          purge_min: 120
+          train_stride: 6
+          seeds:
+          - 42
+          - 43
+          - 44
+          rule_feature: ratio_1m_bg
+          logreg:
+            C: 1.0
+            max_iter: 2000
+          xgb:
+            learning_rate: 0.05
+            subsample: 0.8
+            colsample_bytree: 0.8
+          cv:
+            fold_months:
+            - 2025-08
+            - 2025-09
+            - 2025-10
+            - 2025-11
+            stride: 30
+            n_estimators:
+            - 100
+            - 300
+            - 600
+            max_depth:
+            - 3
+            - 5
+            min_child_weight:
+            - 5
+            - 50
+            reg_lambda:
+            - 1
+            - 10
+          operating_points:
+            A: tss
+            B: hss
+          bootstrap:
+            n: 1000
+            seed: 0
+            level: 0.95
+          ablation:
+            cal_start: '2025-11-01'
+            cal_end: '2025-11-30'
+            train_stride: 1
+            min_positive_episodes: 30
+    outs:
+    - path: models_final2
+      hash: md5
+      md5: d0560d014b3e36ed5edd1db63cb120da.dir
+      size: 13678965
+      nfiles: 24
+    - path: reports/dev2/final_freeze.json
+      hash: md5
+      md5: ab88dc2dbda86b34191f48cadc2b83b3
+      size: 14298

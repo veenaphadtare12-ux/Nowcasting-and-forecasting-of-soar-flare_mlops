@@ -1,0 +1,6 @@
+pretraining rows 830153 (2017-02-07 03:01:00+00:00 .. 2025-03-28 23:56:00+00:00), mapping slope 1.323
+  c_60m: ref 0.214 | zero-shot 0.057 | scratch 0.130 | fine-tune 0.133 | stack 0.212 (7/14 DROPPED) [205s]
+  c_120m: ref 0.222 | zero-shot 0.052 | scratch 0.133 | fine-tune 0.138 | stack 0.208 (6/14 DROPPED) [250s]
+  m_60m: ref 0.242 | zero-shot 0.088 | scratch 0.171 | fine-tune 0.181 | stack 0.233 (6/14 DROPPED) [304s]
+  m_120m: ref 0.233 | zero-shot 0.105 | scratch 0.172 | fine-tune 0.165 | stack 0.226 (5/14 DROPPED) [140s]
+R3 done in 1055s

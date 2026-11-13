@@ -10,3 +10,4 @@ mlflow.db
 reports/_*.txt
 /models
 /models_final
+/models_final2

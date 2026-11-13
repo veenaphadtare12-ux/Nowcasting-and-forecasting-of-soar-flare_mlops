@@ -36,7 +36,12 @@ def test_only_the_evaluate_test_stage_depends_on_test_period_outputs():
     test_outputs = {"data/processed/final/solexs_spectral_minute_test.parquet",
                     "data/processed/final/goes_xrs_minute_test.parquet", "data/processed/final/test_scores.parquet"}
     readers = {name for name, s in stages.items() if test_outputs & set(s.get("deps", []))}
-    assert readers == {"evaluate_test", "test_analysis"}
+    # Since 2026-11-13 the old test period is development data (docs/IMPROVEMENTS.md section 9): the dev2 stages may read
+    # its INPUTS, but its one-time test SCORES stay readable only by test_analysis (never re-reported or re-scored).
+    assert readers - {n for n in stages if n.startswith("dev2_")} == {"evaluate_test", "test_analysis"}
+    score_readers = {name for name, s in stages.items() if "data/processed/final/test_scores.parquet" in s.get("deps", [])}
+    assert score_readers == {"test_analysis"}
+    assert all(stages[n].get("frozen") for n in ("evaluate_test", "test_analysis", "final_models"))
     assert not TEST_FILE.search(json.dumps(stages))  # the file is read only by the evaluate_test code
 
 

@@ -154,8 +154,7 @@ def mapping() -> dict:
         rows.append({"sx_ratio": np.log10(e["peak_counts_s"] / max(e["bg_counts_s"], 0.1)),
                      "gx_ratio": np.log10(w.max() / b), "sx_excess": np.log10(max(e["excess_counts_s"], 0.1)),
                      "gx_peak": np.log10(w.max()), "cls": str(e["goes_class"])[:1]})
-    d = pd.DataFrame(rows)
-    d = d[np.isfinite(d).all(axis=1) if False else d.notna().all(axis=1)]
+    d = pd.DataFrame(rows).dropna()
     big = d[d["cls"].isin(["C", "M", "X"])]
     s_pl, i_pl = np.polyfit(big["gx_peak"], big["sx_excess"], 1)
     s_r, i_r = np.polyfit(d["gx_ratio"], d["sx_ratio"], 1)
@@ -163,12 +162,114 @@ def mapping() -> dict:
            "power_law_slope_excess_vs_goes_flux": float(s_pl), "eda_power_law_slope": 1.34,
            "ratio_slope_solexs_vs_goes": float(s_r), "ratio_intercept": float(i_r),
            "ratio_corr": float(np.corrcoef(d["gx_ratio"], d["sx_ratio"])[0, 1]),
-           "median_ratio_solexs_over_goes": float(np.median(d["sx_ratio"] / d["gx_ratio"].where(d["gx_ratio"] > 0.05)))}
+           "median_ratio_solexs_over_goes": float(np.nanmedian(d["sx_ratio"] / d["gx_ratio"].where(d["gx_ratio"] > 0.05)))}
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "r3_mapping.json").write_text(json.dumps(out, indent=1), encoding="utf-8", newline="\n")
     print(json.dumps(out, indent=1))
     return out
 
 
+# ---------------------------------------------------------------- pretraining and evaluation
+RATIO_COLS = ["n_r_now", "n_r_mean5", "n_r_max15", "n_r_max60", "n_r_max6h", "n_r_max24h", "n_slope5", "n_slope15",
+              "n_accel", "n_bg_change24h"]
+
+
+def map_goes(g: pd.DataFrame, slope: float) -> pd.DataFrame:
+    """GOES log-ratio and log-slope features -> SoLEXS scale (SoLEXS log ratio ~ slope x GOES log ratio)."""
+    out = g.copy()
+    out[RATIO_COLS] = out[RATIO_COLS] * slope
+    return out
+
+
+def solexs_norm_rows(index: pd.DatetimeIndex) -> pd.DataFrame:
+    proc = config.processed_dir()
+    m = pd.read_parquet(proc / "solexs_minute.parquet")["m"]
+    m = m[m.index < pr.dev_end()]
+    return fx.asof_rows(norm_grid(m), index)
+
+
+def _xgb(target: str, y: np.ndarray, seed: int, n_estimators: int | None = None):
+    from src.dev2 import run as rn
+    from src.models import train
+
+    mp = config.load_params()["models"]
+    prm = dict(rn.xgb_params()[target])
+    if n_estimators is not None:
+        prm["n_estimators"] = n_estimators
+    est = train.make_xgb(mp["xgb"], prm, seed, train._pos_weight(y))
+    est.set_params(n_jobs=4)
+    return est
+
+
+def run() -> dict:
+    from joblib import Parallel, delayed
+
+    from src.dev2 import run as rn
+    from src.models import train
+
+    t0 = time.time()
+    p = pr.P()
+    mapping_res = json.loads((OUT / "r3_mapping.json").read_text(encoding="utf-8"))
+    slope = mapping_res["ratio_slope_solexs_vs_goes"]
+    pre, cols = pretrain_frame()
+    pre = map_goes(pre, slope)
+    print(f"pretraining rows {len(pre)} ({pre.index.min()} .. {pre.index.max()}), mapping slope {slope:.3f}", flush=True)
+    assert pre.index.max() < pd.Timestamp("2025-04-06", tz="UTC"), "pretraining reaches the SoLEXS era"
+    ref = rn.read("ref")
+    base = rn.base_frame()
+    norm = solexs_norm_rows(base.index)
+    df = pd.concat([base, norm], axis=1)
+    res = {"mapping_slope": slope, "pretrain_rows": int(len(pre)), "targets": {}}
+    for target in p["r2_targets"]:
+        y_col, ok_col = train.TARGETS[target]
+        h = int(target.split("_")[1][:-1])
+        okp = pre[f"ok_{h}m"].to_numpy().astype(bool)
+        yp = pre.loc[okp, f"y_{target[0]}_{h}m"].to_numpy().astype(int)
+        pre_model = _xgb(target, yp, p["seed"]).fit(pre.loc[okp, cols], yp)
+        df["pre_score"] = pre_model.predict_proba(df[cols])[:, 1].astype("float32")
+        learner = rn.best_learner(ref, target)
+        ext = 100
+
+        def one(m):
+            mk = pr.fold_masks(df.index, m, p["purge_min"])
+            b = pr.fold_bounds(m, p["purge_min"])
+            ok = df[ok_col].to_numpy().astype(bool)
+            fit = df[mk["fit"] & ok].iloc[:: p["train_stride"]]
+            cs = df[(mk["cal"] | mk["score"]) & ok]
+            c = np.asarray(cs.index < b["score_start"])
+            s = ~c
+            yf = fit[y_col].to_numpy().astype(int)
+            sc = {"zeroshot": cs["pre_score"].to_numpy()}
+            sc["scratch"] = _xgb(target, yf, p["seed"]).fit(fit[cols], yf).predict_proba(cs[cols])[:, 1]
+            ft = _xgb(target, yf, p["seed"], n_estimators=ext).fit(fit[cols], yf, xgb_model=pre_model.get_booster())
+            sc["finetune"] = ft.predict_proba(cs[cols])[:, 1]
+            feats = rn.ff.base_features() + ["pre_score"]
+            sc["stack"] = rn.fit_predict(learner, target, fit[feats], yf, cs[feats], rn.xgb_params(), p["seed"])
+            y = cs[y_col].to_numpy().astype(bool)
+            q = cs[train.FLAG].to_numpy() == 0
+            a = cs["_active_day"].to_numpy().astype(bool)
+            return m, {k: pr.evaluate_scores(y[c], v[c], y[s], v[s], q[s], a[s]) for k, v in sc.items()}
+
+        t1 = time.time()
+        months = dict(Parallel(n_jobs=3, prefer="threads")(delayed(one)(m) for m in p["months"]))
+        months = {m: months[m] for m in p["months"]}
+        summ = {k: pr.summarise(months, k) for k in ("zeroshot", "scratch", "finetune", "stack")}
+        cmp = {k: pr.compare(ref["months"][target], learner, months, k) for k in summ}
+        cmp_ft = pr.compare(months, "scratch", months, "finetune")
+        res["targets"][target] = {"reference_learner": learner, "summary": summ, "comparison_vs_ref": cmp,
+                                  "finetune_vs_scratch": cmp_ft, "months": months}
+        print(f"  {target}: ref {cmp['stack']['ref_mean']:.3f} | zero-shot {summ['zeroshot']['mean_monthly_tss']:.3f} | "
+              f"scratch {summ['scratch']['mean_monthly_tss']:.3f} | fine-tune {summ['finetune']['mean_monthly_tss']:.3f} | "
+              f"stack {summ['stack']['mean_monthly_tss']:.3f} ({cmp['stack']['months_better']}/14 {cmp['stack']['decision']}) "
+              f"[{time.time() - t1:.0f}s]", flush=True)
+    res["seconds"] = time.time() - t0
+    rn.write("r3", res)
+    rn.log_mlflow("r3", "GOES-16 pretraining: zero-shot / scratch / fine-tune / stacked",
+                  {t: v["summary"] for t, v in res["targets"].items()},
+                  {t: v["comparison_vs_ref"]["stack"] for t, v in res["targets"].items()}, {"mapping_slope": slope})
+    print(f"R3 done in {res['seconds']:.0f}s")
+    return res
+
+
 if __name__ == "__main__":
-    {"fetch": fetch, "mapping": mapping}[sys.argv[1]]()
+    {"fetch": fetch, "mapping": mapping, "run": run}[sys.argv[1]]()

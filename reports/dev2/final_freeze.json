@@ -1,0 +1,661 @@
+{
+ "blocks": {
+  "calibration_start": "2026-08-01",
+  "threshold_start": "2026-09-01"
+ },
+ "forecasts": {
+  "now": {
+   "choice": "aditya",
+   "learner": "xgb",
+   "variants": {
+    "aditya": {
+     "blocks": [],
+     "n_features": 44,
+     "fit_rows": 536372,
+     "fit_pos": 42835,
+     "cal_rows": 214367,
+     "cal_pos": 12384,
+     "thr_rows": 102960,
+     "thr_pos": 5220,
+     "thresholds": {
+      "A": 0.28041303157806396
+     },
+     "baseline_thresholds": {
+      "rule": {
+       "A": 1.876288652420044
+      },
+      "flux": {
+       "A": 0.9956352114677429
+      },
+      "persistence": {
+       "A": 0.5
+      },
+      "climatology_rate": 0.07986061912254927
+     },
+     "thr_block_tss_A": 0.8164518109269491,
+     "brier_cal_raw": 0.04058443009853363,
+     "brier_thr_raw": 0.025397928431630135,
+     "brier_thr_isotonic": 0.016016973182559013
+    },
+    "with_goes": {
+     "blocks": [
+      "goes"
+     ],
+     "n_features": 50,
+     "fit_rows": 536372,
+     "fit_pos": 42835,
+     "cal_rows": 214367,
+     "cal_pos": 12384,
+     "thr_rows": 102960,
+     "thr_pos": 5220,
+     "thresholds": {
+      "A": 0.29172688722610474
+     },
+     "baseline_thresholds": {
+      "rule": {
+       "A": 1.876288652420044
+      },
+      "flux": {
+       "A": 0.9956352114677429
+      },
+      "persistence": {
+       "A": 0.5
+      },
+      "climatology_rate": 0.07986061912254927
+     },
+     "thr_block_tss_A": 0.8121504625219619,
+     "brier_cal_raw": 0.0426667258143425,
+     "brier_thr_raw": 0.026032380759716034,
+     "brier_thr_isotonic": 0.015995273366570473
+    }
+   }
+  },
+  "c_30m": {
+   "choice": "aditya",
+   "learner": "ensemble",
+   "variants": {
+    "aditya": {
+     "blocks": [
+      "long",
+      "drift",
+      "spectral"
+     ],
+     "n_features": 67,
+     "fit_rows": 533821,
+     "fit_pos": 72915,
+     "cal_rows": 213896,
+     "cal_pos": 20988,
+     "thr_rows": 102960,
+     "thr_pos": 7446,
+     "thresholds": {
+      "A": 0.2862926481992066
+     },
+     "baseline_thresholds": {
+      "rule": {
+       "A": 1.788888931274414
+      },
+      "flux": {
+       "A": 0.6434527039527893
+      },
+      "persistence": {
+       "A": 0.5
+      },
+      "climatology_rate": 0.13659072985139215
+     },
+     "thr_block_tss_A": 0.29397248901600076,
+     "brier_cal_raw": 0.13778851686724786,
+     "brier_thr_raw": 0.11519894589392186,
+     "brier_thr_isotonic": 0.06691995088264774
+    },
+    "with_goes": {
+     "blocks": [
+      "long",
+      "drift",
+      "spectral",
+      "goes"
+     ],
+     "n_features": 73,
+     "fit_rows": 533821,
+     "fit_pos": 72915,
+     "cal_rows": 213896,
+     "cal_pos": 20988,
+     "thr_rows": 102960,
+     "thr_pos": 7446,
+     "thresholds": {
+      "A": 0.2923487806321846
+     },
+     "baseline_thresholds": {
+      "rule": {
+       "A": 1.788888931274414
+      },
+      "flux": {
+       "A": 0.6434527039527893
+      },
+      "persistence": {
+       "A": 0.5
+      },
+      "climatology_rate": 0.13659072985139215
+     },
+     "thr_block_tss_A": 0.30932714919238347,
+     "brier_cal_raw": 0.13619061997332577,
+     "brier_thr_raw": 0.11533377846658033,
+     "brier_thr_isotonic": 0.06755615558598027
+    }
+   }
+  },
+  "c_60m": {
+   "choice": "aditya",
+   "learner": "xgb",
+   "variants": {
+    "aditya": {
+     "blocks": [],
+     "n_features": 44,
+     "fit_rows": 531239,
+     "fit_pos": 130329,
+     "cal_rows": 213410,
+     "cal_pos": 37572,
+     "thr_rows": 102960,
+     "thr_pos": 14448,
+     "thresholds": {
+      "A": 0.29119670391082764
+     },
+     "baseline_thresholds": {
+      "rule": {
+       "A": 1.788888931274414
+      },
+      "flux": {
+       "A": 0.6901960968971252
+      },
+      "persistence": {
+       "A": 0.5
+      },
+      "climatology_rate": 0.24533025625001176
+     },
+     "thr_block_tss_A": 0.2585286782068929,
+     "brier_cal_raw": 0.1555614471435547,
+     "brier_thr_raw": 0.14426524937152863,
+     "brier_thr_isotonic": 0.12240467220544815
+    },
+    "with_goes": {
+     "blocks": [
+      "goes",
+      "gc",
+      "srs"
+     ],
+     "n_features": 66,
+     "fit_rows": 531239,
+     "fit_pos": 130329,
+     "cal_rows": 213410,
+     "cal_pos": 37572,
+     "thr_rows": 102960,
+     "thr_pos": 14448,
+     "thresholds": {
+      "A": 0.2813916504383087
+     },
+     "baseline_thresholds": {
+      "rule": {
+       "A": 1.788888931274414
+      },
+      "flux": {
+       "A": 0.6901960968971252
+      },
+      "persistence": {
+       "A": 0.5
+      },
+      "climatology_rate": 0.24533025625001176
+     },
+     "thr_block_tss_A": 0.2935731221308581,
+     "brier_cal_raw": 0.16055043041706085,
+     "brier_thr_raw": 0.14078544080257416,
+     "brier_thr_isotonic": 0.11819128692150116
+    }
+   }
+  },
+  "c_120m": {
+   "choice": "aditya",
+   "learner": "xgb",
+   "variants": {
+    "aditya": {
+     "blocks": [],
+     "n_features": 44,
+     "fit_rows": 526277,
+     "fit_pos": 210047,
+     "cal_rows": 212438,
+     "cal_pos": 61134,
+     "thr_rows": 102960,
+     "thr_pos": 26478,
+     "thresholds": {
+      "A": 0.32818302512168884
+     },
+     "baseline_thresholds": {
+      "rule": {
+       "A": 1.7925926446914673
+      },
+      "flux": {
+       "A": 0.6989700198173523
+      },
+      "persistence": {
+       "A": 0.5
+      },
+      "climatology_rate": 0.39911871504929913
+     },
+     "thr_block_tss_A": 0.2737539840665957,
+     "brier_cal_raw": 0.1652587503194809,
+     "brier_thr_raw": 0.18072161078453064,
+     "brier_thr_isotonic": 0.19285628199577332
+    },
+    "with_goes": {
+     "blocks": [
+      "goes",
+      "gc",
+      "srs"
+     ],
+     "n_features": 66,
+     "fit_rows": 526277,
+     "fit_pos": 210047,
+     "cal_rows": 212438,
+     "cal_pos": 61134,
+     "thr_rows": 102960,
+     "thr_pos": 26478,
+     "thresholds": {
+      "A": 0.3028812110424042
+     },
+     "baseline_thresholds": {
+      "rule": {
+       "A": 1.7925926446914673
+      },
+      "flux": {
+       "A": 0.6989700198173523
+      },
+      "persistence": {
+       "A": 0.5
+      },
+      "climatology_rate": 0.39911871504929913
+     },
+     "thr_block_tss_A": 0.2769859997894139,
+     "brier_cal_raw": 0.17579583823680878,
+     "brier_thr_raw": 0.1794498711824417,
+     "brier_thr_isotonic": 0.17815570533275604
+    }
+   }
+  },
+  "m_30m": {
+   "choice": "aditya",
+   "learner": "logreg",
+   "variants": {
+    "aditya": {
+     "blocks": [],
+     "n_features": 44,
+     "fit_rows": 533821,
+     "fit_pos": 8822,
+     "cal_rows": 213896,
+     "cal_pos": 1980,
+     "thr_rows": 102960,
+     "thr_pos": 540,
+     "thresholds": {
+      "A": 0.03927281126379967,
+      "C": Infinity,
+      "K10": Infinity,
+      "K5": Infinity,
+      "K20": Infinity
+     },
+     "baseline_thresholds": {
+      "rule": {
+       "A": 0.8082832098007202
+      },
+      "flux": {
+       "A": 0.5185139179229736
+      },
+      "persistence": {
+       "A": 0.5
+      },
+      "climatology_rate": 0.016526138911732585
+     },
+     "thr_block_tss_A": 0.1214443793529909,
+     "brier_cal_raw": 0.0836406797170639,
+     "brier_thr_raw": 0.05725483223795891,
+     "brier_thr_isotonic": 0.005382316652685404
+    },
+    "with_goes": {
+     "blocks": [
+      "goes"
+     ],
+     "n_features": 50,
+     "fit_rows": 533821,
+     "fit_pos": 8822,
+     "cal_rows": 213896,
+     "cal_pos": 1980,
+     "thr_rows": 102960,
+     "thr_pos": 540,
+     "thresholds": {
+      "A": 0.05713917687535286,
+      "C": Infinity,
+      "K10": Infinity,
+      "K5": Infinity,
+      "K20": Infinity
+     },
+     "baseline_thresholds": {
+      "rule": {
+       "A": 0.8082832098007202
+      },
+      "flux": {
+       "A": 0.5185139179229736
+      },
+      "persistence": {
+       "A": 0.5
+      },
+      "climatology_rate": 0.016526138911732585
+     },
+     "thr_block_tss_A": 0.1462246956974549,
+     "brier_cal_raw": 0.08843035250902176,
+     "brier_thr_raw": 0.06328172236680984,
+     "brier_thr_isotonic": 0.005400991998612881
+    }
+   }
+  },
+  "m_60m": {
+   "choice": "aditya",
+   "learner": "logreg",
+   "variants": {
+    "aditya": {
+     "blocks": [],
+     "n_features": 44,
+     "fit_rows": 531239,
+     "fit_pos": 16579,
+     "cal_rows": 213410,
+     "cal_pos": 3942,
+     "thr_rows": 102960,
+     "thr_pos": 1080,
+     "thresholds": {
+      "A": 0.05398145318031311,
+      "C": Infinity,
+      "K10": Infinity,
+      "K5": Infinity,
+      "K20": Infinity
+     },
+     "baseline_thresholds": {
+      "rule": {
+       "A": 0.8040123581886292
+      },
+      "flux": {
+       "A": 0.5797836184501648
+      },
+      "persistence": {
+       "A": 0.5
+      },
+      "climatology_rate": 0.031208175604577223
+     },
+     "thr_block_tss_A": 0.1557093312393666,
+     "brier_cal_raw": 0.08888797461986542,
+     "brier_thr_raw": 0.06676273047924042,
+     "brier_thr_isotonic": 0.01095054391771555
+    },
+    "with_goes": {
+     "blocks": [
+      "goes",
+      "gc",
+      "srs"
+     ],
+     "n_features": 66,
+     "fit_rows": 531239,
+     "fit_pos": 16579,
+     "cal_rows": 213410,
+     "cal_pos": 3942,
+     "thr_rows": 102960,
+     "thr_pos": 1080,
+     "thresholds": {
+      "A": 0.3544345498085022,
+      "C": Infinity,
+      "K10": Infinity,
+      "K5": Infinity,
+      "K20": Infinity
+     },
+     "baseline_thresholds": {
+      "rule": {
+       "A": 0.8040123581886292
+      },
+      "flux": {
+       "A": 0.5797836184501648
+      },
+      "persistence": {
+       "A": 0.5
+      },
+      "climatology_rate": 0.031208175604577223
+     },
+     "thr_block_tss_A": 0.15747938751472323,
+     "brier_cal_raw": 0.09434932470321655,
+     "brier_thr_raw": 0.08361562341451645,
+     "brier_thr_isotonic": 0.010831065475940704
+    }
+   }
+  },
+  "m_120m": {
+   "choice": "aditya",
+   "learner": "xgb",
+   "variants": {
+    "aditya": {
+     "blocks": [],
+     "n_features": 44,
+     "fit_rows": 526277,
+     "fit_pos": 30066,
+     "cal_rows": 212438,
+     "cal_pos": 7542,
+     "thr_rows": 102960,
+     "thr_pos": 2160,
+     "thresholds": {
+      "A": 0.05833711847662926,
+      "C": Infinity,
+      "K10": Infinity,
+      "K5": Infinity,
+      "K20": Infinity
+     },
+     "baseline_thresholds": {
+      "rule": {
+       "A": 0.579365074634552
+      },
+      "flux": {
+       "A": 0.5910646319389343
+      },
+      "persistence": {
+       "A": 0.5
+      },
+      "climatology_rate": 0.057129610452290334
+     },
+     "thr_block_tss_A": 0.36807870370370366,
+     "brier_cal_raw": 0.0942222848534584,
+     "brier_thr_raw": 0.06882983446121216,
+     "brier_thr_isotonic": 0.022353967651724815
+    },
+    "with_goes": {
+     "blocks": [
+      "goes",
+      "gc",
+      "srs"
+     ],
+     "n_features": 66,
+     "fit_rows": 526277,
+     "fit_pos": 30066,
+     "cal_rows": 212438,
+     "cal_pos": 7542,
+     "thr_rows": 102960,
+     "thr_pos": 2160,
+     "thresholds": {
+      "A": 0.13834917545318604,
+      "C": Infinity,
+      "K10": Infinity,
+      "K5": Infinity,
+      "K20": Infinity
+     },
+     "baseline_thresholds": {
+      "rule": {
+       "A": 0.579365074634552
+      },
+      "flux": {
+       "A": 0.5910646319389343
+      },
+      "persistence": {
+       "A": 0.5
+      },
+      "climatology_rate": 0.057129610452290334
+     },
+     "thr_block_tss_A": 0.34638227513227515,
+     "brier_cal_raw": 0.08386511355638504,
+     "brier_thr_raw": 0.06611035764217377,
+     "brier_thr_isotonic": 0.02200792171061039
+    }
+   }
+  }
+ },
+ "r1": {
+  "k0_aditya": {
+   "learner": "logreg",
+   "thresholds": {
+    "y_c": 0.3756018644835656,
+    "y_m": 0.31916008864489986
+   },
+   "flux_thresholds": {
+    "y_c": 1.4588895409955471,
+    "y_m": 1.649334858712142
+   },
+   "fit_triggers": 2893,
+   "fit_m": 306,
+   "thr_triggers": 182,
+   "thr_m": 15
+  },
+  "k0_with_goes": {
+   "learner": "logreg",
+   "thresholds": {
+    "y_c": 0.35136417352758775,
+    "y_m": 0.4603149961238334
+   },
+   "flux_thresholds": {
+    "y_c": 1.4588895409955471,
+    "y_m": 1.649334858712142
+   },
+   "fit_triggers": 2893,
+   "fit_m": 306,
+   "thr_triggers": 182,
+   "thr_m": 15
+  },
+  "k1_aditya": {
+   "learner": "logreg",
+   "thresholds": {
+    "y_c": 0.47774784724697716,
+    "y_m": 0.5112065848422946
+   },
+   "flux_thresholds": {
+    "y_c": 1.373524980463404,
+    "y_m": 1.759164022728366
+   },
+   "fit_triggers": 2893,
+   "fit_m": 306,
+   "thr_triggers": 182,
+   "thr_m": 15
+  },
+  "k1_with_goes": {
+   "learner": "logreg",
+   "thresholds": {
+    "y_c": 0.47901138455325115,
+    "y_m": 0.529387907349493
+   },
+   "flux_thresholds": {
+    "y_c": 1.373524980463404,
+    "y_m": 1.759164022728366
+   },
+   "fit_triggers": 2893,
+   "fit_m": 306,
+   "thr_triggers": 182,
+   "thr_m": 15
+  },
+  "k2_aditya": {
+   "learner": "logreg",
+   "thresholds": {
+    "y_c": 0.4343604103929783,
+    "y_m": 0.37468122631580414
+   },
+   "flux_thresholds": {
+    "y_c": 1.4199557484897578,
+    "y_m": 1.786159659576959
+   },
+   "fit_triggers": 2893,
+   "fit_m": 306,
+   "thr_triggers": 182,
+   "thr_m": 15
+  },
+  "k2_with_goes": {
+   "learner": "logreg",
+   "thresholds": {
+    "y_c": 0.36700241374558273,
+    "y_m": 0.35459493902387645
+   },
+   "flux_thresholds": {
+    "y_c": 1.4199557484897578,
+    "y_m": 1.786159659576959
+   },
+   "fit_triggers": 2893,
+   "fit_m": 306,
+   "thr_triggers": 182,
+   "thr_m": 15
+  },
+  "k3_aditya": {
+   "learner": "logreg",
+   "thresholds": {
+    "y_c": 0.41061573440472937,
+    "y_m": 0.20119186759751675
+   },
+   "flux_thresholds": {
+    "y_c": 1.3259943001703645,
+    "y_m": 1.9355072658247128
+   },
+   "fit_triggers": 2893,
+   "fit_m": 306,
+   "thr_triggers": 182,
+   "thr_m": 15
+  },
+  "k3_with_goes": {
+   "learner": "logreg",
+   "thresholds": {
+    "y_c": 0.4341910651424283,
+    "y_m": 0.19175957236318927
+   },
+   "flux_thresholds": {
+    "y_c": 1.3259943001703645,
+    "y_m": 1.9355072658247128
+   },
+   "fit_triggers": 2893,
+   "fit_m": 306,
+   "thr_triggers": 182,
+   "thr_m": 15
+  },
+  "k5_aditya": {
+   "learner": "logreg",
+   "thresholds": {
+    "y_c": 0.4356835855517752,
+    "y_m": 0.4761774141969671
+   },
+   "flux_thresholds": {
+    "y_c": 1.3505710339547832,
+    "y_m": 2.216781486346398
+   },
+   "fit_triggers": 2893,
+   "fit_m": 306,
+   "thr_triggers": 182,
+   "thr_m": 15
+  },
+  "k5_with_goes": {
+   "learner": "logreg",
+   "thresholds": {
+    "y_c": 0.4430280473989204,
+    "y_m": 0.4933080379416257
+   },
+   "flux_thresholds": {
+    "y_c": 1.3505710339547832,
+    "y_m": 2.216781486346398
+   },
+   "fit_triggers": 2893,
+   "fit_m": 306,
+   "thr_triggers": 182,
+   "thr_m": 15
+  }
+ }
+}

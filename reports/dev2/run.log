@@ -1,0 +1,50 @@
+=== ref 10:55
+  now       533s
+  c_30m     353s
+  c_60m     404s
+  c_120m    371s
+  m_30m     432s
+  m_60m     325s
+  m_120m    174s
+2026/11/13 11:38:38 INFO mlflow.tracking.fluent: Experiment with name 'flare-dev2' does not exist. Creating a new experiment.
+ref done in 2598s
+=== e6 11:38
+  c_60m      34s
+  c_120m     34s
+  m_60m     264s
+  m_120m     50s
+  m_30m     315s
+e6 done in 707s
+   c_60m: 0.214 -> 0.184 (3/14) DROPPED
+   c_120m: 0.222 -> 0.216 (8/14) DROPPED
+   m_60m: 0.242 -> 0.230 (6/14) DROPPED
+   m_120m: 0.233 -> 0.211 (6/14) DROPPED
+   m_30m: 0.240 -> 0.248 (8/14) DROPPED
+=== r2a 11:50
+  c_60m      55s
+  c_120m     56s
+  m_60m     232s
+  m_120m     27s
+r2a done in 378s
+   c_60m: 0.214 -> 0.158 (3/14) DROPPED
+   c_120m: 0.222 -> 0.161 (3/14) DROPPED
+   m_60m: 0.242 -> 0.165 (6/14) DROPPED
+   m_120m: 0.233 -> 0.189 (7/14) DROPPED
+=== r2b 11:57
+  c_60m      34s
+  c_120m     34s
+  m_60m     219s
+  m_120m     33s
+r2b done in 326s
+   c_60m: 0.214 -> 0.167 (3/14) DROPPED | vs r2a: +0.009 (8) DROPPED
+   c_120m: 0.222 -> 0.180 (5/14) DROPPED | vs r2a: +0.020 (8) DROPPED
+   m_60m: 0.242 -> 0.116 (4/14) DROPPED | vs r2a: -0.049 (6) DROPPED
+   m_120m: 0.233 -> 0.142 (4/14) DROPPED | vs r2a: -0.046 (6) DROPPED
+=== champ 12:02
+  c_30m     631s
+   c_30m: 0.168 -> 0.218 (13) KEPT
+  m_30m     234s
+   m_30m: 0.240 -> 0.281 (9) KEPT
+  m_30m     288s
+   m_30m_aditya: 0.240 -> 0.284 (8) DROPPED
+champ done in 1170s
