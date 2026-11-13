@@ -685,3 +685,37 @@ Nothing was retrained, re-tuned or re-scored, and the test dataset file is not r
 - Heredoc quoting broke twice: scripts were written to files instead.
 
 **Checks:** 86 tests pass, 1 skipped (pytest, 49 s). `dvc status`: data and pipelines up to date. 37 DVC stages (14 frozen, historical). Holdout2 checksums verified after scoring.
+
+## 2026-11-13 — Ops-1: CI, data contracts, Prefect flows, drift, developer tooling
+
+**Done**
+- `.github/workflows/ci.yml`: ruff + `pytest -m "not data"` on Python 3.12, using `requirements-ci.txt` (a pinned
+  Linux subset) and `tests/fixtures/` (128 KB, tune period 2025-07-08).
+  - Clean-copy check (git worktree, no DVC data): 97 passed, 6 skipped, 4 deselected.
+- **pandera contracts** in `src/validation/`: SoLEXS minute, HEL1OS coverage + counts, GOES events, the 57-column
+  dataset, predictions.
+  - Wired into `solexs_clean`, `hel1os_index`, `match_goes` and `build_dataset` as `produce && check`.
+  - The contracts passed on the existing outputs, then `dvc commit` recorded the new commands. dvc.lock changed only by
+    the commands and 8 new dependency hashes (0 changed hashes).
+- **Prefect flows** (`flows/`, logic in `src/ops/`) with window locks (`src/ops/locks.py`): nothing after the
+  development end, and no re-scoring of the old test.
+  - Ran for real: `daily_ingest` (no new dev days; 11 locked days listed by name; 4 contracts OK) and `check_drift`
+    (21/44 features drifted, share 0.48, not flagged).
+  - Not run on real data, because the ML phase is frozen: `score_replay`, `retrain_candidate`. Both are tested with a
+    throwaway registry.
+- Tooling: `pyproject.toml`, `.pre-commit-config.yaml`, `Makefile`, `requirements-serve.txt`. New packages:
+  evidently 0.7.23, ruff 0.17.5, pre-commit 4.7.0. A dry run confirmed that no existing package version changed.
+
+**Problems and decisions**
+- *Safety hole fixed:* the `dev2_*` stages and `evaluate_holdout2` were not frozen, so any dependency change plus
+  `dvc repro` would have re-scored holdout2. All 10 are now frozen, and a test requires every model/evaluation stage
+  to be frozen.
+- *Frozen files are not reformatted:* ruff findings in DVC-dependency files are tolerated via per-file ignores (12
+  findings, documented in pyproject). Fixed only in non-dependency files.
+- *Prefect:* the user's global `~/.prefect` points to a server that isn't running, and its database is from another
+  Prefect version (alembic revision error). The project now uses its own `PREFECT_HOME=.prefect`; the global profile
+  was not touched.
+- *Drift parser bug* (p-value vs distance methods, 7 instead of 21 drifted features): fixed, and tested against
+  Evidently's own share.
+- *GitHub:* the repo is public; all commit author emails are the user's Gmail; history has no blob > 5 MB and no
+  credentials. The `gh` token lacked the `workflow` scope (needed to push `.github/workflows`).
