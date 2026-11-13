@@ -30,7 +30,12 @@ def test_api_features_equal_pipeline_features(day):
     api = sf.day_features(counts, pd.Timestamp(day, tz="UTC"), hel)[feats]
     ref = pipe[feats]
     assert api.index.equals(ref.index)
-    pd.testing.assert_frame_equal(api, ref, check_exact=True, check_freq=False)
+    # Bit-for-bit equal on the machine that built the dataset. Across platforms (Windows -> Linux CI), libm's log10
+    # can differ in the last bit; hx_cdte_lo_d5m is a difference of two nearly equal logs, so that bit can survive the
+    # float32 cast. Every other column must still be exact; this one must agree to float32 rounding.
+    noisy = ["hx_cdte_lo_d5m"]
+    pd.testing.assert_frame_equal(api.drop(columns=noisy), ref.drop(columns=noisy), check_exact=True, check_freq=False)
+    pd.testing.assert_frame_equal(api[noisy], ref[noisy], check_exact=False, rtol=1e-5, atol=1e-6, check_freq=False)
 
 
 def test_bundle_files_match_the_manifest():

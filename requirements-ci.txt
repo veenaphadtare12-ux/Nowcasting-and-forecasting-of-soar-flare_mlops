@@ -17,4 +17,12 @@ pandera==0.34.0
 prefect==3.8.7
 evidently==0.7.23
 pytest==9.1.1
+# web stack pinned like the API image (newer FastAPI breaks the Prefect 3.8.7 server used by the flow tests)
+fastapi==0.142.2
+starlette==1.7.0
+pydantic==2.13.5
+pydantic-settings==2.15.0
+prometheus_client==0.26.0
+httpx==0.28.1
+uvicorn==0.54.0
 ruff==0.17.5
