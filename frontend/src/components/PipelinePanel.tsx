@@ -14,8 +14,8 @@ function ago(iso?: string | null): string {
 /** Compact status of the whole pipeline: last Prefect run, data freshness, champion versions, drift. */
 export default function PipelinePanel({ compact = false }: { compact?: boolean }) {
   const { data, error, loading, reload } = useApi<PipelineStatus>("/pipeline/status", 30000);
-  if (error) return <Card title="Pipeline status"><ErrorBox error={error} onRetry={reload} /></Card>;
-  if (loading && !data) return <Card title="Pipeline status"><Loading height={140} /></Card>;
+  if (error) return <Card title="Pipeline"><ErrorBox error={error} onRetry={reload} /></Card>;
+  if (loading && !data) return <Card title="Pipeline"><Loading height={140} /></Card>;
   if (!data) return null;
 
   const runs = data.prefect.recent_runs ?? [];
@@ -27,64 +27,64 @@ export default function PipelinePanel({ compact = false }: { compact?: boolean }
 
   return (
     <Card
-      title="Pipeline status"
+      title="Pipeline"
       right={
-        <span className="text-[11px] normal-case tracking-normal text-slate-500">
+        <span className="text-[11px] normal-case tracking-normal text-dim">
           bundle {data.bundle.version} · {data.bundle.git_sha.slice(0, 7)}
         </span>
       }
     >
       <div className={`grid gap-3 ${compact ? "sm:grid-cols-2" : "sm:grid-cols-2 xl:grid-cols-4"}`}>
-        <div className="rounded-lg border border-ink-700 bg-ink-800/50 p-3">
-          <div className="text-xs uppercase tracking-wide text-slate-400">Last daily_ingest</div>
+        <div className="rounded-xl border border-white/[0.06] bg-ink-800/40 p-4">
+          <div className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-dim">Last daily_ingest</div>
           {lastIngest ? (
             <div className="mt-1 text-sm">
               <Pill tone={lastIngest.state === "Completed" ? "green" : lastIngest.state === "Failed" ? "red" : "amber"}>{lastIngest.state ?? "?"}</Pill>{" "}
-              <span className="text-slate-300">{ago(lastIngest.end ?? lastIngest.start)}</span>
+              <span className="text-fg/80">{ago(lastIngest.end ?? lastIngest.start)}</span>
             </div>
           ) : localIngest ? (
-            <div className="mt-1 text-sm"><Pill tone="green">{localIngest.status}</Pill> <span className="text-slate-300">{ago(localIngest.finished_at)}</span></div>
+            <div className="mt-1 text-sm"><Pill tone="green">{localIngest.status}</Pill> <span className="text-fg/80">{ago(localIngest.finished_at)}</span></div>
           ) : (
-            <div className="mt-1 text-sm text-slate-400">no run yet</div>
+            <div className="mt-1 text-sm text-muted">no run yet</div>
           )}
-          <div className="mt-1 text-xs text-slate-500">
+          <div className="mt-1 text-xs text-dim">
             Prefect {data.prefect.configured ? (data.prefect.reachable ? <Pill tone="green">reachable</Pill> : <Pill tone="red">unreachable</Pill>) : <Pill>not configured</Pill>}
             {data.prefect.deployments?.find((d) => d.name.startsWith("daily_ingest"))?.schedules?.[0] && (
               <span className="ml-1 mono">cron {data.prefect.deployments?.find((d) => d.name.startsWith("daily_ingest"))?.schedules?.[0]} UTC</span>
             )}
           </div>
         </div>
-        <div className="rounded-lg border border-ink-700 bg-ink-800/50 p-3">
-          <div className="text-xs uppercase tracking-wide text-slate-400">Data freshness</div>
-          <div className="mt-1 text-sm text-slate-200">
+        <div className="rounded-xl border border-white/[0.06] bg-ink-800/40 p-4">
+          <div className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-dim">Data freshness</div>
+          <div className="mt-1 text-sm text-fg/90">
             Latest scored day: <b>{fresh.latest_scored_day ?? "none yet"}</b>
           </div>
-          <div className="text-xs text-slate-400">
+          <div className="text-xs text-muted">
             {fresh.pending_days.length ? `${fresh.pending_days.length} day(s) waiting` : "nothing waiting"} · production from {fresh.production_start}
           </div>
-          {fresh.hours_since_last_scoring != null && <div className="text-xs text-slate-500">scored {fresh.hours_since_last_scoring} h ago</div>}
+          {fresh.hours_since_last_scoring != null && <div className="text-xs text-dim">scored {fresh.hours_since_last_scoring} h ago</div>}
         </div>
-        <div className="rounded-lg border border-ink-700 bg-ink-800/50 p-3">
-          <div className="text-xs uppercase tracking-wide text-slate-400">Champions (MLflow)</div>
+        <div className="rounded-xl border border-white/[0.06] bg-ink-800/40 p-4">
+          <div className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-dim">Champions (MLflow)</div>
           <div className="mt-1 flex flex-wrap gap-1">
             {Object.entries(champs).map(([name, v]) => (
-              <span key={name} className="mono rounded bg-ink-700 px-1.5 py-0.5 text-slate-300" title={name}>
+              <span key={name} className="mono rounded bg-ink-700 px-1.5 py-0.5 text-fg/80" title={name}>
                 {name.replace("flare-", "").replace("forecast-", "")} v{v.champion ?? "?"}
               </span>
             ))}
           </div>
-          <div className="mt-1 text-xs text-slate-500">
+          <div className="mt-1 text-xs text-dim">
             {challengers.length ? `${challengers.length} challenger(s) waiting for review` : "no challenger"} ·{" "}
             {data.mlflow.configured ? (data.mlflow.reachable ? "registry reachable" : "registry unreachable") : "bundle copy"}
           </div>
         </div>
-        <div className="rounded-lg border border-ink-700 bg-ink-800/50 p-3">
-          <div className="text-xs uppercase tracking-wide text-slate-400">Feature drift</div>
+        <div className="rounded-xl border border-white/[0.06] bg-ink-800/40 p-4">
+          <div className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-dim">Feature drift</div>
           <div className="mt-1 text-sm">
             {data.drift.drift_flag ? <Pill tone="red">drift flagged</Pill> : <Pill tone="green">no dataset drift</Pill>}{" "}
-            <span className="text-slate-300">{fmtPct(data.drift.drifted_share, 0)} of features</span>
+            <span className="text-fg/80">{fmtPct(data.drift.drifted_share, 0)} of features</span>
           </div>
-          <div className="text-xs text-slate-500">{data.drift.current_label ?? (data.drift.current_window ? `${data.drift.current_window[0].slice(0, 10)} … ${data.drift.current_window[1].slice(0, 10)}` : "")}</div>
+          <div className="text-xs text-dim">{data.drift.current_label ?? (data.drift.current_window ? `${data.drift.current_window[0].slice(0, 10)} … ${data.drift.current_window[1].slice(0, 10)}` : "")}</div>
         </div>
       </div>
     </Card>

@@ -84,7 +84,7 @@ def test_tracked_text_files_use_lf_line_endings():
 
     root = Path(__file__).resolve().parents[1]
     files = subprocess.check_output(["git", "ls-files"], cwd=root, text=True).split()
-    binary = (".png", ".parquet", ".db", ".joblib", ".gz", ".fits")
+    binary = (".png", ".jpg", ".jpeg", ".webp", ".woff2", ".parquet", ".db", ".joblib", ".gz", ".fits")
     # dvc.lock is written by DVC itself (CRLF on Windows); it is never a stage dependency, and git stores it as LF.
     skip = {"dvc.lock"}
     crlf = [f for f in files if not f.endswith(binary) and f not in skip and (root / f).exists()

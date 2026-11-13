@@ -4,13 +4,13 @@ import type { ProductionLatest, Series } from "../api";
 import { SOLEXS, TARGET_COLOR, TARGET_LABEL, fmtPct, hhmm } from "../api";
 import Chart, { axisStyle } from "../components/Chart";
 import PipelinePanel from "../components/PipelinePanel";
-import { Card, ErrorBox, Loading, Pill, SourceNote, Stat } from "../components/ui";
+import { Card, ErrorBox, Loading, PageHeader, Pill, Stat } from "../components/ui";
 import { useApi } from "../hooks";
 
 function dayChart(d: Extract<ProductionLatest, { status: "ok" }>): echarts.EChartsOption {
   const lc = d.lightcurve.time.map((t, i) => [t, d.lightcurve.solexs_rate[i]]);
   const series: echarts.SeriesOption[] = [
-    { name: "SoLEXS counts/s", type: "line", data: lc, showSymbol: false, lineStyle: { width: 1.2, color: SOLEXS }, xAxisIndex: 0, yAxisIndex: 0 },
+    { name: "SoLEXS counts/s", type: "line", data: lc, showSymbol: false, lineStyle: { width: 1.2, color: SOLEXS }, itemStyle: { color: SOLEXS }, xAxisIndex: 0, yAxisIndex: 0 },
   ];
   Object.entries(d.predictions).forEach(([t, s]: [string, Series]) => {
     series.push({
@@ -19,6 +19,7 @@ function dayChart(d: Extract<ProductionLatest, { status: "ok" }>): echarts.EChar
       data: s.time.map((x, i) => [x, s.p_flare[i]]),
       showSymbol: false,
       lineStyle: { width: 1.2, color: TARGET_COLOR[t] },
+      itemStyle: { color: TARGET_COLOR[t] },
       xAxisIndex: 1,
       yAxisIndex: 1,
       markLine: { silent: true, symbol: "none", lineStyle: { type: "dashed", color: TARGET_COLOR[t], opacity: 0.6 }, data: [{ yAxis: s.threshold }], label: { show: false } },
@@ -27,7 +28,7 @@ function dayChart(d: Extract<ProductionLatest, { status: "ok" }>): echarts.EChar
   return {
     animation: false,
     tooltip: { trigger: "axis" },
-    legend: { top: 0, textStyle: { color: "#cbd5e1" } },
+    legend: { top: 0 },
     axisPointer: { link: [{ xAxisIndex: "all" }] },
     grid: [
       { left: 60, right: 20, top: 40, height: "38%" },
@@ -51,43 +52,32 @@ export default function Latest() {
 
   return (
     <div className="space-y-4">
-      <header>
-        <h1 className="text-2xl font-semibold text-slate-100">Latest production day</h1>
-        <p className="text-sm text-slate-400">
-          New SoLEXS days are scored every day by the <span className="mono">daily_ingest</span> flow: data contracts → pipeline features → champion
-          models → predictions store.
-        </p>
-      </header>
+      <PageHeader eyebrow="Monitor · production" title="Latest day" sub="Scored automatically every night at 02:15 UTC." />
       <PipelinePanel />
       {error && <ErrorBox error={error} onRetry={reload} />}
       {loading && !data && <Loading height={300} />}
       {data?.status === "no_data" && (
-        <Card title="No production day scored yet">
-          <p className="text-sm text-slate-300">{data.message}</p>
-          <div className="mt-3 grid gap-3 sm:grid-cols-3">
-            <Stat label="Production starts" value={data.freshness.production_start} sub="the day after the holdout2 period" />
-            <Stat label="Newest raw day available" value={data.freshness.latest_available_day ?? "none"} sub="SoLEXS L1 folders / inbox" />
-            <Stat label="Waiting to be scored" value={data.freshness.pending_days.length} />
+        <Card title="Awaiting the first production day" right={<Pill tone="amber">standby</Pill>}>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Stat label="Production starts" value={data.freshness.production_start} />
+            <Stat label="Newest raw day" value={data.freshness.latest_available_day ?? "—"} />
+            <Stat label="Waiting to score" value={data.freshness.pending_days.length} />
           </div>
-          <SourceNote>
-            Evaluation periods and holdout2 are locked, so production only ever scores days that no model has seen. Use the <b>Replay</b> page to watch
-            the champions on past days minute by minute.
-          </SourceNote>
         </Card>
       )}
       {data?.status === "ok" && option && (
         <>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Stat label="Day" value={data.day} sub={`scored ${data.summary.scored_at.replace("T", " ").slice(0, 16)} UTC`} />
-            <Stat label="SoLEXS coverage" value={fmtPct(data.summary.valid_fraction, 0)} sub={`${data.summary.rows.toLocaleString()} 10-s rows`} />
-            <Stat label="GOES flare list" value={data.goes_flares.length} sub={data.summary.goes.status} />
-            <Stat label="Model bundle" value={data.summary.bundle_version} />
+            <Stat label="Coverage" value={fmtPct(data.summary.valid_fraction, 0)} sub={`${data.summary.rows.toLocaleString()} rows`} />
+            <Stat label="GOES flares" value={data.goes_flares.length} />
+            <Stat label="Bundle" value={data.summary.bundle_version} />
           </div>
-          <Card title="Light curve and flare probabilities">
+          <Card title="Light curve · flare probability">
             <Chart option={option} height={460} />
           </Card>
           <div className="grid gap-4 lg:grid-cols-2">
-            <Card title="Alerts per target">
+            <Card title="Alerts">
               <table className="tbl">
                 <thead>
                   <tr><th>Target</th><th>Alerts (min)</th><th>First alert</th><th>Max P</th><th>Threshold</th></tr>
@@ -103,7 +93,7 @@ export default function Latest() {
                     </tr>
                   ))}
                   {Object.entries(data.summary.not_scored).map(([t, why]) => (
-                    <tr key={t} className="text-slate-500">
+                    <tr key={t} className="text-dim">
                       <td>{TARGET_LABEL[t] ?? t}</td>
                       <td colSpan={4} className="text-xs">not scored in production: {why}</td>
                     </tr>
@@ -111,7 +101,7 @@ export default function Latest() {
                 </tbody>
               </table>
             </Card>
-            <Card title="GOES flares that day (NOAA SWPC list)">
+            <Card title="GOES flares">
               {data.goes_flares.length ? (
                 <table className="tbl">
                   <thead><tr><th>Class</th><th>Begin</th><th>Peak</th><th>End</th></tr></thead>
@@ -122,7 +112,7 @@ export default function Latest() {
                   </tbody>
                 </table>
               ) : (
-                <p className="text-sm text-slate-400">No flares listed ({data.summary.goes.status}).</p>
+                <p className="text-sm text-muted">No flares listed ({data.summary.goes.status}).</p>
               )}
             </Card>
           </div>

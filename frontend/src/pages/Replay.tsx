@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DayInfo, DetectorEvent, Frame, GoesFlare, ReplayDay, StreamMeta } from "../api";
 import { API, HEL1OS, SOLEXS, TARGETS, TARGET_COLOR, TARGET_LABEL, fmtPct, getJson, hhmm } from "../api";
 import Chart, { axisStyle } from "../components/Chart";
-import { Card, ErrorBox, Gauge, Loading, Pill } from "../components/ui";
+import { Card, ErrorBox, Gauge, Loading, PageHeader, Pill } from "../components/ui";
 import { useApi } from "../hooks";
 
 type Buf = {
@@ -188,7 +188,7 @@ export default function Replay() {
     const x1 = iso(new Date(new Date(x0).getTime() + 86400000));
     const pts = (ys: (number | null)[]) => b.t.map((t, i) => [t, ys[i] != null && (ys[i] as number) > 0 ? ys[i] : null]);
     const areas = b.goes.map((g) => [
-      { xAxis: g.begin, name: g.goes_class ?? "…", itemStyle: { color: g.goes_class?.match(/^[MX]/) ? "rgba(239,68,68,0.18)" : "rgba(224,122,31,0.12)" } },
+      { xAxis: g.begin, name: g.goes_class ?? "…", itemStyle: { color: g.goes_class?.match(/^[MX]/) ? "rgba(255,107,107,0.13)" : "rgba(245,181,68,0.09)" } },
       { xAxis: g.end ?? clock ?? g.begin },
     ]);
     const xAxis = (gi: number, show: boolean) => ({ type: "time" as const, gridIndex: gi, min: x0, max: x1, ...axisStyle, axisLabel: { ...axisStyle.axisLabel, show } });
@@ -208,9 +208,9 @@ export default function Replay() {
       animation: false,
       tooltip: { trigger: "axis", axisPointer: { type: "line" }, valueFormatter: (v) => (typeof v === "number" ? v.toPrecision(3) : String(v)) },
       axisPointer: { link: [{ xAxisIndex: "all" }] },
-      legend: { top: 0, textStyle: { color: "#cbd5e1" }, data: ["SoLEXS soft X-rays", "HEL1OS CZT 20–40 keV", "HEL1OS CdTe 5–20 keV", ...TARGETS.map((k) => TARGET_LABEL[k])] },
+      legend: { top: 0, data: ["SoLEXS soft X-rays", "HEL1OS CZT 20–40 keV", "HEL1OS CdTe 5–20 keV", ...TARGETS.map((k) => TARGET_LABEL[k])] },
       grid: [
-        { left: 64, right: 18, top: 38, height: "27%" },
+        { left: 64, right: 18, top: 72, height: "23%" },
         { left: 64, right: 18, top: "36%", height: "16%" },
         { left: 64, right: 18, top: "56%", height: "22%" },
         { left: 64, right: 18, top: "82%", height: "12%" },
@@ -220,13 +220,13 @@ export default function Replay() {
         { type: "log", gridIndex: 0, name: "SoLEXS c/s", ...axisStyle },
         { type: "log", gridIndex: 1, name: "HEL1OS c/s", ...axisStyle, show: Boolean(hasHx) },
         { type: "value", gridIndex: 2, min: 0, max: 1, name: "P(flare)", ...axisStyle },
-        { type: "category", gridIndex: 3, data: TARGETS.map((k) => k), ...axisStyle, axisLabel: { color: "#94a3b8", fontSize: 10 } },
+        { type: "category", gridIndex: 3, data: TARGETS.map((k) => k), ...axisStyle, axisLabel: { ...axisStyle.axisLabel, fontSize: 10 } },
       ],
-      graphic: hasHx ? [] : [{ type: "text", left: "center", top: "43%", style: { text: "No HEL1OS session on this day", fill: "#64748b", fontSize: 12 } }],
+      graphic: hasHx ? [] : [{ type: "text", left: "center", top: "43%", style: { text: "No HEL1OS session on this day", fill: "#5b6779", fontSize: 12 } }],
       series: [
-        { name: "SoLEXS soft X-rays", type: "line", data: pts(b.solexs), showSymbol: false, lineStyle: { width: 1.2, color: SOLEXS }, itemStyle: { color: SOLEXS }, markArea: { silent: true, label: { color: "#fca5a5", fontSize: 10 }, data: areas as never } },
+        { name: "SoLEXS soft X-rays", type: "line", data: pts(b.solexs), showSymbol: false, lineStyle: { width: 1.2, color: SOLEXS }, itemStyle: { color: SOLEXS }, markArea: { silent: true, label: { color: "#ff8a7a", fontSize: 10 }, data: areas as never } },
         { name: "HEL1OS CZT 20–40 keV", type: "line", xAxisIndex: 1, yAxisIndex: 1, data: pts(b.czt), showSymbol: false, lineStyle: { width: 1, color: HEL1OS }, itemStyle: { color: HEL1OS } },
-        { name: "HEL1OS CdTe 5–20 keV", type: "line", xAxisIndex: 1, yAxisIndex: 1, data: pts(b.cdte), showSymbol: false, lineStyle: { width: 1, color: "#6f93d3" }, itemStyle: { color: "#6f93d3" } },
+        { name: "HEL1OS CdTe 5–20 keV", type: "line", xAxisIndex: 1, yAxisIndex: 1, data: pts(b.cdte), showSymbol: false, lineStyle: { width: 1, color: "#c4b5fd" }, itemStyle: { color: "#c4b5fd" } },
         ...TARGETS.map(
           (k): echarts.SeriesOption => ({
             name: TARGET_LABEL[k],
@@ -247,17 +247,17 @@ export default function Replay() {
 
   return (
     <div className="space-y-4">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-100">Replay</h1>
-          <p className="text-sm text-slate-400">Watch the champion models on a past development day, minute by minute, using only data available at each moment.</p>
-        </div>
-        <div className="text-right">
-          <div className="text-xs uppercase tracking-wide text-slate-500">Replay clock (UTC)</div>
-          <div className="font-mono text-3xl text-slate-100" aria-live="polite">{clock ? clock.slice(11, 19) : "--:--:--"}</div>
-          <div className="text-xs text-slate-400">{day ?? ""}</div>
-        </div>
-      </header>
+      <PageHeader
+        eyebrow="Monitor · replay"
+        title="Replay"
+        sub="Past days, minute by minute, with only the data known at each moment."
+        right={
+          <div className="rounded-xl border border-white/[0.07] bg-ink-900/70 px-4 py-2.5 text-right">
+            <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-dim">UTC · {day ?? "—"}</div>
+            <div className="font-mono text-[28px] leading-tight text-fg tabular-nums" aria-live="polite">{clock ? clock.slice(11, 19) : "--:--:--"}</div>
+          </div>
+        }
+      />
 
       {days.error && <ErrorBox error={days.error} onRetry={days.reload} />}
       {days.loading && <Loading height={80} />}
@@ -267,26 +267,27 @@ export default function Replay() {
             <button
               key={d.day}
               onClick={() => setDay(d.day)}
-              className={`rounded-xl border p-3 text-left transition ${d.day === day ? "border-solexs bg-solexs/10" : "border-ink-700 bg-ink-900 hover:border-ink-600"}`}
+              className={`rounded-xl border p-3.5 text-left transition ${d.day === day ? "border-accent/50 bg-accent/[0.06] shadow-[0_0_0_1px_rgba(94,234,212,.15)]" : "border-white/[0.06] bg-ink-900/70 hover:border-white/15"}`}
             >
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-sm text-slate-100">{d.day}</span>
-                <span className="flex gap-1">
-                  {d.goes_counts.X > 0 && <Pill tone="red">{d.goes_counts.X} X</Pill>}
-                  {d.goes_counts.M > 0 && <Pill tone="orange">{d.goes_counts.M} M</Pill>}
-                  {d.hel1os && <Pill tone="blue">HEL1OS</Pill>}
-                </span>
+              <div className="font-mono text-[13px] text-fg tabular-nums">{d.day}</div>
+              <div className="mt-2 flex min-h-5 flex-wrap gap-1">
+                {d.goes_counts.X > 0 && <Pill tone="red">{d.goes_counts.X} X</Pill>}
+                {d.goes_counts.M > 0 && <Pill tone="orange">{d.goes_counts.M} M</Pill>}
+                {d.hel1os && <Pill tone="blue">HEL1OS</Pill>}
+                {!d.goes_counts.X && !d.goes_counts.M && <Pill>quiet</Pill>}
               </div>
-              <div className="mt-1 text-xs text-slate-400">{d.note}</div>
+              <div className="mt-2 line-clamp-2 text-xs text-dim" title={d.note}>{d.note.split(":")[0]}</div>
             </button>
           ))}
         </div>
       )}
 
       {info && (
-        <div className="rounded-lg border border-amber-500/30 bg-amber-950/20 px-3 py-2 text-xs text-amber-200">
-          Demonstration, not evaluation: this is a development day {info.in_fit_period ? "inside the champions' training period" : "from the month used to choose the thresholds"}.
-          The frozen evaluation results are on the Forecast performance page. Predictions source: <b>{meta?.source ?? "…"}</b>.
+        <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
+          <Pill tone="amber">demo, not evaluation</Pill>
+          <span>{info.in_fit_period ? "inside the training period" : "threshold-selection month"}</span>
+          <span className="text-dim">·</span>
+          <span>source <span className="font-mono text-fg/80">{meta?.source ?? "…"}</span></span>
         </div>
       )}
 
@@ -295,11 +296,11 @@ export default function Replay() {
           {playing ? "❚❚ Pause" : "▶ Play"}
         </button>
         <button className="btn" onClick={() => seek(0)} disabled={!day || prefilling}>⟲ Restart</button>
-        <div className="flex overflow-hidden rounded-lg border border-ink-600" role="group" aria-label="speed">
+        <div className="flex overflow-hidden rounded-lg border border-white/10" role="group" aria-label="speed">
           {SPEEDS.map((s, i) => (
             <button
               key={s.speed}
-              className={`px-3 py-1.5 text-sm ${i === speedIx ? "bg-solexs/25 text-orange-100" : "bg-ink-800 text-slate-300 hover:bg-ink-700"}`}
+              className={`px-3 py-1.5 font-mono text-xs ${i === speedIx ? "bg-accent/15 text-accent" : "bg-ink-800 text-muted hover:bg-ink-700"}`}
               onClick={() => {
                 setSpeedIx(i);
                 if (playing) {
@@ -312,38 +313,38 @@ export default function Replay() {
             </button>
           ))}
         </div>
-        <label className="ml-2 flex flex-1 items-center gap-2 text-xs text-slate-400">
+        <label className="ml-2 flex flex-1 items-center gap-2 text-xs text-muted">
           seek
-          <input type="range" min={0} max={1439} step={10} value={minutes} onChange={(e) => seek(Number(e.target.value))} className="flex-1 accent-orange-500" disabled={!day} />
+          <input type="range" min={0} max={1439} step={10} value={minutes} onChange={(e) => seek(Number(e.target.value))} className="flex-1" disabled={!day} />
         </label>
       </div>
 
       {error && <ErrorBox error={error} />}
 
       <div
-        className={`rounded-xl border px-4 py-3 transition ${activeAlerts.length ? "border-red-500/70 bg-red-950/50" : "border-emerald-600/30 bg-emerald-950/20"}`}
+        className={`rounded-xl border px-4 py-3 transition ${activeAlerts.length ? "border-coral/40 bg-coral/[0.07]" : "border-accent/20 bg-accent/[0.035]"}`}
         role="status"
       >
         {activeAlerts.length ? (
-          <div className="flex flex-wrap items-center gap-2 text-red-100">
-            <span className="text-lg font-semibold">⚠ ALERT</span>
+          <div className="flex flex-wrap items-center gap-2 text-coral">
+            <span className="font-mono text-xs font-medium uppercase tracking-[0.16em]">Alert</span>
             {activeAlerts.map((k) => (
-              <span key={k} className="pill bg-red-500/25 text-red-100 ring-1 ring-red-400/50">
+              <span key={k} className="pill bg-coral/15 text-coral">
                 {TARGET_LABEL[k]} · p {fmtPct(current[k], 0)} ≥ {fmtPct(thr[k], 0)}
               </span>
             ))}
           </div>
         ) : (
-          <span className="text-sm text-emerald-200">No alert at {clock ? hhmm(clock) : "–"} UTC.</span>
+          <span className="flex items-center gap-2 font-mono text-xs text-accent"><i className="h-1.5 w-1.5 rounded-full bg-accent" />All clear · {clock ? hhmm(clock) : "–"} UTC</span>
         )}
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[1fr_320px]">
-        <Card title="Live light curves, probabilities and alerts">
+        <Card title="Light curves · probability · alerts">
           {option ? <Chart option={option} height={620} /> : <Loading height={620} />}
         </Card>
         <div className="space-y-4">
-          <Card title="Flare probability now">
+          <Card title="Probability now">
             <div className="space-y-2">
               {TARGETS.map((k) => (
                 <Gauge key={k} target={k} p={current[k]} threshold={thr[k] ?? 1} color={TARGET_COLOR[k]} />
@@ -352,21 +353,21 @@ export default function Replay() {
           </Card>
           <Card title="Event log">
             <ol className="max-h-72 space-y-1 overflow-y-auto pr-1 text-xs">
-              {log.length === 0 && <li className="text-slate-500">Press Play: alerts, GOES flares and detector triggers appear here as they happen.</li>}
+              {log.length === 0 && <li className="text-dim">Press Play to start the log.</li>}
               {log.map((l, i) => (
                 <li key={`${l.t}-${i}`} className="flex gap-2">
-                  <span className="mono text-slate-500">{hhmm(l.t)}</span>
-                  <span className={l.kind === "alert" ? "text-red-300" : l.kind === "clear" ? "text-emerald-300" : l.kind === "goes" ? "text-orange-200" : "text-blue-200"}>{l.text}</span>
+                  <span className="mono text-dim">{hhmm(l.t)}</span>
+                  <span className={l.kind === "alert" ? "text-coral" : l.kind === "clear" ? "text-accent" : l.kind === "goes" ? "text-amber" : "text-peri"}>{l.text}</span>
                 </li>
               ))}
             </ol>
           </Card>
-          <Card title="GOES flares so far">
+          <Card title="GOES flares">
             <ul className="space-y-1 text-xs">
-              {b.goes.length === 0 && <li className="text-slate-500">none yet</li>}
+              {b.goes.length === 0 && <li className="text-dim">None yet</li>}
               {b.goes.map((g, i) => (
                 <li key={i} className="flex items-center justify-between">
-                  <span className="mono text-slate-400">{hhmm(g.begin)}</span>
+                  <span className="mono text-muted">{hhmm(g.begin)}</span>
                   {g.goes_class ? <Pill tone={/^[MX]/.test(g.goes_class) ? "red" : "orange"}>{g.goes_class}</Pill> : <Pill tone="amber">rising…</Pill>}
                 </li>
               ))}

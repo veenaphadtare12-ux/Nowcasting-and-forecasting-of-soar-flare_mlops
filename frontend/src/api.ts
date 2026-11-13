@@ -12,14 +12,26 @@ export const TARGET_LABEL: Record<string, string> = {
   m_60m: "≥M flare in 60 min",
   m_120m: "≥M flare in 120 min",
 };
-export const SOLEXS = "#E07A1F";
-export const HEL1OS = "#2B5DA8";
+export const TARGET_SHORT: Record<string, string> = {
+  now: "Nowcast",
+  c_30m: "≥C 30m",
+  c_60m: "≥C 60m",
+  c_120m: "≥C 2h",
+  m_30m: "≥M 30m",
+  m_60m: "≥M 60m",
+  m_120m: "≥M 2h",
+};
+export const SOLEXS = "#F5B544"; // soft X-rays: amber
+export const HEL1OS = "#8EA2FF"; // hard X-rays: periwinkle
+export const MODEL = "#5EEAD4"; // champion models: signal mint
+export const BASELINE = "#3B4658";
+export const ALERT = "#FF6B6B";
 export const TARGET_COLOR: Record<string, string> = {
-  now: "#E07A1F",
-  c_30m: "#f2b134",
-  c_60m: "#d9a441",
-  m_30m: "#e8524a",
-  m_60m: "#b9473f",
+  now: "#5EEAD4",
+  c_30m: "#F7D070",
+  c_60m: "#F5A54A",
+  m_30m: "#FF8A7A",
+  m_60m: "#F0627E",
 };
 
 export type Nullable<T> = T | null;
