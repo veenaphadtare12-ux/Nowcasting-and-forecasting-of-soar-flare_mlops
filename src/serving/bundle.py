@@ -326,6 +326,21 @@ def _pipeline_status(models: dict) -> dict:
     }
 
 
+def _drift_samples(out: Path, feats: list[str], n: int = 20000, seed: int = 0) -> None:
+    """Feature samples for check_drift in containers: the champions' training block and the last 30 development days
+    (development data only; no labels)."""
+    from src.dev2 import protocol
+    from src.ops.drift import default_windows
+
+    d = protocol.load(feats)
+    rng = np.random.default_rng(seed)
+    w = default_windows()
+    for name, (a, b) in (("reference_sample", w["reference"]), ("recent_dev_sample", w["current"])):
+        x = d[(d.index >= a) & (d.index < b)]
+        x = x.iloc[np.sort(rng.choice(len(x), min(n, len(x)), replace=False))]
+        x.astype("float32").to_parquet(out / f"{name}.parquet", compression="zstd")
+
+
 def export(out: Path | None = None, tracking_uri: str | None = None) -> dict:
     from src import features, hel1os
     from src.models.train import load_period
@@ -370,10 +385,11 @@ def export(out: Path | None = None, tracking_uri: str | None = None) -> dict:
             "in_fit_period": day < pd.Timestamp(config.load_params()["final"]["fit_end"], tz="UTC"),
         }
     _json(tmp / "model_card.json", _results())
+    (tmp / "drift").mkdir()
     drift = config.PROJECT_ROOT / "reports" / "drift" / "latest.json"
     if drift.exists():
-        (tmp / "drift").mkdir()
         shutil.copy(drift, tmp / "drift" / "latest.json")
+    _drift_samples(tmp / "drift", models["now"]["features"])
     _json(tmp / "pipeline" / "status.json", _pipeline_status(models))
     files = {p.relative_to(tmp).as_posix(): sha256(p) for p in sorted(tmp.rglob("*")) if p.is_file()}
     manifest = {

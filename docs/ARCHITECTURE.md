@@ -111,3 +111,32 @@ built only from data ≤ t.
   - The UI says so, and replay is never presented as evaluation.
 - M results on holdout2 are labelled UNDERPOWERED. The test results come from the one-time evaluation and are not
   recomputed.
+
+## 8. Production mode (added 2026-11-13)
+- **Window:** production scores only days from `FLARE_PRODUCTION_START` = 2026-11-13, the day after holdout2
+  (2026-09-13 … 11-12). Holdout2 and every evaluation period stay locked, so production predictions are always on
+  data never used before. Today no such day exists on disk, so the "Latest" page says so until new SoLEXS L1 days
+  arrive.
+- **Path** (`src/ops/production.py`, flow `daily_ingest`, scheduled daily by the Prefect worker):
+  1. new raw SoLEXS folder (FITS → `src/solexs.py` cleaning), or an inbox parquet (tests);
+  2. pandera `raw_solexs_counts`;
+  3. features with `src/serving/features.py` (the pipeline code);
+  4. pandera `production_features`;
+  5. the champions that need only the 44 base features (now, c_60m, m_60m);
+  6. pandera `predictions`;
+  7. the store, then `/production/latest` → frontend.
+  - c_30m and m_30m need long-context, spectral or GOES inputs that production does not build yet; they are
+    reported as "not scored", never faked.
+  - HEL1OS is not wired into production yet, so `hel1os_available = 0` (the same semantics as a day without
+    sessions in the pipeline).
+- **Equivalence test:** on a development day without HEL1OS, the production path reproduces the bundle's
+  predictions exactly (`tests/test_production.py`).
+- **Drift in containers:** `check_drift` compares the bundle's training-feature sample with the last 30 days of
+  production features. With fewer than 1,000 production rows, it uses the last development window and says so.
+
+## 9. Docker on this machine
+- Docker Engine runs inside WSL Ubuntu (Docker Desktop cannot start on this Windows build; see
+  `docs/DEPLOY_PROGRESS.md`). The PowerShell scripts run docker through `wsl -d Ubuntu`.
+- WSL stops the Ubuntu VM shortly after the last `wsl.exe` exits, and Docker with it, so the scripts keep one hidden
+  `sleep infinity` process alive.
+- Ports are forwarded to Windows `localhost`.

@@ -1,15 +1,26 @@
 # One connected product (docs/ARCHITECTURE.md). Start: scripts\up.ps1   Stop: scripts\down.ps1   Check: scripts\smoke_test.ps1
 # Images are tagged with the git SHA (FLARE_TAG); the same images run in CI and in Kubernetes.
+# Secrets come from the environment / an uncommitted .env file (see .env.example); defaults are for local use only.
 name: flare
 
-x-api-env: &api-env
+x-flare-env: &flare-env
   FLARE_ENVIRONMENT: compose
   FLARE_PREDICTIONS_DIR: /data/predictions
   FLARE_DRIFT_FILE: /data/drift/latest.json
+  FLARE_INBOX_DIR: /data/inbox
+  FLARE_RAW_SOLEXS_DIR: /raw/solexs
+  FLARE_PRODUCTION_START: ${FLARE_PRODUCTION_START:-2026-11-13}
   FLARE_CORS_ORIGINS: "http://localhost:8080,http://127.0.0.1:8080"
   FLARE_LOG_LEVEL: INFO
   FLARE_MAX_REPLAY_SPEED: "600"
-  PREFECT_HOME: /data/prefect
+  FLARE_PREFECT_API_URL: http://prefect-server:4200/api
+  FLARE_MLFLOW_URL: http://mlflow:5000
+
+x-flare-volumes: &flare-volumes
+  - predictions:/data/predictions
+  - drift:/data/drift
+  - inbox:/data/inbox
+  - ${FLARE_RAW_SOLEXS_HOST:-./data/raw_empty}:/raw/solexs:ro
 
 services:
   api:
@@ -20,22 +31,141 @@ services:
       args:
         GIT_SHA: ${FLARE_TAG:-local}
     environment:
-      <<: *api-env
-    volumes:
-      - predictions:/data/predictions
+      <<: *flare-env
+    volumes: *flare-volumes
     ports:
       - "8000:8000"
+    depends_on:
+      prefect-server:
+        condition: service_healthy
+      mlflow:
+        condition: service_healthy
     restart: unless-stopped
 
-  # Runs a Prefect flow with the same image, e.g.  docker compose run --rm worker python -m flows.score_replay --day 2026-04-24
+  # Prefect worker: serves the deployments (daily_ingest + check_drift on a schedule, score_replay on demand).
   worker:
+    image: ghcr.io/veenaphadtare12-ux/flare-api:${FLARE_TAG:-local}
+    command: ["python", "-m", "flows.serve"]
+    environment:
+      <<: *flare-env
+      PREFECT_API_URL: http://prefect-server:4200/api
+      PREFECT_HOME: /data/prefect
+    volumes: *flare-volumes
+    depends_on:
+      prefect-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://prefect-server:4200/api/health', timeout=4)"]
+      interval: 30s
+      timeout: 6s
+      retries: 5
+    restart: unless-stopped
+
+  prefect-server:
+    image: prefecthq/prefect:3.8.7-python3.12
+    command: ["prefect", "server", "start", "--host", "0.0.0.0", "--port", "4200"]
+    environment:
+      PREFECT_UI_API_URL: http://localhost:4200/api
+      PREFECT_SERVER_ANALYTICS_ENABLED: "false"
+    volumes:
+      - prefect:/root/.prefect
+    ports:
+      - "4200:4200"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:4200/api/health', timeout=4)"]
+      interval: 10s
+      timeout: 6s
+      retries: 20
+      start_period: 20s
+    restart: unless-stopped
+
+  # MLflow tracking + registry server. The API only reads from it (champion/challenger versions for /pipeline/status).
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v3.16.1
+    command:
+      - mlflow
+      - server
+      - --host=0.0.0.0
+      - --port=5000
+      - --backend-store-uri=sqlite:////mlflow/mlflow.db
+      - --artifacts-destination=/mlflow/artifacts
+      - --serve-artifacts
+      - --allowed-hosts=*
+    volumes:
+      - mlflow:/mlflow
+    ports:
+      - "5000:5000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/health', timeout=4)"]
+      interval: 10s
+      timeout: 6s
+      retries: 20
+      start_period: 20s
+    restart: unless-stopped
+
+  # One-off: registers the model bundle's champions in the MLflow server (idempotent).
+  mlflow-seed:
+    image: ghcr.io/mlflow/mlflow:v3.16.1
+    command: ["python", "/seed/seed_registry.py"]
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      BUNDLE_DIR: /bundle
+    volumes:
+      - ./model_bundle:/bundle:ro
+      - ./scripts/seed_registry.py:/seed/seed_registry.py:ro
+    depends_on:
+      mlflow:
+        condition: service_healthy
+    restart: "no"
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+    volumes:
+      - ./monitoring/prometheus:/etc/prometheus:ro
+      - prometheus:/prometheus
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:12.1.1
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/flare-api.json
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  # Runs one flow with the same image, e.g.  docker compose run --rm tools python -m flows.score_replay --day 2026-04-24
+  tools:
     image: ghcr.io/veenaphadtare12-ux/flare-api:${FLARE_TAG:-local}
     profiles: ["tools"]
     environment:
-      <<: *api-env
-    volumes:
-      - predictions:/data/predictions
-    command: ["python", "-m", "flows.score_replay", "--day", "2026-04-24"]
+      <<: *flare-env
+      PREFECT_API_URL: http://prefect-server:4200/api
+      PREFECT_HOME: /data/prefect
+    volumes: *flare-volumes
+    command: ["python", "-m", "flows.daily_ingest"]
 
 volumes:
   predictions:
+  drift:
+  inbox:
+  prefect:
+  mlflow:
+  prometheus:
+  grafana:

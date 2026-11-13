@@ -10,12 +10,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     FLARE_BUNDLE_DIR=/app/model_bundle \
     FLARE_PREDICTIONS_DIR=/data/predictions \
     FLARE_DRIFT_FILE=/data/drift/latest.json \
+    FLARE_INBOX_DIR=/data/inbox \
     PREFECT_HOME=/data/prefect \
     MLFLOW_DISABLE_AGENT_HINT=1
 
 WORKDIR /app
 RUN useradd --create-home --uid 10001 app \
- && mkdir -p /data/predictions /data/drift /data/prefect \
+ && mkdir -p /data/predictions /data/drift /data/prefect /data/inbox \
  && chown -R app:app /data
 
 COPY requirements-serve.txt requirements-worker.txt ./
@@ -24,6 +25,7 @@ RUN pip install -r requirements-serve.txt -r requirements-worker.txt
 COPY params.yaml ./
 COPY src/ src/
 COPY flows/ flows/
+COPY scripts/seed_registry.py scripts/
 COPY model_bundle/ model_bundle/
 
 USER app

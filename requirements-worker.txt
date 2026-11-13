@@ -1,2 +1,5 @@
-# Extra packages for running the Prefect flows inside the same image (docker compose run worker ...).
+# Extra packages for the Prefect flows in the same image (worker service): orchestration, drift, raw FITS, NOAA download.
 prefect==3.8.7
+evidently==0.7.23
+astropy==8.0.1
+requests==2.34.2

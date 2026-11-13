@@ -1,4 +1,4 @@
-# Stop the product. -Volumes also deletes the predictions store volume.
+# Stop the product. -Volumes also deletes the volumes (predictions store, MLflow, Prefect, Grafana, Prometheus data).
 param([switch]$Volumes)
 . "$PSScriptRoot\_common.ps1"
-if ($Volumes) { docker compose --profile tools down --volumes } else { docker compose --profile tools down }
+if ($Volumes) { Invoke-Bash "docker compose --profile tools down --volumes" } else { Invoke-Bash "docker compose --profile tools down" }

@@ -26,7 +26,7 @@ from fastapi.responses import StreamingResponse
 from prometheus_client import CONTENT_TYPE_LATEST, CollectorRegistry, Counter, Gauge, Histogram, generate_latest
 from pydantic import BaseModel, Field
 
-from src.ops import replay, runs
+from src.ops import production, replay, runs
 from src.serving import bundle as B
 from src.serving import features as sf
 from src.settings import get_settings
@@ -476,6 +476,129 @@ def drift_latest() -> dict:
     return d
 
 
+def _production_payload(day: str) -> dict:
+    d = production.prod_dir()
+    summ = json.loads((d / f"{day}.json").read_text(encoding="utf-8"))
+    lc = pd.read_parquet(d / f"{day}_lightcurve.parquet")
+    pred = replay.read_store(day, get_settings().predictions_dir)
+    series = {}
+    if pred is not None:
+        for t, g in pred.groupby("target"):
+            g = g.sort_values("time")
+            series[t] = {
+                "model": g["model"].iloc[0],
+                "model_version": str(g["model_version"].iloc[0]),
+                "threshold": float(g["threshold"].iloc[0]),
+                "time": _iso(g["time"]),
+                "p_flare": _num(g["p_flare"]),
+                "alert": [bool(x) for x in g["alert"]],
+            }
+    return {
+        "day": day,
+        "summary": summ,
+        "lightcurve": {"time": _iso(lc.index), "solexs_rate": _num(lc["solexs_rate"])},
+        "predictions": series,
+        "goes_flares": summ.get("goes", {}).get("flares", []),
+    }
+
+
+@app.get("/production/days")
+def production_days() -> dict:
+    """Freshness of the production pipeline and the scored production days (newest last)."""
+    f = production.freshness()
+    d = production.prod_dir()
+    f["days"] = [json.loads((d / f"{x}.json").read_text(encoding="utf-8")) for x in f["scored_days"]]
+    for x in f["days"]:
+        x.pop("store", None)
+    return f
+
+
+@app.get("/production/latest")
+def production_latest() -> dict:
+    """The newest scored production day with its predictions and alerts, plus data freshness."""
+    f = production.freshness()
+    if not f["latest_scored_day"]:
+        return {
+            "status": "no_data",
+            "freshness": f,
+            "message": f"No production day scored yet. Production starts {f['production_start']} (the day after the "
+            "holdout2 period); new SoLEXS L1 day folders are scored by the daily_ingest flow.",
+        }
+    return {"status": "ok", "freshness": f, **_production_payload(f["latest_scored_day"])}
+
+
+@app.get("/production/{day}")
+def production_day(day: str) -> dict:
+    if day not in production.scored_days():
+        raise HTTPException(404, f"{day} has not been scored by the production pipeline")
+    return {"status": "ok", "freshness": production.freshness(), **_production_payload(day)}
+
+
+def _get_json(url: str, method: str = "GET", body: dict | None = None, timeout: float = 3.0):
+    import urllib.request
+
+    req = urllib.request.Request(
+        url, method=method, data=None if body is None else json.dumps(body).encode(), headers={"Content-Type": "application/json"}
+    )
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        return json.loads(r.read().decode() or "null")
+
+
+def _prefect_status() -> dict:
+    url = get_settings().prefect_api_url
+    if not url:
+        return {"configured": False}
+    try:
+        flows = {f["id"]: f["name"] for f in _get_json(f"{url}/flows/filter", "POST", {"limit": 50})}
+        fr = _get_json(f"{url}/flow_runs/filter", "POST", {"sort": "START_TIME_DESC", "limit": 15})
+        deps = _get_json(f"{url}/deployments/filter", "POST", {"limit": 20})
+        return {
+            "configured": True,
+            "reachable": True,
+            "ui": url.removesuffix("/api"),
+            "deployments": [
+                {
+                    "name": f"{flows.get(x['flow_id'], '?')}/{x['name']}",
+                    "schedules": [sc.get("schedule", {}).get("cron") for sc in x.get("schedules", [])],
+                }
+                for x in deps
+            ],
+            "recent_runs": [
+                {
+                    "flow": flows.get(x["flow_id"], "?"),
+                    "name": x["name"],
+                    "state": x.get("state_name"),
+                    "start": x.get("start_time"),
+                    "end": x.get("end_time"),
+                }
+                for x in fr
+            ],
+        }
+    except Exception as e:
+        return {"configured": True, "reachable": False, "error": f"{type(e).__name__}: {e}"[:200]}
+
+
+def _mlflow_status() -> dict:
+    url = get_settings().mlflow_url
+    if not url:
+        return {"configured": False}
+    out = {"configured": True, "ui": url, "models": {}}
+    try:
+        for t, m in bundle().manifest["models"].items():
+            row = {}
+            for alias in ("champion", "challenger"):
+                try:
+                    mv = _get_json(f"{url}/api/2.0/mlflow/registered-models/alias?name={m['registry_name']}&alias={alias}")
+                    row[alias] = mv["model_version"]["version"]
+                except Exception:
+                    row[alias] = None
+            out["models"][m["registry_name"]] = row
+        out["reachable"] = True
+    except Exception as e:
+        out |= {"reachable": False, "error": f"{type(e).__name__}: {e}"[:200]}
+    return out
+
+
 @app.get("/pipeline/status")
 def pipeline_status() -> dict:
     s = get_settings()
@@ -490,6 +613,12 @@ def pipeline_status() -> dict:
         "days": sorted(d for d in b.days if replay.read_store(d, s.predictions_dir) is not None) if db.exists() else [],
     }
     st["bundle"] = {"version": b.version, "git_sha": b.manifest["git_sha"], "created_at": b.manifest["created_at"]}
+    st["production"] = production.freshness()
+    st["prefect"] = _prefect_status()
+    st["mlflow"] = _mlflow_status()
+    drift = Path(s.drift_file)
+    st["drift"] = json.loads(drift.read_text(encoding="utf-8")) if drift.exists() else b.json("drift/latest.json")
+    st["drift"].pop("per_feature", None)
     return st
 
 

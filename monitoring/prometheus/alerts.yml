@@ -1,0 +1,23 @@
+groups:
+  - name: flare-api
+    rules:
+      # Fires when the API answers more than 5 % of requests with a server error over 5 minutes.
+      - alert: FlareApiHighErrorRate
+        expr: |
+          sum(rate(flare_api_requests_total{status=~"5.."}[5m]))
+            / clamp_min(sum(rate(flare_api_requests_total[5m])), 1e-9) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "flare-api server errors above 5 % for 5 minutes"
+          description: "Check `docker compose logs api` (or kubectl logs deploy/api). Runbook: docs/RUNBOOK.md#api-errors"
+      # Fires when Prometheus cannot scrape the API at all.
+      - alert: FlareApiDown
+        expr: up{job="flare-api"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "flare-api is not reachable by Prometheus"
+          description: "Runbook: docs/RUNBOOK.md#api-down"

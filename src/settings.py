@@ -26,6 +26,12 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     max_replay_speed: float = Field(600.0, description="highest allowed replay speed (replay seconds per wall second)")
     stream_max_frames: int = Field(8640, description="cap on frames per SSE stream (one day of 10-s steps)")
+    production_start: str = Field("2026-11-13", description="first production day: the day after holdout2 (locked before it)")
+    raw_solexs_dir: Path | None = Field(None, description="SoLEXS L1 day folders for production (FITS); None = not mounted")
+    inbox_dir: Path | None = Field(ROOT / "data" / "inbox", description="cleaned 1-s counts <YYYY-MM-DD>.parquet (CI / tests)")
+    ingest_dvc: bool = Field(False, description="daily_ingest also re-runs changed DVC data stages (developer machine only)")
+    prefect_api_url: str | None = Field(None, description="Prefect server API, for /pipeline/status")
+    mlflow_url: str | None = Field(None, description="MLflow tracking server (read-only use), for /pipeline/status")
     environment: str = Field("local", description="local | compose | k8s | ci")
     git_sha: str = Field("unknown", description="set at image build time")
 

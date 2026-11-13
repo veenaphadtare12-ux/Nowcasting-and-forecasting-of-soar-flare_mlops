@@ -97,3 +97,32 @@ def run_default(out_dir: Path | None = None) -> dict:
     latest = (Path(out_dir) if out_dir else OUT) / "latest.json"
     latest.write_text(json.dumps(s, indent=1, default=str), encoding="utf-8", newline="\n")
     return s
+
+
+def run_bundle(out_file: Path | None = None) -> dict:
+    """Containers (no DVC data): the bundle's training-feature reference sample vs the last 30 days of production
+    features; while production has fewer than 1,000 rows, vs the bundle's last development window (labelled)."""
+    from src.ops import production
+    from src.serving import bundle as B
+    from src.settings import get_settings
+
+    s = get_settings()
+    b = B.load(str(s.bundle_dir))
+    feats = b.model_meta("now")["features"]
+    ref = pd.read_parquet(b.path / "drift" / "reference_sample.parquet")
+    cur = production.recent_features(30)
+    if cur is not None and len(cur) >= 1000:
+        label = f"production: last {len(production.scored_days()[-30:])} scored day(s)"
+    else:
+        cur = pd.read_parquet(b.path / "drift" / "recent_dev_sample.parquet")
+        label = "development window 2026-08-14 .. 2026-09-12 (no production data in the last 30 days yet)"
+    out_file = Path(out_file) if out_file else Path(s.drift_file)
+    summ = drift_report(ref, cur, feats, out_file.parent, out_file.stem + "_report")
+    summ |= {
+        "mode": "bundle",
+        "current_label": label,
+        "reference_label": "training block sample (2025-04-09 .. 2026-04-30)",
+        "html": str(out_file.parent / (out_file.stem + "_report.html")),
+    }
+    out_file.write_text(json.dumps(summ, indent=1, default=str), encoding="utf-8", newline="\n")
+    return summ

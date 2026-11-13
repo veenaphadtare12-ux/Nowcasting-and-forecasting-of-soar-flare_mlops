@@ -14,7 +14,13 @@ from src.ops import drift, runs
 
 @task
 def run_report() -> dict:
-    return drift.run_default()
+    # developer machine (DVC dataset present): training block vs the last 30 development days;
+    # containers: bundle reference sample vs the last 30 days of production features
+    from src import config
+
+    if (config.processed_dir() / "dataset" / "tune.parquet").exists():
+        return drift.run_default()
+    return drift.run_bundle()
 
 
 @flow(name="check_drift", log_prints=True)

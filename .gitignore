@@ -14,3 +14,4 @@ reports/_*.txt
 .prefect/
 data/predictions/
 reports/drift/*.html
+.env
