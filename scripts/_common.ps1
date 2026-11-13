@@ -15,7 +15,7 @@ function Test-NativeDocker {
 $script:Native = Test-NativeDocker
 
 function Get-WslPath([string]$WinPath) {
-    $p = $WinPath -replace '\', '/'
+    $p = $WinPath.Replace([char]92, [char]47)
     if ($p -match '^([A-Za-z]):(.*)$') { return "/mnt/" + $Matches[1].ToLower() + $Matches[2] }
     return $p
 }
