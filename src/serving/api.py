@@ -464,6 +464,12 @@ def results() -> dict:
     return bundle().json("model_card.json")
 
 
+@app.get("/data/coverage")
+def data_coverage() -> dict:
+    """SoLEXS daily coverage and monthly GOES flare counts over the development period (from the model bundle)."""
+    return bundle().json("data/coverage.json")
+
+
 @app.get("/drift/latest")
 def drift_latest() -> dict:
     b = bundle()

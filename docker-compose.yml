@@ -42,6 +42,20 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  frontend:
+    image: ghcr.io/veenaphadtare12-ux/flare-frontend:${FLARE_TAG:-local}
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+      args:
+        GIT_SHA: ${FLARE_TAG:-local}
+    ports:
+      - "8080:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
   # Prefect worker: serves the deployments (daily_ingest + check_drift on a schedule, score_replay on demand).
   worker:
     image: ghcr.io/veenaphadtare12-ux/flare-api:${FLARE_TAG:-local}

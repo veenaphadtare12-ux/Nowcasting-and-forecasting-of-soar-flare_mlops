@@ -143,3 +143,10 @@ def test_store_predictions_take_precedence_over_the_bundle(client, tmp_path):
     r = client.get(f"/replay/{X_DAY}", params={"until": f"{X_DAY}T06:00:00Z"}).json()
     assert r["source"] == "store" and r["run"]["status"] == "Completed"
     assert X_DAY in client.get("/pipeline/status").json()["predictions_store"]["days"]
+
+
+def test_data_coverage_is_development_only(client):
+    c = client.get("/data/coverage").json()
+    assert c["days"][-1] <= "2026-09-12" and c["summary"]["usable_days"] == 424
+    assert len(c["days"]) == len(c["valid_fraction"]) == len(c["usable"])
+    assert all(m <= "2026-09" for m in c["goes_monthly"])

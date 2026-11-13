@@ -1,8 +1,8 @@
 {
  "schema_version": 1,
- "bundle_version": "2026.11.13-1643",
- "git_sha": "02cf6578b01270b8bd8ea5b6efc62cec32518d2c",
- "created_at": "2026-11-13T16:43:44+00:00",
+ "bundle_version": "2026.11.13-1719",
+ "git_sha": "d587665835888d117cd57d500888f561ab05ca9b",
+ "created_at": "2026-11-13T17:19:20+00:00",
  "source": "MLflow registry alias 'champion' (mlflow.db) + frozen reports",
  "models": {
   "now": {
@@ -441,6 +441,7 @@
   }
  },
  "files": {
+  "data/coverage.json": "776e0f5cdba105ee1c7a579e0d8d1e494a0701047335e294f00361f2b3cda9e3",
   "drift/latest.json": "31a863918bdc63ca5d8adc88866fa268db7f15cd207ae8d5f3694b3797f426af",
   "drift/recent_dev_sample.parquet": "61c1706b714cafc9c4da119ebbe44040cf22fcf81af203b5cd3367a5d9d4d584",
   "drift/reference_sample.parquet": "61b3e4c3f9228ee391c048efbb0d037aca1ec32f050eaf348a2c5565e7bf0cc5",

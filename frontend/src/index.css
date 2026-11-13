@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+@theme {
+  --color-solexs: #e07a1f;
+  --color-hel1os: #2b5da8;
+  --color-ink-950: #070b12;
+  --color-ink-900: #0d1420;
+  --color-ink-800: #141d2c;
+  --color-ink-700: #1e2a3d;
+  --color-ink-600: #2c3b52;
+  --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "Cascadia Code", Consolas, monospace;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+body {
+  @apply bg-ink-950 text-slate-200 antialiased;
+}
+.card {
+  @apply rounded-xl border border-ink-700 bg-ink-900/80 p-4 shadow-lg shadow-black/20;
+}
+.card-title {
+  @apply mb-3 flex items-center justify-between text-sm font-semibold uppercase tracking-wide text-slate-400;
+}
+.btn {
+  @apply inline-flex items-center gap-1.5 rounded-lg border border-ink-600 bg-ink-800 px-3 py-1.5 text-sm text-slate-200 transition hover:border-solexs/60 hover:bg-ink-700 disabled:cursor-not-allowed disabled:opacity-40;
+}
+.btn-primary {
+  @apply border-solexs/70 bg-solexs/20 text-orange-100 hover:bg-solexs/30;
+}
+.pill {
+  @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium;
+}
+.tbl {
+  @apply w-full text-left text-sm;
+}
+.tbl th {
+  @apply border-b border-ink-700 px-2 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400;
+}
+.tbl td {
+  @apply border-b border-ink-800 px-2 py-1.5 align-top;
+}
+.mono {
+  @apply font-mono text-xs;
+}

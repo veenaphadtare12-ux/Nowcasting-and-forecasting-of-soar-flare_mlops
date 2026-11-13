@@ -15,3 +15,5 @@ reports/_*.txt
 data/predictions/
 reports/drift/*.html
 .env
+frontend/node_modules/
+frontend/dist/

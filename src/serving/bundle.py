@@ -326,6 +326,34 @@ def _pipeline_status(models: dict) -> dict:
     }
 
 
+def _coverage() -> dict:
+    """Daily SoLEXS valid fraction and monthly GOES flare counts over the development period only (no holdout)."""
+    lo, hi = config.period_bounds("tune")[0], config.period_bounds("test")[1]
+    qc = pd.read_csv(config.processed_dir() / "solexs_qc.csv")
+    qc["date"] = pd.to_datetime(qc["date"], utc=True)
+    qc = qc[(qc["date"] >= lo) & (qc["date"] < hi)]
+    days = pd.date_range(lo, hi - pd.Timedelta(days=1), freq="D")
+    vf = qc.set_index("date")["valid_fraction"].reindex(days).fillna(0.0)
+    usable = qc.set_index("date")["usable"].astype(bool).reindex(days).fillna(False)
+    g = pd.read_parquet(config.processed_dir() / "goes_matched.parquet")
+    t = g["peak"].fillna(g["begin"])
+    g = g[(t >= lo) & (t < hi)].assign(month=t.dt.strftime("%Y-%m"))
+    monthly = g.groupby(["month", "class_letter"]).size().unstack(fill_value=0).reindex(columns=list("BCMX"), fill_value=0)
+    periods = {
+        p: [str(config.period_bounds(p)[0].date()), str((config.period_bounds(p)[1] - pd.Timedelta(days=1)).date())]
+        for p in ("tune", "val", "test")
+    }
+    return {
+        "days": [d.strftime("%Y-%m-%d") for d in days],
+        "valid_fraction": [round(float(v), 4) for v in vf],
+        "usable": [bool(u) for u in usable],
+        "periods": periods,
+        "goes_monthly": {m: {k: int(v) for k, v in r.items()} for m, r in monthly.iterrows()},
+        "summary": {"days": len(days), "usable_days": int(usable.sum()), "mean_valid_fraction": round(float(vf.mean()), 4)},
+        "note": "Development period only (tune, val and the old test period as development data); holdout data is never included.",
+    }
+
+
 def _drift_samples(out: Path, feats: list[str], n: int = 20000, seed: int = 0) -> None:
     """Feature samples for check_drift in containers: the champions' training block and the last 30 development days
     (development data only; no labels)."""
@@ -391,6 +419,7 @@ def export(out: Path | None = None, tracking_uri: str | None = None) -> dict:
         shutil.copy(drift, tmp / "drift" / "latest.json")
     _drift_samples(tmp / "drift", models["now"]["features"])
     _json(tmp / "pipeline" / "status.json", _pipeline_status(models))
+    _json(tmp / "data" / "coverage.json", _coverage())
     files = {p.relative_to(tmp).as_posix(): sha256(p) for p in sorted(tmp.rglob("*")) if p.is_file()}
     manifest = {
         "schema_version": SCHEMA_VERSION,
