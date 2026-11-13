@@ -1,0 +1,126 @@
+{
+ "holdout2_days": [
+  "2026-09-13",
+  "2026-11-12"
+ ],
+ "calendar_days": 61,
+ "solexs_day_folders": 11,
+ "solexs_days": [
+  {
+   "date": "2026-09-13",
+   "usable": true,
+   "valid_fraction": 0.9997
+  },
+  {
+   "date": "2026-10-30",
+   "usable": true,
+   "valid_fraction": 0.9865
+  },
+  {
+   "date": "2026-10-31",
+   "usable": true,
+   "valid_fraction": 0.9909
+  },
+  {
+   "date": "2026-11-01",
+   "usable": true,
+   "valid_fraction": 0.9924
+  },
+  {
+   "date": "2026-11-02",
+   "usable": true,
+   "valid_fraction": 0.9936
+  },
+  {
+   "date": "2026-11-05",
+   "usable": true,
+   "valid_fraction": 1.0
+  },
+  {
+   "date": "2026-11-06",
+   "usable": true,
+   "valid_fraction": 1.0
+  },
+  {
+   "date": "2026-11-07",
+   "usable": true,
+   "valid_fraction": 1.0
+  },
+  {
+   "date": "2026-11-08",
+   "usable": true,
+   "valid_fraction": 0.9999
+  },
+  {
+   "date": "2026-11-09",
+   "usable": true,
+   "valid_fraction": 1.0
+  },
+  {
+   "date": "2026-11-10",
+   "usable": true,
+   "valid_fraction": 1.0
+  }
+ ],
+ "goes_days_without_report": [],
+ "usable_days": 11,
+ "usable_day_list": [
+  "2026-09-13",
+  "2026-10-30",
+  "2026-10-31",
+  "2026-11-01",
+  "2026-11-02",
+  "2026-11-05",
+  "2026-11-06",
+  "2026-11-07",
+  "2026-11-08",
+  "2026-11-09",
+  "2026-11-10"
+ ],
+ "goes_flares_all_days": {
+  "B": 185,
+  "C": 286,
+  "M": 13
+ },
+ "goes_flares_on_usable_days": {
+  "B": 33,
+  "C": 118,
+  "M": 7
+ },
+ "m_or_larger_on_usable_days": 7,
+ "m_flares_on_usable_days_by_day": {
+  "2026-11-05": 1,
+  "2026-11-07": 3,
+  "2026-11-08": 3
+ },
+ "min_m_flares": 15,
+ "m_results_underpowered": true,
+ "goes_xrs_files": 61,
+ "hel1os_sessions": [
+  "HLS_20260913_000011_43182sec_lev1_V111",
+  "HLS_20260913_121028_42567sec_lev1_V111",
+  "HLS_20260914_000009_43177sec_lev1_V111",
+  "HLS_20260914_115948_43200sec_lev1_V111",
+  "HLS_20261102_000009_43182sec_lev1_V112",
+  "HLS_20261102_121028_42563sec_lev1_V112",
+  "HLS_20261103_000008_43181sec_lev1_V111",
+  "HLS_20261103_120005_43188sec_lev1_V111",
+  "HLS_20261104_000010_43176sec_lev1_V111",
+  "HLS_20261104_114948_43801sec_lev1_V111",
+  "HLS_20261105_000005_43185sec_lev1_V111",
+  "HLS_20261105_120004_43188sec_lev1_V111",
+  "HLS_20261105_235954_43195sec_lev1_V111",
+  "HLS_20261106_120005_43190sec_lev1_V111",
+  "HLS_20261107_000011_43179sec_lev1_V111",
+  "HLS_20261107_120001_43190sec_lev1_V111",
+  "HLS_20261108_000006_43187sec_lev1_V111",
+  "HLS_20261108_120007_43190sec_lev1_V111",
+  "HLS_20261109_000010_43177sec_lev1_V111",
+  "HLS_20261109_121027_42561sec_lev1_V111",
+  "HLS_20261110_000008_43177sec_lev1_V111",
+  "HLS_20261110_115946_43204sec_lev1_V111",
+  "HLS_20261111_000005_43180sec_lev1_V111",
+  "HLS_20261111_120001_43187sec_lev1_V111"
+ ],
+ "note": "No model was run and no feature or label was built. Counts by GOES begin time."
+}

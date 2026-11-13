@@ -163,3 +163,11 @@ final:
     window_before_min: 120     # our first alert in [t_M1 - 120 min, t_M1 + 30 min]
     window_after_min: 30
     models: [m_30m, m_60m, now]
+
+# --- holdout2 (task of 2026-11-13). Locked: docs/HOLDOUT2_LOCK.md. Only src/holdout2/ingest.py (setup counts, no
+# features, no model) and the final stage src/holdout2/evaluate.py may read these days or these files.
+holdout2:
+  start: "2026-09-13"
+  end: "2026-11-12"                       # last day with GOES XRS on the server at ingest time
+  external_dir: "data/external/holdout2"  # GOES events, GOES-19 XRS and NOAA SRS for the holdout2 days only
+  min_m_flares: 15                        # fewer >=M flares -> every M result on holdout2 is UNDERPOWERED
