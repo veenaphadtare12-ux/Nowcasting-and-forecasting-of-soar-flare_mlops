@@ -3,6 +3,7 @@ import re
 from pathlib import Path
 
 import pandas as pd
+import pytest
 import yaml
 
 from src import config
@@ -37,6 +38,7 @@ def test_holdout2_comes_after_every_development_period():
     assert pd.Timestamp(h["end"]) >= pd.Timestamp(h["start"])
 
 
+@pytest.mark.data
 def test_shared_processed_files_hold_no_holdout2_minutes():
     start = pd.Timestamp(config.load_params()["holdout2"]["start"], tz="UTC")
     proc = config.processed_dir()

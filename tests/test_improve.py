@@ -46,6 +46,7 @@ def test_far_cap_threshold_matches_brute_force():
     assert thr == pytest.approx(min(ok))
 
 
+@pytest.mark.data
 def test_improve_loader_never_returns_test_rows():
     d = pr.load(["rate"])
     assert d.index.max() < config.period_bounds("val")[1]

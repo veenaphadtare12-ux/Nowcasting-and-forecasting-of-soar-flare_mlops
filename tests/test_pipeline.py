@@ -2,7 +2,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import pytest
 
 from src import goes, hel1os, solexs
 from src.detection import matching
@@ -64,7 +63,9 @@ def test_goes_class_only_from_goes_match():
 
 
 def test_hel1os_keeps_newest_version_per_session():
-    mk = lambda n, hms, dur, v: hel1os.Session(Path(n), pd.Timestamp(f"2024-08-12 {hms}", tz="UTC"), dur, v)
+    def mk(n, hms, dur, v):
+        return hel1os.Session(Path(n), pd.Timestamp(f"2024-08-12 {hms}", tz="UTC"), dur, v)
+
     a = mk("v211", "00:00:06", 43181, 211)
     b = mk("v311", "00:00:06", 43181, 311)
     c = mk("other", "12:00:02", 43195, 211)

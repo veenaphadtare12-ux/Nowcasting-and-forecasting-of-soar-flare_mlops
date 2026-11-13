@@ -13,8 +13,10 @@ stages:
     - data/external/goes_events
 
   solexs_clean:
-    cmd: python -m src.pipeline solexs_clean
+    cmd: python -m src.pipeline solexs_clean && python -m src.validation.check solexs_minute   # data contract (pandera)
     deps:
+    - src/validation/schemas.py
+    - src/validation/check.py
     - src/solexs.py
     - src/detection/detector.py
     - src/pipeline.py
@@ -54,8 +56,10 @@ stages:
     - data/processed/legacy_events_raw.parquet
 
   match_goes:
-    cmd: python -m src.pipeline match_goes
+    cmd: python -m src.pipeline match_goes && python -m src.validation.check goes_events   # data contract (pandera)
     deps:
+    - src/validation/schemas.py
+    - src/validation/check.py
     - src/detection/matching.py
     - src/goes.py
     - src/pipeline.py
@@ -111,8 +115,10 @@ stages:
         cache: false
 
   build_dataset:
-    cmd: python -m src.pipeline build_dataset
+    cmd: python -m src.pipeline build_dataset && python -m src.validation.check dataset   # data contract (pandera)
     deps:
+    - src/validation/schemas.py
+    - src/validation/check.py
     - src/features.py
     - src/labels.py
     - src/dataset.py
@@ -169,8 +175,10 @@ stages:
   # Optional: HEL1OS is not a dependency of any other stage.
     frozen: true
   hel1os_index:
-    cmd: python -m src.pipeline hel1os_index
+    cmd: python -m src.pipeline hel1os_index && python -m src.validation.check hel1os   # data contract (pandera)
     deps:
+    - src/validation/schemas.py
+    - src/validation/check.py
     - src/hel1os.py
     - src/pipeline.py
     params:
@@ -494,6 +502,7 @@ stages:
 
   dev2_ref:
     cmd: python -m src.dev2.run ref
+    frozen: true    # ML phase closed (2026-11-13): never re-run, holdout2 is scored once
     deps: &dev2deps
     - src/dev2/run.py
     - src/dev2/protocol.py
@@ -520,6 +529,7 @@ stages:
 
   dev2_e6:
     cmd: python -m src.dev2.run e6
+    frozen: true    # ML phase closed (2026-11-13): never re-run, holdout2 is scored once
     deps: *dev2deps
     params:
     - dev2
@@ -530,6 +540,7 @@ stages:
 
   dev2_r2a:
     cmd: python -m src.dev2.run r2a
+    frozen: true    # ML phase closed (2026-11-13): never re-run, holdout2 is scored once
     deps: *dev2deps
     params:
     - dev2
@@ -540,6 +551,7 @@ stages:
 
   dev2_r2b:
     cmd: python -m src.dev2.run r2b
+    frozen: true    # ML phase closed (2026-11-13): never re-run, holdout2 is scored once
     deps: *dev2deps
     params:
     - dev2
@@ -550,6 +562,7 @@ stages:
 
   dev2_champ:
     cmd: python -m src.dev2.run champ
+    frozen: true    # ML phase closed (2026-11-13): never re-run, holdout2 is scored once
     deps: *dev2deps
     params:
     - dev2
@@ -560,6 +573,7 @@ stages:
 
   dev2_r1:
     cmd: python -m src.dev2.early run
+    frozen: true    # ML phase closed (2026-11-13): never re-run, holdout2 is scored once
     deps:
     - src/dev2/early.py
     - src/dev2/protocol.py
@@ -580,6 +594,7 @@ stages:
 
   dev2_r3_mapping:
     cmd: python -m src.dev2.pretrain mapping
+    frozen: true    # ML phase closed (2026-11-13): never re-run, holdout2 is scored once
     deps:
     - src/dev2/pretrain.py
     - data/processed/events.parquet
@@ -591,6 +606,7 @@ stages:
 
   dev2_r3:
     cmd: python -m src.dev2.pretrain run
+    frozen: true    # ML phase closed (2026-11-13): never re-run, holdout2 is scored once
     deps:
     - src/dev2/pretrain.py
     - src/dev2/run.py
@@ -611,6 +627,7 @@ stages:
   # src/dev2/choose.py (the mechanical choice) writes params.yaml dev2.final.targets/r1 by hand-run, like detector tuning.
   dev2_final:        # FINAL_CHOICE_2 models: fit < 2026-08-01, isotonic on Aug 2026, thresholds on 2026-09-01..12
     cmd: python -m src.dev2.final
+    frozen: true    # ML phase closed (2026-11-13): never re-run, holdout2 is scored once
     deps:
     - src/dev2/final.py
     - src/dev2/run.py
@@ -641,6 +658,7 @@ stages:
 
   evaluate_holdout2:   # the ONLY stage that builds/reads holdout2; refuses to run before FINAL_CHOICE_2.md is committed
     cmd: python -m src.holdout2.evaluate
+    frozen: true    # ML phase closed (2026-11-13): never re-run, holdout2 is scored once
     deps:
     - src/holdout2/evaluate.py
     - src/holdout2/ingest.py

@@ -30,7 +30,8 @@ stages:
       size: 1550929
       nfiles: 523
   solexs_clean:
-    cmd: python -m src.pipeline solexs_clean
+    cmd: python -m src.pipeline solexs_clean && python -m src.validation.check 
+      solexs_minute
     deps:
     - path: src/detection/detector.py
       hash: md5
@@ -44,6 +45,14 @@ stages:
       hash: md5
       md5: 48363970f48c546cfff24587af97940e
       size: 4276
+    - path: src/validation/check.py
+      hash: md5
+      md5: 550bcdc586dc326e985006fa6dabcab3
+      size: 1690
+    - path: src/validation/schemas.py
+      hash: md5
+      md5: cd265735d7a84863506ff25f085a2439
+      size: 7963
     params:
       params.yaml:
         flare_detection.min_valid_s_per_min: 30
@@ -160,7 +169,8 @@ stages:
       md5: 6ec607e5a1aabd47c7f2aaed91f346f5
       size: 1402
   hel1os_index:
-    cmd: python -m src.pipeline hel1os_index
+    cmd: python -m src.pipeline hel1os_index && python -m src.validation.check 
+      hel1os
     deps:
     - path: src/hel1os.py
       hash: md5
@@ -170,6 +180,14 @@ stages:
       hash: md5
       md5: 91adef6dba469bbf23064d6f2b019877
       size: 9653
+    - path: src/validation/check.py
+      hash: md5
+      md5: 550bcdc586dc326e985006fa6dabcab3
+      size: 1690
+    - path: src/validation/schemas.py
+      hash: md5
+      md5: cd265735d7a84863506ff25f085a2439
+      size: 7963
     params:
       params.yaml:
         paths.data_root_hel1os: D:/MLOPS_CP/Data/HELIOS
@@ -272,7 +290,8 @@ stages:
       md5: d37339b0678312847271983bcb001a7a
       size: 160784
   match_goes:
-    cmd: python -m src.pipeline match_goes
+    cmd: python -m src.pipeline match_goes && python -m src.validation.check 
+      goes_events
     deps:
     - path: data/external/goes_events
       hash: md5
@@ -299,6 +318,14 @@ stages:
       hash: md5
       md5: 91adef6dba469bbf23064d6f2b019877
       size: 9653
+    - path: src/validation/check.py
+      hash: md5
+      md5: 550bcdc586dc326e985006fa6dabcab3
+      size: 1690
+    - path: src/validation/schemas.py
+      hash: md5
+      md5: cd265735d7a84863506ff25f085a2439
+      size: 7963
     params:
       params.yaml:
         goes_match:
@@ -438,7 +465,8 @@ stages:
       md5: f4158af32b59e5972ddb7f43da3dc131
       size: 6426
   build_dataset:
-    cmd: python -m src.pipeline build_dataset
+    cmd: python -m src.pipeline build_dataset && python -m src.validation.check 
+      dataset
     deps:
     - path: data/external/goes_events
       hash: md5
@@ -491,6 +519,14 @@ stages:
       hash: md5
       md5: 91adef6dba469bbf23064d6f2b019877
       size: 9653
+    - path: src/validation/check.py
+      hash: md5
+      md5: 550bcdc586dc326e985006fa6dabcab3
+      size: 1690
+    - path: src/validation/schemas.py
+      hash: md5
+      md5: cd265735d7a84863506ff25f085a2439
+      size: 7963
     params:
       params.yaml:
         features:

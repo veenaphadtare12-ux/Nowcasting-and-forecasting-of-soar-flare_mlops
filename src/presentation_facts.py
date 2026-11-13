@@ -178,7 +178,7 @@ def write_facts() -> None:
       f"**val {pct(share['val'])}** ({hsh['val'][0]:,} of {hsh['val'][1]:,}), **overall {pct(share['overall'])}** "
       "— `data/processed/dataset/{tune,val}.parquet` (`hel1os_available`)")
     a(f"- test: {test_overlap_sessions} sessions on usable SoLEXS days (count only, nothing analysed) — `reports/data_inventory.csv`")
-    a(f"- Extracted: light curves + aux only (847 files, 693 FITS verified); event lists and spectra stay zipped — `reports/data_inventory.csv`")
+    a("- Extracted: light curves + aux only (847 files, 693 FITS verified); event lists and spectra stay zipped — `reports/data_inventory.csv`")
     a("")
     a("### GOES flares per class (flares peaking while SoLEXS had valid data)")
     a("| Class | tune | val |")

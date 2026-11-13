@@ -1,0 +1,40 @@
+[project]
+name = "solar-flare-project"
+version = "1.0.0"
+description = "Solar flare nowcasting/forecasting from Aditya-L1 SoLEXS + HEL1OS (MLOps course project)"
+requires-python = ">=3.12,<3.13"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "data: needs the local DVC data (data/processed) or raw archives; skipped in CI with -m 'not data'",
+]
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 130
+target-version = "py312"
+extend-exclude = ["notebooks", ".dvc"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]
+
+[tool.ruff.lint.per-file-ignores]
+# Files that are dependencies of DVC stages whose outputs are frozen (ML phase closed 2026-11-13). Editing them would mark
+# the stages as changed, so these known findings are tolerated until the ML phase is reopened. Do not add new code here.
+"src/dataset.py" = ["F401", "I001"]
+"src/pipeline.py" = ["F401", "I001"]
+"src/dev2/*.py" = ["F401", "F841", "I001"]
+"src/final/*.py" = ["F401", "F841", "I001"]
+"src/holdout2/*.py" = ["F401", "F841", "I001"]
+"src/improve/*.py" = ["I001"]
+"src/models/*.py" = ["I001"]
+"src/detection/*.py" = ["I001"]
+"src/*.py" = ["I001", "E402"]
+"tests/*.py" = ["E402"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["src", "flows"]
+
+[tool.ruff.format]
+line-ending = "lf"

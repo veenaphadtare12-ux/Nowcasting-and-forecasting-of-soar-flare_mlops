@@ -440,7 +440,6 @@ def hel1os_eda(chan: pd.DataFrame | None, m: pd.Series, ev: pd.DataFrame, g: pd.
     if chan is None or "hel1os_available" not in d:
         return {"available": False}
     out = {"available": True, "per_period": {}}
-    av = d["hel1os_available"] == 1
     for per in ("tune", "val"):
         lo, hi = config.period_bounds(per)
         dp = d[(d.index >= lo) & (d.index < hi)]

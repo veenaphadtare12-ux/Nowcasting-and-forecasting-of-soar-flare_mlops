@@ -63,6 +63,7 @@ def test_final_choice_is_complete_and_matches_the_registry_names():
     assert (ROOT / "docs" / "FINAL_CHOICE.md").exists()
 
 
+@pytest.mark.data
 def test_flare_starts_match_the_label_rule():
     proc = config.processed_dir()
     g = pd.read_parquet(proc / "goes_matched.parquet")

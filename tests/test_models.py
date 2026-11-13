@@ -100,7 +100,8 @@ def test_day_bootstrap_interval_brackets_the_estimate_and_is_reproducible():
 
 
 def test_climatology_and_persistence_baselines():
-    y_cal = np.array([0, 1, 0, 0]); y_val = np.array([0, 1, 1, 0, 0, 0])
+    y_cal = np.array([0, 1, 0, 0])
+    y_val = np.array([0, 1, 1, 0, 0, 0])
     flag = np.array([0, 1, 0, 1, 0, 0], dtype=float)
     days = np.zeros(6, dtype=int)
     quiet = flag == 0

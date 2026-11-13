@@ -1,0 +1,17 @@
+# Serving environment for the champion models (FastAPI + MLflow pyfunc). Pinned to the training versions so the
+# pickled scikit-learn / XGBoost models load exactly as trained (see docs/MODEL_CARD.md).
+fastapi==0.142.2
+starlette==1.7.0
+uvicorn==0.54.0
+pydantic==2.13.5
+httpx==0.28.1
+mlflow-skinny==3.16.1
+cloudpickle==3.1.2
+numpy==2.5.3
+pandas==3.0.6
+pyarrow==25.0.1
+scipy==1.18.1
+scikit-learn==1.9.1
+xgboost==3.4.1
+joblib==1.6.0
+PyYAML==6.0.3

@@ -16,7 +16,6 @@ import itertools
 import json
 from concurrent.futures import ProcessPoolExecutor
 
-import numpy as np
 import pandas as pd
 
 from src import config, goes

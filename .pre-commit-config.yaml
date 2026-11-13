@@ -1,0 +1,21 @@
+# pre-commit install   (once)    |   pre-commit run --all-files   (manual)
+# ruff-format is limited to the new code: reformatting files that frozen DVC stages depend on would mark those stages
+# as changed (and trigger retraining). Lint runs everywhere.
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.5
+    hooks:
+      - id: ruff
+      - id: ruff-format
+        files: ^(flows/|src/validation/|src/ops/|tests/fixtures/|tests/test_validation\.py|tests/test_ops\.py)
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-added-large-files
+        args: ["--maxkb=5000"]
+      - id: check-yaml
+        exclude: ^dvc\.lock$
+      - id: mixed-line-ending
+        args: ["--fix=lf"]
+        exclude: ^dvc\.lock$
+      - id: detect-private-key

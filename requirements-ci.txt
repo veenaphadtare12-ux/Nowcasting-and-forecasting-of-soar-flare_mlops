@@ -1,0 +1,20 @@
+# CI test environment (Linux, Python 3.12). Pinned to the versions in requirements.txt (the full Windows dev freeze).
+# Only what the tests import; no DVC data is needed (data-dependent tests carry the `data` marker and are skipped).
+numpy==2.5.3
+pandas==3.0.6
+pyarrow==25.0.1
+scipy==1.18.1
+scikit-learn==1.9.1
+xgboost==3.4.1
+joblib==1.6.0
+matplotlib==3.11.2
+PyYAML==6.0.3
+astropy==8.0.1
+h5py==3.16.0
+requests==2.34.2
+mlflow==3.16.1
+pandera==0.34.0
+prefect==3.8.7
+evidently==0.7.23
+pytest==9.1.1
+ruff==0.17.5

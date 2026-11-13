@@ -11,3 +11,6 @@ reports/_*.txt
 /models
 /models_final
 /models_final2
+.prefect/
+data/predictions/
+reports/drift/*.html
