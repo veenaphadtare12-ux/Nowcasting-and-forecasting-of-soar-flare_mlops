@@ -1,0 +1,63 @@
+Stage 'solexs_clean' didn't change, skipping
+Stage 'detect_events' didn't change, skipping
+Stage 'legacy_events' didn't change, skipping
+Stage 'fetch_goes' didn't change, skipping
+Stage 'match_goes' didn't change, skipping
+Stage 'hel1os_index' didn't change, skipping
+Stage 'build_dataset' didn't change, skipping
+Stage 'solexs_spectral' didn't change, skipping
+Stage 'goes_xrs_fetch' didn't change, skipping
+Stage 'goes_xrs_minute' didn't change, skipping
+WARNING: stage: 'solexs_spectral_test' is frozen. Its dependencies are not going to be reproduced.
+Stage 'solexs_spectral_test' didn't change, skipping
+WARNING: stage: 'goes_xrs_test_minute' is frozen. Its dependencies are not going to be reproduced.
+Stage 'goes_xrs_test_minute' didn't change, skipping
+Stage 'srs_fetch' didn't change, skipping
+WARNING: stage: 'train' is frozen. Its dependencies are not going to be reproduced.
+Stage 'train' didn't change, skipping
+Stage 'dev2_final' didn't change, skipping
+'data\external\holdout2.dvc' didn't change, skipping
+Running stage 'evaluate_holdout2':
+> python -m src.holdout2.evaluate
+holdout2 files unchanged
+  c_120m  aditya    TSS_A 0.729 [0.48, 0.87]  pos 41538
+  c_120m  with_goes TSS_A 0.739 [0.50, 0.88]  pos 41538
+  c_30m   aditya    TSS_A 0.486 [0.22, 0.67]  pos 19410
+  c_30m   with_goes TSS_A 0.508 [0.23, 0.70]  pos 19410
+  c_60m   aditya    TSS_A 0.603 [0.33, 0.78]  pos 31002
+  c_60m   with_goes TSS_A 0.592 [0.32, 0.78]  pos 31002
+  m_120m  aditya    TSS_A 0.448 [-0.27, 0.70]  pos 4722
+  m_120m  with_goes TSS_A 0.405 [-0.37, 0.69]  pos 4722
+  m_30m   aditya    TSS_A 0.307 [-0.47, 0.50]  pos 1260
+  m_30m   with_goes TSS_A 0.327 [-0.44, 0.52]  pos 1260
+  m_60m   aditya    TSS_A 0.332 [-0.43, 0.54]  pos 2520
+  m_60m   with_goes TSS_A 0.517 [-0.24, 0.74]  pos 2520
+  now     aditya    TSS_A 0.760 [0.69, 0.81]  pos 10644
+  now     with_goes TSS_A 0.765 [0.70, 0.82]  pos 10644
+2026/11/13 12:40:16 INFO mlflow.tracking.fluent: Experiment with name 'flare-holdout2' does not exist. Creating a new experiment.
+| Target | Variant | Positives (days) | TSS at A [95% day-bootstrap] | Quiet-start | Active / quiet days | Best baseline (TSS) | Per month (Sep / Oct / Nov) |
+|---|---|---|---|---|---|---|---|
+| c_120m | aditya (champion) | 41538 (11) | **0.729** [0.48, 0.87] | 0.748 | -0.000 / 0.607 | flux 0.706 | 0.46 / -0.00 / 0.56 |
+| c_120m | with_goes | 41538 (11) | **0.739** [0.50, 0.88] | 0.757 | 0.001 / 0.569 | flux 0.706 | 0.05 / -0.03 / 0.62 |
+| c_30m | aditya (champion) | 19410 (11) | **0.486** [0.22, 0.67] | 0.525 | 0.000 / 0.460 | flux 0.493 | -0.19 / -0.10 / 0.31 |
+| c_30m | with_goes | 19410 (11) | **0.508** [0.23, 0.70] | 0.549 | 0.000 / 0.499 | flux 0.493 | -0.04 / -0.11 / 0.33 |
+| c_60m | aditya (champion) | 31002 (11) | **0.603** [0.33, 0.78] | 0.636 | 0.001 / 0.569 | flux 0.596 | 0.22 / -0.02 / 0.42 |
+| c_60m | with_goes | 31002 (11) | **0.592** [0.32, 0.78] | 0.626 | 0.000 / 0.598 | flux 0.596 | 0.28 / 0.00 / 0.43 |
+| m_120m (UNDERPOWERED) | aditya (champion) | 4722 (11) | **0.448** [-0.27, 0.70] | 0.492 | 0.000 / 0.795 | flux 0.408 | -0.17 / -0.00 / 0.25 |
+| m_120m (UNDERPOWERED) | with_goes | 4722 (11) | **0.405** [-0.37, 0.69] | 0.458 | 0.029 / 0.058 | flux 0.408 | -0.16 / -0.00 / 0.24 |
+| m_30m (UNDERPOWERED) | aditya (champion) | 1260 (11) | **0.307** [-0.47, 0.50] | 0.338 | 0.001 / 0.558 | flux 0.350 | -0.68 / -0.22 / 0.19 |
+| m_30m (UNDERPOWERED) | with_goes | 1260 (11) | **0.327** [-0.44, 0.52] | 0.360 | 0.001 / 0.594 | flux 0.350 | -0.64 / -0.20 / 0.20 |
+| m_60m (UNDERPOWERED) | aditya (champion) | 2520 (11) | **0.332** [-0.43, 0.54] | 0.366 | 0.000 / 0.598 | flux 0.392 | -0.65 / -0.15 / 0.20 |
+| m_60m (UNDERPOWERED) | with_goes | 2520 (11) | **0.517** [-0.24, 0.74] | 0.563 | 0.066 / 0.697 | flux 0.392 | -0.04 / 0.00 / 0.35 |
+| now | aditya (champion) | 10644 (14) | **0.760** [0.69, 0.81] | 0.558 | 0.645 / 0.730 | persistence 0.661 | 0.80 / -0.03 / 0.72 |
+| now | with_goes | 10644 (14) | **0.765** [0.70, 0.82] | 0.550 | 0.658 / 0.725 | persistence 0.661 | 0.78 / -0.03 / 0.73 |
+Updating lock file 'dvc.lock'
+
+To track the changes with git, run:
+
+	git add dvc.lock
+
+To enable auto staging, run:
+
+	dvc config core.autostage true
+Use `dvc push` to send your updates to remote storage.

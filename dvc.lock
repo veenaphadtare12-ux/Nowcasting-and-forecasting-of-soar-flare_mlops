@@ -4534,3 +4534,148 @@ stages:
       hash: md5
       md5: ab88dc2dbda86b34191f48cadc2b83b3
       size: 14298
+  evaluate_holdout2:
+    cmd: python -m src.holdout2.evaluate
+    deps:
+    - path: data/external/holdout2
+      hash: md5
+      md5: 9c9f16cc4d043065f9703768b31a1e27.dir
+      size: 18156234
+      nfiles: 183
+    - path: data/processed/dataset
+      hash: md5
+      md5: 194ca35bab9353da7cb8f2969e15de6a.dir
+      size: 221276527
+      nfiles: 3
+    - path: data/processed/events.parquet
+      hash: md5
+      md5: 2b45af31c2e52392d34af193823356bf
+      size: 216275
+    - path: data/processed/solexs_minute.parquet
+      hash: md5
+      md5: 909cdc962a62700281ad3b2c4ae51543
+      size: 6050846
+    - path: docs/FINAL_CHOICE_2.md
+      hash: md5
+      md5: 95bc64917104faa21ddfbd0201497e79
+      size: 11989
+    - path: docs/HOLDOUT2_LOCK.md
+      hash: md5
+      md5: 53889ba1eaf9726b4eb77b96b6766a27
+      size: 1491
+    - path: models_final2
+      hash: md5
+      md5: d0560d014b3e36ed5edd1db63cb120da.dir
+      size: 13678965
+      nfiles: 24
+    - path: reports/holdout2/ingest.json
+      hash: md5
+      md5: 77bb78c6a967a51ee681f231970a38d5
+      size: 2771
+    - path: reports/holdout2/lock_sha256.txt
+      hash: md5
+      md5: 60f7a1bc7716b119d46115571438700a
+      size: 78273
+    - path: src/dev2/context.py
+      hash: md5
+      md5: 41d28dc89b8bc769c3c4299922fdbb1e
+      size: 7058
+    - path: src/dev2/early.py
+      hash: md5
+      md5: 73111980ede2e664e9aa1d980f66653a
+      size: 13841
+    - path: src/holdout2/evaluate.py
+      hash: md5
+      md5: affa186d12f87b72d39c4f446a32b0d0
+      size: 20366
+    - path: src/holdout2/ingest.py
+      hash: md5
+      md5: b160bebe17f76079d5a3a750bae8cbef
+      size: 8790
+    params:
+      params.yaml:
+        dev2.final:
+          calibration_start: '2026-08-01'
+          threshold_start: '2026-09-01'
+          bootstrap:
+            n: 1000
+            seed: 0
+            level: 0.95
+          targets:
+            now:
+              learner: xgb
+              blocks: []
+              goes_blocks:
+              - goes
+              choice: aditya
+              idea: base
+            c_30m:
+              learner: ensemble
+              blocks:
+              - long
+              - drift
+              - spectral
+              goes_blocks:
+              - goes
+              choice: aditya
+              idea: champ_c30
+            c_60m:
+              learner: xgb
+              blocks: []
+              goes_blocks:
+              - goes
+              - gc
+              - srs
+              choice: aditya
+              idea: base
+            c_120m:
+              learner: xgb
+              blocks: []
+              goes_blocks:
+              - goes
+              - gc
+              - srs
+              choice: aditya
+              idea: base
+            m_30m:
+              learner: logreg
+              blocks: []
+              goes_blocks:
+              - goes
+              choice: aditya
+              idea: base
+            m_60m:
+              learner: logreg
+              blocks: []
+              goes_blocks:
+              - goes
+              - gc
+              - srs
+              choice: aditya
+              idea: base
+            m_120m:
+              learner: xgb
+              blocks: []
+              goes_blocks:
+              - goes
+              - gc
+              - srs
+              choice: aditya
+              idea: base
+          r1:
+            aditya: logreg
+            with_goes: logreg
+        holdout2:
+          start: '2026-09-13'
+          end: '2026-11-12'
+          external_dir: data/external/holdout2
+          min_m_flares: 15
+    outs:
+    - path: reports/holdout2/metrics.json
+      hash: md5
+      md5: f153e0004b9f12e53d44bac70d94a66a
+      size: 101583
+    - path: reports/holdout2/results.md
+      hash: md5
+      md5: 5a1c386263986bbbfd92acb2564f7c07
+      size: 2026

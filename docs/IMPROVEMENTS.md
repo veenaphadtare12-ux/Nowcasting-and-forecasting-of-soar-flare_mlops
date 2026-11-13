@@ -265,3 +265,186 @@ is known only when the merged event ends.
 the merged event's real end-known time; count later segments only from that moment; add a test that rebuilds the
 catalogue from a truncated light curve and checks that no event or end is visible before the cut. Then re-run E2, and
 the c_30m champion check, under the 14-month protocol.
+
+**Fix applied (2026-11-13, commit 9c14741, after the user's go-ahead).** `detector._realtime_times`: every segment of a split
+detection now carries `end_known_time` = the moment the whole detection's end is known; later segments get
+`trigger_time` = that moment, the first kept segment keeps the real trigger. `activity.end_known_time` uses the column, so
+the activity flag, E2 and R2 are all corrected at the source. New tests rebuild the catalogue from light curves cut at
+every minute (a synthetic double flare and three real split detections) and check that no event or end is visible before
+the cut; the old behaviour fails them. Effect of the rebuild: 41 trigger times changed; onsets, ends, matches and the minute
+grid are identical; the activity flag changed on 0.003 % of tune rows; features and labels are unchanged. The historical
+stages (old training, E1–E7, frozen champions, the one-time test) are DVC-frozen, so the old test is never re-scored.
+
+## 9. Development protocol 2 (2026-11-13): 14 rolling months, R1–R4
+
+*Protocol and rule fixed before any result (`params.yaml` → `dev2`, `src/dev2/`).* Rolling monthly evaluation over every
+development month, 2025-08 … 2026-09 (the old test months are ordinary development data; their old test scores are never
+re-reported or used). Same folds as section 1 (fit before month m−1 minus purge, thresholds on month m−1, score month m);
+the code reproduces the old protocol exactly on an overlapping fold (m_60m, Mar 2026: TSS −0.0536, same rows and alerts).
+**Acceptance rule unchanged:** mean monthly TSS up AND ≥ 60 % of months better, i.e. ≥ 9 of 14 (the share of 6 of 10).
+Every result reports the mean of monthly TSS, pooled TSS, worst month, quiet-start TSS and TSS on active vs quiet days
+(active = a GOES ≥M flare ended in the 72 h before the day; evaluation only, never a feature). Inputs are Aditya-only by
+default; GOES-derived inputs (XRS flux, GOES flare counts, NOAA SRS) are kept only if they pass the rule on their own.
+Sources: `reports/dev2/*.json`, MLflow experiment `flare-dev2`.
+
+### 9.1 Reference (base 44 features), with the baselines
+
+| Target | Learner | Mean monthly ± std | Pooled | Worst month | Active / quiet days | Quiet-start (pooled) | Current flux (mean / pooled) | Persistence (pooled) | Rule (pooled) |
+|---|---|---|---|---|---|---|---|---|---|
+| now | XGB | 0.719 ± 0.044 | 0.722 | 0.641 (2025-08) | 0.709 / 0.726 | 0.459 | 0.519 / 0.536 | 0.662 | 0.647 |
+| c_30m | LogReg | 0.168 ± 0.090 | 0.194 | -0.003 (2025-09) | 0.167 / 0.159 | 0.202 | 0.164 / 0.195 | 0.014 | 0.035 |
+| c_60m | XGB | 0.214 ± 0.096 | 0.229 | 0.029 (2025-09) | 0.221 / 0.185 | 0.239 | 0.175 / 0.187 | 0.019 | 0.039 |
+| c_120m | XGB | 0.222 ± 0.127 | 0.239 | 0.006 (2025-09) | 0.233 / 0.194 | 0.243 | 0.195 / 0.200 | 0.029 | 0.059 |
+| m_30m | LogReg | 0.240 ± 0.198 | 0.387 | -0.137 (2026-09) | 0.303 / 0.377 | 0.398 | 0.243 / 0.399 | 0.076 | 0.146 |
+| m_60m | LogReg | 0.242 ± 0.195 | 0.409 | -0.070 (2026-09) | 0.326 / 0.367 | 0.414 | 0.210 / 0.395 | 0.077 | 0.115 |
+| m_120m | XGB | 0.233 ± 0.146 | 0.359 | -0.079 (2026-03) | 0.319 / 0.264 | 0.355 | 0.213 / 0.381 | 0.076 | 0.072 |
+
+**Reading.** The models beat persistence and the ratio rule clearly, as before. But the **current flux level alone**
+(`log_rate` with one threshold; never compared before) is nearly as good: for ≥M it ties the models (m_30m 0.243 vs
+0.240 mean monthly, 0.399 vs 0.387 pooled); for ≥C the models gain only 0.01–0.04. Most of the forecast skill is "how
+bright is the Sun right now". Mean and pooled TSS again differ a lot for M (0.24 vs 0.41): months with few M flares pull
+the mean down.
+
+### 9.2 Ideas, against the reference (same learner; cell = mean monthly TSS (Δ), months better of 14, pooled TSS, decision)
+
+| Experiment | Inputs | now | c_30m | c_60m | c_120m | m_30m | m_60m | m_120m |
+|---|---|---|---|---|---|---|---|---|
+| e6 | + GOES XRS flux (non-Aditya) | – | – | 0.184 (-0.030), 3/14, pooled 0.200, dropped | 0.216 (-0.006), 8/14, pooled 0.218, dropped | 0.248 (+0.008), 8/14, pooled 0.381, dropped | 0.230 (-0.012), 6/14, pooled 0.392, dropped | 0.211 (-0.023), 6/14, pooled 0.362, dropped |
+| r2a | + own detector events 24/48/72 h (Aditya) | – | – | 0.158 (-0.056), 3/14, pooled 0.152, dropped | 0.161 (-0.062), 3/14, pooled 0.165, dropped | – | 0.165 (-0.077), 6/14, pooled 0.382, dropped | 0.189 (-0.045), 7/14, pooled 0.361, dropped |
+| r2b | R2a + GOES counts + SRS (non-Aditya) | – | – | 0.167 (-0.047), 3/14, pooled 0.169, dropped | 0.180 (-0.042), 5/14, pooled 0.184, dropped | – | 0.116 (-0.126), 4/14, pooled 0.344, dropped | 0.142 (-0.091), 4/14, pooled 0.295, dropped |
+| r2b vs r2a | GOES counts + SRS on their own | – | – | 0.167 (+0.009), 8/14, pooled 0.169, dropped | 0.180 (+0.020), 8/14, pooled 0.184, dropped | – | 0.116 (-0.049), 6/14, pooled 0.344, dropped | 0.142 (-0.046), 6/14, pooled 0.295, dropped |
+| champ | FINAL_CHOICE.md feature sets, after the split-event fix | – | 0.218 (+0.050), 13/14, pooled 0.237, **KEPT** (E2+E3+E5 ensemble) | – | – | 0.281 (+0.041), 9/14, pooled 0.422, **KEPT** (E5+E6); 0.284 (+0.044), 8/14, pooled 0.428, dropped (E5 only) | – | – |
+| r3 zeroshot | R3 GOES-16 pretrained, zero-shot | – | – | 0.057 (-0.157), 0/14, pooled 0.021, dropped | 0.052 (-0.170), 1/14, pooled 0.005, dropped | – | 0.088 (-0.154), 4/14, pooled 0.103, dropped | 0.105 (-0.128), 3/14, pooled 0.126, dropped |
+| r3 scratch | R3 same normalised features, SoLEXS only | – | – | 0.130 (-0.084), 0/14, pooled 0.124, dropped | 0.133 (-0.089), 1/14, pooled 0.122, dropped | – | 0.171 (-0.071), 4/14, pooled 0.232, dropped | 0.172 (-0.061), 4/14, pooled 0.233, dropped |
+| r3 finetune | R3 pretrained + fine-tuned on SoLEXS | – | – | 0.133 (-0.081), 0/14, pooled 0.125, dropped | 0.138 (-0.084), 1/14, pooled 0.130, dropped | – | 0.181 (-0.061), 4/14, pooled 0.224, dropped | 0.165 (-0.068), 5/14, pooled 0.244, dropped |
+| r3 stack | R3 reference + pretrained score | – | – | 0.212 (-0.002), 7/14, pooled 0.227, dropped | 0.208 (-0.014), 6/14, pooled 0.228, dropped | – | 0.233 (-0.009), 6/14, pooled 0.391, dropped | 0.226 (-0.008), 5/14, pooled 0.353, dropped |
+
+- **E2+E3+E5 for ≥C in 30 min still passes after the split-event fix** (0.168 → 0.218, 13 of 14 months): the bug did not
+  create that gain.
+- **R2 primary** (own detector events in 24/48/72 h, counted only once confirmed) is worse everywhere (−0.05 to −0.08):
+  the base features already hold the recent light curve, and counts of past events add noise.
+- **R2 secondary** (GOES counts known from end + 24 h, NOAA SRS used after issue) does not pass on its own (8 of 14 at
+  best). The SRS parser found a report for 516 of 525 development days; 0.4 % of minutes have none.
+- **E6** (GOES XRS flux) is dropped for all five targets. m_30m E5+E6 passes against the reference only because E5 does
+  (E6 on top of E5: 5 of 14).
+- **m_30m E5 alone is a near miss**: 0.240 → 0.284 but 8 of 14 months (needs 9). Under the old literal "6 months" it would
+  have passed; the 60 % share was fixed first and is kept.
+- **R3, GOES-16 pretraining** (2017-02-07 … 2025-03-28, 830,153 rows, 13,687 flares; GOES-13/15 classes divided by 0.7):
+  the GOES model transfers to SoLEXS only weakly (zero-shot 0.05–0.10); fine-tuning adds ≤ 0.01 over the same normalised
+  features trained on SoLEXS alone; stacked on the reference it is slightly worse. **Mapping check:** SoLEXS peak excess ∝
+  GOES peak flux^1.42 over 2,297 ≥C flares (EDA: 1.34); in background-normalised terms log(SoLEXS peak/bg) ≈ 1.32 ×
+  log(GOES peak/bg), r = 0.97 (`reports/dev2/r3_mapping.json`). The GOES ratio features were scaled by 1.32 before
+  pretraining.
+
+### 9.3 R4: operating points for M targets (pooled over 14 months)
+
+| Target | Learner | A: TSS / POD / FAR (pooled) | C (FAR ≤ 0.80): TSS / POD / FAR | K10 (cost): TSS / POD / FAR | K5 | K20 |
+|---|---|---|---|---|---|---|
+| m_30m | LogReg | 0.387 / 0.800 / 0.970 | -0.003 / 0.000 / 1.000 | -0.002 / 0.003 / 0.991 | -0.001 / 0.000 / 1.000 | 0.128 / 0.160 / 0.926 |
+| m_60m | LogReg | 0.409 / 0.805 / 0.941 | 0.002 / 0.018 / 0.967 | 0.008 / 0.037 / 0.963 | -0.002 / 0.002 / 0.984 | 0.164 / 0.320 / 0.941 |
+| m_120m | XGB | 0.359 / 0.702 / 0.895 | -0.005 / 0.053 / 0.951 | 0.163 / 0.281 / 0.881 | 0.018 / 0.049 / 0.917 | 0.130 / 0.484 / 0.928 |
+
+FAR ≤ 0.80 is again unreachable for M flares (POD ≤ 0.07). A cost of 10 false-alarm rows per missed row helps only
+m_120m (POD 0.28 at FAR 0.88); a cost of 20 gives POD 0.16–0.48 at FAR 0.93–0.94. Our M forecasts cannot be both
+selective and sensitive.
+
+### 9.4 R1: early flare-class prediction from the causal trigger
+
+Population: every real detector trigger (the first segment of each detection, `trigger_time`), including false ones.
+R1 population: 3075 triggers, 321 >=M, 2289 >=C, 727 false triggers. Features at trigger + k use only data labelled at or before trigger + k.
+
+| k (min after trigger) | Inputs | ≥M: TSS / precision / recall (pooled) | ≥M mean monthly (worst) | ≥M active / quiet days | Current flux ≥M TSS | ≥C TSS (model / flux) | Class recall <C / C / ≥M | Lead to NOAA M1: median (IQR), share before |
+|---|---|---|---|---|---|---|---|---|
+| 0 | aditya | 0.437 / 0.22 / 0.75 | 0.260 (-0.019) | 0.421 / 0.222 | 0.440 | 0.219 / 0.055 | 0.48 / 0.38 / 0.75 | 2 (-0, 6) min, 69% |
+| 0 | with_goes | 0.434 / 0.23 / 0.72 | 0.246 (-0.067) | 0.402 / 0.263 | 0.440 | 0.256 / 0.055 | 0.47 / 0.44 / 0.72 | 2 (-10, 6) min, 68% |
+| 1 | aditya | 0.559 / 0.30 / 0.77 | 0.450 (0.141) | 0.549 / 0.446 | 0.488 | 0.372 / 0.201 | 0.54 / 0.54 / 0.77 | 1 (-1, 4) min, 56% |
+| 1 | with_goes | 0.538 / 0.29 / 0.76 | 0.444 (0.142) | 0.527 / 0.433 | 0.488 | 0.366 / 0.201 | 0.54 / 0.53 / 0.76 | 1 (-1, 4) min, 56% |
+| 2 | aditya | 0.605 / 0.30 / 0.84 | 0.504 (0.187) | 0.579 / 0.541 | 0.578 | 0.366 / 0.160 | 0.57 / 0.49 / 0.84 | 0 (-2, 3) min, 47% |
+| 2 | with_goes | 0.589 / 0.29 / 0.83 | 0.478 (0.187) | 0.564 / 0.514 | 0.578 | 0.406 / 0.160 | 0.55 / 0.54 / 0.83 | 0 (-2, 3) min, 47% |
+| 3 | aditya | 0.640 / 0.37 / 0.80 | 0.575 (0.152) | 0.623 / 0.531 | 0.577 | 0.346 / 0.200 | 0.61 / 0.52 / 0.80 | -1 (-3, 2) min, 37% |
+| 3 | with_goes | 0.635 / 0.37 / 0.80 | 0.569 (0.147) | 0.626 / 0.502 | 0.577 | 0.338 / 0.200 | 0.61 / 0.51 / 0.80 | -1 (-3, 2) min, 36% |
+| 5 | aditya | 0.668 / 0.38 / 0.83 | 0.632 (0.239) | 0.638 / 0.674 | 0.650 | 0.353 / 0.273 | 0.61 / 0.52 / 0.83 | -3 (-5, 1) min, 27% |
+| 5 | with_goes | 0.664 / 0.39 / 0.82 | 0.634 (0.233) | 0.640 / 0.649 | 0.650 | 0.321 / 0.273 | 0.60 / 0.52 / 0.82 | -3 (-5, 1) min, 27% |
+
+- **At the trigger itself (k = 0) the model is no better than the current flux** (0.437 vs 0.440), but its alerts come a
+  median 2 min **before** NOAA's M1 crossing (69 % early).
+- **From one minute after the trigger the model beats the flux baseline** (k = 1: 0.559 vs 0.488; k = 3: 0.640 vs
+  0.577): rise rate, curvature and the spectral ratio carry extra information. The price is time: by k = 3 the median
+  alert is 1 min after NOAA's M1, by k = 5 3 min after.
+- Peak-class decisions are poor for C (recall about 0.5): telling C from B or a false trigger early in a rise is hard.
+- GOES inputs add nothing (with_goes ≤ aditya at every k).
+
+## 10. Holdout2 — scored once (2026-11-13, after FINAL_CHOICE_2.md, commit b5e2044)
+
+Choice (`docs/FINAL_CHOICE_2.md`): every champion is **Aditya-only**; c_30m keeps E2+E3+E5 (ensemble), the others use the
+base 44 features. Holdout2 = 11 days (2026-09-13, 2026-10-30 … 11-10 without 11-03/04), built by the one stage
+`evaluate_holdout2` with the same code as the development data (a dry run on development days reproduces the dataset
+exactly, `tests/test_holdout2_pipeline.py`). Sources: `reports/holdout2/metrics.json`, `reports/holdout2/results.md`.
+The nowcast counts 14 "days" because a row at 00:00 belongs to the next date (the dataset's convention); it is one row per
+extra day.
+
+| Target | Variant | Positives (days) | **TSS at A** [95 % day-bootstrap] | POD / FAR | Quiet-start | Active / quiet days | Current flux | Persistence | Rule | Sep 13 / Oct 30–31 / Nov 1–10 (positive rows) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| now | aditya ★ | 10,644 (14) | **0.760** [0.69, 0.81] | 0.88 / 0.52 | 0.558 | 0.645 / 0.730 | 0.564 [0.31, 0.77] | 0.661 | 0.634 | 0.80 (444) / no positives / 0.72 (10,200) |
+| now | with_goes | 10,644 (14) | **0.765** [0.70, 0.82] | 0.88 / 0.50 | 0.550 | 0.658 / 0.725 | ″ | ″ | ″ | 0.78 (444) / no positives / 0.73 (10,200) |
+| c_30m | aditya ★ | 19,410 (11) | **0.486** [0.22, 0.67] | 0.98 / 0.66 | 0.525 | 0.000 / 0.460 | 0.493 [0.22, 0.70] | 0.058 | 0.074 | -0.19 (180) / no positives / 0.31 (19,230) |
+| c_30m | with_goes | 19,410 (11) | **0.508** [0.23, 0.70] | 0.98 / 0.65 | 0.549 | 0.000 / 0.499 | ″ | ″ | ″ | -0.04 (180) / no positives / 0.33 (19,230) |
+| c_60m | aditya ★ | 31,002 (11) | **0.603** [0.33, 0.78] | 0.98 / 0.44 | 0.636 | 0.001 / 0.569 | 0.596 [0.32, 0.77] | 0.107 | 0.121 | 0.22 (360) / no positives / 0.42 (30,642) |
+| c_60m | with_goes | 31,002 (11) | **0.592** [0.32, 0.78] | 0.99 / 0.45 | 0.626 | 0.000 / 0.598 | ″ | ″ | ″ | 0.28 (360) / no positives / 0.43 (30,642) |
+| c_120m | aditya ★ | 41,538 (11) | **0.729** [0.48, 0.87] | 0.98 / 0.24 | 0.748 | -0.000 / 0.607 | 0.706 [0.44, 0.85] | 0.143 | 0.162 | 0.46 (720) / no positives / 0.56 (40,818) |
+| c_120m | with_goes | 41,538 (11) | **0.739** [0.50, 0.88] | 0.97 / 0.23 | 0.757 | 0.001 / 0.569 | ″ | ″ | ″ | 0.05 (720) / no positives / 0.62 (40,818) |
+| m_30m ⚠ | aditya ★ | 1,260 (11) | **0.307** [-0.47, 0.50] | 1.00 / 0.98 | 0.338 | 0.001 / 0.558 | 0.350 [-0.40, 0.56] | 0.060 | -0.028 | no positives / no positives / 0.19 (1,260) |
+| m_30m ⚠ | with_goes | 1,260 (11) | **0.327** [-0.44, 0.52] | 1.00 / 0.98 | 0.360 | 0.001 / 0.594 | ″ | ″ | ″ | no positives / no positives / 0.20 (1,260) |
+| m_60m ⚠ | aditya ★ | 2,520 (11) | **0.332** [-0.43, 0.54] | 1.00 / 0.96 | 0.366 | 0.000 / 0.598 | 0.392 [-0.33, 0.62] | 0.073 | 0.002 | no positives / no positives / 0.20 (2,520) |
+| m_60m ⚠ | with_goes | 2,520 (11) | **0.517** [-0.24, 0.74] | 0.97 / 0.94 | 0.563 | 0.066 / 0.697 | ″ | ″ | ″ | no positives / no positives / 0.35 (2,520) |
+| m_120m ⚠ | aditya ★ | 4,722 (11) | **0.448** [-0.27, 0.70] | 1.00 / 0.91 | 0.492 | 0.000 / 0.795 | 0.408 [-0.32, 0.64] | 0.061 | 0.001 | no positives / no positives / 0.25 (4,722) |
+| m_120m ⚠ | with_goes | 4,722 (11) | **0.405** [-0.37, 0.69] | 0.87 / 0.91 | 0.458 | 0.029 / 0.058 | ″ | ″ | ″ | no positives / no positives / 0.24 (4,722) |
+
+★ champion (FINAL_CHOICE_2). ⚠ UNDERPOWERED: 7 ≥M flares on 3 days (< 15); no claim is made from M rows.
+
+| Target | Brier raw | Brier isotonic (fitted Aug 2026) | Brier climatology | C (FAR ≤ 0.80) TSS / POD | K10 TSS / POD | K20 TSS / POD |
+|---|---|---|---|---|---|---|
+| now | 0.059 | 0.043 | 0.101 | – | – | – |
+| c_30m | 0.174 | 0.120 | 0.168 | – | – | – |
+| c_60m | 0.145 | 0.157 | 0.228 | – | – | – |
+| c_120m | 0.114 | 0.110 | 0.249 | – | – | – |
+| m_30m | 0.160 | 0.013 | 0.013 | 0.000 / 0.00 | 0.000 / 0.00 | 0.000 / 0.00 |
+| m_60m | 0.188 | 0.025 | 0.026 | 0.000 / 0.00 | 0.000 / 0.00 | 0.000 / 0.00 |
+| m_120m | 0.184 | 0.053 | 0.048 | 0.000 / 0.00 | 0.000 / 0.00 | 0.000 / 0.00 |
+
+R1 on holdout2: 112 triggers (7 reach ≥M — UNDERPOWERED, 96 ≥C, 12 false triggers).
+
+| k | Inputs | ≥M TSS / precision / recall (TP, FP, FN) | Current flux ≥M TSS | ≥C TSS (model / flux) | Leads to NOAA M1 for true ≥M alerts (min) |
+|---|---|---|---|---|---|
+| 0 | aditya | 0.181 / 0.09 / 0.57 (4, 41, 3) | 0.381 | 0.250 / 0.385 | 2, 9, 8, 2 |
+| 0 | with_goes | 0.143 / 0.09 / 0.43 (3, 30, 4) | 0.381 | 0.250 / 0.385 | 2, 9, 2 |
+| 1 | aditya | 0.524 / 0.20 / 0.71 (5, 20, 2) | 0.533 | 0.479 / 0.323 | 2, 1, 8, 1, 7 |
+| 1 | with_goes | 0.552 / 0.23 / 0.71 (5, 17, 2) | 0.533 | 0.427 / 0.323 | 2, 1, 8, 1, 7 |
+| 2 | aditya | 0.457 / 0.16 / 0.71 (5, 27, 2) | 0.505 | 0.427 / 0.521 | 1, 16, 0, 7, 0 |
+| 2 | with_goes | 0.429 / 0.14 / 0.71 (5, 30, 2) | 0.505 | 0.417 / 0.521 | 1, 16, 0, 7, 0 |
+| 3 | aditya | 0.552 / 0.16 / 0.86 (6, 32, 1) | 0.676 | 0.292 / 0.344 | 0, -1, 6, 5, -1, 5 |
+| 3 | with_goes | 0.562 / 0.16 / 0.86 (6, 31, 1) | 0.676 | 0.500 / 0.344 | 0, -1, 6, 5, -1, 5 |
+| 5 | aditya | 0.686 / 0.25 / 0.86 (6, 18, 1) | 0.352 | 0.417 / 0.542 | -2, -3, 4, 3, -3, 3 |
+| 5 | with_goes | 0.695 / 0.26 / 0.86 (6, 17, 1) | 0.352 | 0.396 / 0.542 | -2, -3, 4, 3, -3, 3 |
+
+
+**Reading — what holdout2 says, honestly.**
+- **Nowcast: confirmed.** 0.760 [0.69, 0.81], above persistence (0.661) and the rule (0.634), consistent with development
+  (0.72) and the old test.
+- **C forecasts: high pooled TSS (0.49 / 0.60 / 0.73), but no better than the current-flux baseline (0.49 / 0.60 /
+  0.71).** The 11 days are one quiet stretch (2026-10-30/31: B flares only, no positives at all) and one very active
+  stretch (2026-11-05 … 10, ≥C within 60 min on 67 % of rows). Models and baseline mostly recognise which stretch they are
+  in: on active days TSS is about 0 (the models alert almost all the time there), and the November value (0.31–0.56) is
+  far below the pooled one. This is the pooled-vs-monthly effect of `docs/TEST_SANITY.md`, stronger.
+- **M forecasts: UNDERPOWERED (7 flares), no claim.** For the record: every M row was caught (POD 1.0) at FAR 0.91–0.98;
+  C and K never alert, as stated in advance.
+- **Calibration:** raw M probabilities are far too high (Brier 0.16–0.19 vs climatology 0.01–0.05, a side effect of
+  `class_weight=balanced`); isotonic calibration fitted on August brings them to about climatology. For C targets isotonic
+  helps c_30m (0.174 → 0.120) and is neutral elsewhere.
+- **With vs without GOES:** inside the bootstrap noise everywhere (largest: m_60m 0.33 → 0.52, UNDERPOWERED).
+- **R1 on holdout2 (7 ≥M triggers, UNDERPOWERED):** recall 0.57–0.86; the model beats flux at k = 5 (0.69 vs 0.35) but
+  loses at k = 0 and k = 3. Leads to NOAA's M1 for the true alerts: +2 to +9 min at k = 0, −3 to +4 min at k = 5.
+
+**Bottom line.** The pipeline, the locks and the protocol work, and the nowcast generalises. The forecasts' apparent skill
+is mostly the activity level, which a one-number baseline captures just as well; R1 shows the most promising real-time
+information (shape and temperature of a rise in its first minutes). Holdout2 is too short and too M-poor to say more.

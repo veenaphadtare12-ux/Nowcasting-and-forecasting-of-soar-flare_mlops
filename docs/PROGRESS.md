@@ -636,3 +636,52 @@ Nothing was retrained, re-tuned or re-scored, and the test dataset file is not r
   - "already rising" rows (GOES begin ≤ t < label start; 2.9% of m_30m positives) don't drive the score: removing
     them gives 0.518 → 0.526.
 - **Doc fix:** c_30m uses 67 features, not 64. Fixed in MODEL_CARD.md; dated erratum added to FINAL_CHOICE.md.
+
+## 2026-11-13 — Holdout2, split-event fix, development protocol 2, FINAL_CHOICE_2, holdout2 scored once
+**Done**
+- A0 audit: the v1 calibrators, thresholds and choices were never fitted on the old test (all on May 2026 or the rolling
+  months).
+- Holdout2 ingested (11 usable days, 7 ≥M → UNDERPOWERED) and locked: SHA-256 of 494 files, lock test (3a6140c).
+- **Causal-ordering bug found → STOP → fixed** after the go-ahead (9c14741). Split detector segments were visible a median
+  18 min (max 155 min) too early; 41 of 3,126 events. Features and labels are unchanged, and the activity flag changed on
+  0.003 % of rows.
+- 14-month protocol (`src/dev2/`): reference; E6; R2a/R2b; champion re-check; R1; R3 (GOES-16 2017-02-07 … 2025-03-28,
+  830k rows); R4.
+- FINAL_CHOICE_2 committed (b5e2044) before any holdout2 feature existed. Holdout2 then scored once (stage
+  `evaluate_holdout2`).
+
+**Key numbers**
+- Dev reference, mean monthly TSS: now 0.719, c_30m 0.168 (0.218 with E2+E3+E5), c_60m 0.214, c_120m 0.222, m_30m
+  0.240, m_60m 0.242, m_120m 0.233.
+- **Current-flux baseline** (new): ties the M models (m_30m 0.243). For C it is 0.01–0.04 behind.
+- All of R2, E6 and R3 dropped. R3 mapping: SoLEXS ∝ GOES^1.42 (EDA 1.34); ratio slope 1.32, r = 0.97.
+- R1, ≥M TSS: 0.44 at the trigger (= flux), 0.56 / 0.64 / 0.67 at +1 / +3 / +5 min (flux 0.49 / 0.58 / 0.65). Median
+  lead to NOAA M1: +2 min at the trigger, −1 min at +3 min.
+- R4: FAR ≤ 0.80 unusable for M. K10 helps only m_120m (POD 0.28, FAR 0.88).
+- Holdout2 (TSS at A):
+  - now 0.760 [0.69, 0.81];
+  - c_30m 0.486, c_60m 0.603, c_120m 0.729 (current flux 0.493 / 0.596 / 0.706);
+  - M 0.31 / 0.33 / 0.45, UNDERPOWERED.
+  - On active days TSS ≈ 0 (the models alert almost always there).
+
+**Decisions (and why)**
+- **Acceptance rule with 14 months = ≥ 9 better** (the same 60 % share as 6 of 10). This was fixed before any result, so
+  m_30m E5 (8/14) is a recorded near miss.
+- **R1 population = real triggers only** (segment 0). Lead time is measured to the end of the first GOES-19 1-min XRS-B
+  ≥ 1e-5 (NOAA's M1 moment).
+- **GOES counts are known from flare end + 24 h.** A window of W hours covers the latest W hours of that delayed list.
+  SRS is used from 01:00 UT of its date (issued 00:30).
+- **R3:** GOES-13/15 classes divided by 0.7; GOES ratio features scaled by the measured 1.32; fine-tuning = 100 extra
+  boosting rounds on SoLEXS.
+- **Final thresholds on the raw score** (isotonic is monotone); calibration fitted on Aug 2026, thresholds on Sep 1–12, as
+  asked. C/K never alert for M targets, and this was stated before scoring.
+
+**Problems**
+- The SoLEXS downloads covered only 10 new days; one bundle was truncated, and the VELC bundle is not SoLEXS.
+- My own bugs, caught before use:
+  - a duplicate dict key blanked two comparison fields (recomputed from the stored months);
+  - a params rewrite left a duplicate `final:` key (DVC refused it; repaired, writer made idempotent);
+  - CRLF line endings from DVC again.
+- Heredoc quoting broke twice: scripts were written to files instead.
+
+**Checks:** 86 tests pass, 1 skipped (pytest, 49 s). `dvc status`: data and pipelines up to date. 37 DVC stages (14 frozen, historical). Holdout2 checksums verified after scoring.

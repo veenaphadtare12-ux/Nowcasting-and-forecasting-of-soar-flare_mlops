@@ -629,3 +629,49 @@ flare-models     runs= 105  first=2026-10-21 18:47:31  last=2026-10-21 19:57:32
 flare-models-v2  runs=  85  first=2026-10-21 20:11:06  last=2026-10-22 01:44:08
 total runs: 600 | registered models: 0
 ```
+
+## 8. Holdout2, the split-event fix and development protocol 2 *(added 2026-11-13)*
+
+**What was asked:** treat the old test period as closed, lock a new holdout ("holdout2", all data after 2026-09-12),
+develop R1–R4 on a 14-month rolling protocol with the unchanged acceptance rule, freeze a new choice, then score
+holdout2 once.
+
+**What happened, in order:**
+1. **A0 audit (read-only):** the v1 isotonic calibrators, thresholds and choices were all fitted on development data
+   (May 2026 block, rolling months). The old test numbers stay valid.
+2. **Data:** SoLEXS exists for only 10 days after the cut-off (2026-10-30 … 11-10 without 11-03/04), plus 2026-09-13.
+   The user chose to go ahead with them. The VELC zip downloaded alongside is coronagraph data and was not used.
+3. **Holdout2 ingest and lock** (`src/holdout2/ingest.py`):
+   - Usable days and GOES flares by class were counted, with no model run: 11 days, 118 C and **7 M** flares. Every M
+     result is therefore UNDERPOWERED.
+   - SHA-256 of all 494 files went into `docs/HOLDOUT2_LOCK.md`.
+   - `tests/test_holdout2_lock.py` allows only the setup script and one final DVC stage to touch holdout2.
+   - (Auto mode's safety check also blocked an attempt to open a holdout2 file during development.)
+4. **STOP: causal-ordering bug.** The detector splits a merged event only after it ends, but it gave the later pieces a
+   stand-in trigger at "onset + 1 min". So 41 events (1.3 %) became visible a median 18 min too early, which affected the
+   E2 features. The work stopped and was reported. After the user's go-ahead the bug was fixed at the source
+   (`end_known_time`), with truncation tests that the old code fails.
+5. **Development protocol 2** (`src/dev2/`): 14 rolling months (2025-08 … 2026-09), reporting the mean of months, pooled
+   TSS, worst month and active vs quiet days.
+   - **Tested:** R2 (own-event context; GOES counts + NOAA SRS), E6 (GOES flux), R3 (GOES-16 pretraining 2017–2025,
+     mapped with the measured SoLEXS ∝ GOES^1.42 law), R1 (early class prediction from the trigger) and R4 (cost and
+     FAR-capped operating points).
+   - **Passed:** only the old c_30m combination E2+E3+E5, which still passes after the fix.
+6. **FINAL_CHOICE_2** (commit b5e2044): every champion is Aditya-only. The document records the model hashes and the
+   headline metrics fixed in advance.
+7. **Holdout2, scored once** (`dvc repro evaluate_holdout2`):
+   - Nowcast 0.760 [0.69, 0.81], above persistence (0.66).
+   - C forecasts 0.49 / 0.60 / 0.73, but the current-flux baseline does the same (0.49 / 0.60 / 0.71).
+   - M results UNDERPOWERED.
+
+**Where the numbers are:**
+- `docs/IMPROVEMENTS.md` sections 7–10.
+- `docs/FINAL_CHOICE_2.md`, `docs/MODEL_CARD.md` (version 2), `docs/PRESENTATION_FACTS.md` section M.
+- `reports/dev2/*.json`, `reports/holdout2/metrics.json`.
+
+**New MLOps pieces:**
+- 12 new DVC stages. The historical stages are frozen so the old test can never be re-scored.
+- MLflow experiments `flare-dev2`, `flare-final2` and `flare-holdout2`.
+- The holdout2 stage refuses to run unless FINAL_CHOICE_2 is committed, the model SHA-256s match, and the lock checksums
+  hold.
+- A dry-run test proves the holdout2 path rebuilds the development dataset exactly.

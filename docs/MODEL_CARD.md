@@ -1,4 +1,58 @@
-# Model card — Aditya-L1 solar-flare nowcast and forecast models (champions, v1)
+# Model card — Aditya-L1 solar-flare nowcast and forecast models
+
+## Version 2 (added 2026-11-13): FINAL_CHOICE_2 models, scored once on holdout2
+
+**What changed since v1.**
+- **A0 audit:** the v1 isotonic calibrators, all thresholds and all feature/model choices were fitted or chosen on
+  development data (May 2026 threshold block; rolling protocol 2025-08…2026-05). Nothing used the old test period, so
+  the v1 test numbers below (including the calibrated Brier scores) stay valid.
+- **Causal-ordering fix:** split detector events used to become visible a median 18 min (max 155 min) too early. Fixed at
+  the source (`docs/IMPROVEMENTS.md` section 8). The v1 c_30m model used the affected E2 features, so its v1 test
+  number carries this small defect. After the fix the same configuration still passes the acceptance rule (0.168 → 0.218,
+  13 of 14 months), so the gain is real.
+- **Development data now includes the old test months** (14 rolling months, 2025-08 … 2026-09).
+
+| Target | Model (champion, `models_final2/<target>_aditya.joblib`) | Inputs | Development: mean monthly / pooled TSS | **Holdout2 TSS at A [95 %]** | Current-flux baseline on holdout2 |
+|---|---|---|---|---|---|
+| now | XGBoost | 44 base (Aditya-only) | 0.719 / 0.722 | **0.760** [0.69, 0.81] | 0.564 (persistence 0.661) |
+| c_30m | LogReg + XGBoost average | 44 base + E2 + E3 + E5 = 67 | 0.218 / 0.237 | **0.486** [0.22, 0.67] | 0.493 |
+| c_60m | XGBoost | 44 base | 0.214 / 0.229 | **0.603** [0.33, 0.78] | 0.596 |
+| c_120m | XGBoost | 44 base | 0.222 / 0.239 | **0.729** [0.48, 0.87] | 0.706 |
+| m_30m | Logistic regression | 44 base | 0.240 / 0.387 | 0.307 [−0.47, 0.50] — UNDERPOWERED | 0.350 |
+| m_60m | Logistic regression | 44 base | 0.242 / 0.409 | 0.332 [−0.43, 0.54] — UNDERPOWERED | 0.392 |
+| m_120m | XGBoost | 44 base | 0.233 / 0.359 | 0.448 [−0.27, 0.70] — UNDERPOWERED | 0.408 |
+
+- **Training:**
+  - Fit: development rows before 2026-08-01.
+  - Isotonic calibration: August 2026.
+  - Thresholds: 2026-09-01 … 09-12. A = max TSS; M targets also C (FAR ≤ 0.80) and K10 (cost). C and K10 never alert:
+    this was known and stated before holdout2.
+- **Where it is recorded:** frozen in `docs/FINAL_CHOICE_2.md` (commit b5e2044) with the SHA-256 of every model file.
+  Code: `src/dev2/final.py`, DVC stage `dev2_final`. MLflow experiment `flare-final2`.
+- **"With GOES" variants** (`*_with_goes.joblib`) are frozen too, for comparison. GOES-derived inputs never passed the
+  acceptance rule on their own, and on holdout2 they change TSS only inside the noise.
+- **Holdout2:**
+  - 11 days (2026-09-13, 2026-10-30 … 11-10 without 11-03/04), with 118 C and 7 M flares.
+  - Locked by SHA-256 before any feature existed (`docs/HOLDOUT2_LOCK.md`) and scored once by the stage
+    `evaluate_holdout2` (`reports/holdout2/`).
+- **R1, early class prediction** (`models_final2/r1_k<k>_<inputs>.joblib`): LogReg per k = 0, 1, 2, 3, 5 min after the
+  detector trigger.
+  - Development ≥M TSS 0.44 → 0.67 as k grows (current-flux baseline 0.44 → 0.65).
+  - Holdout2 has only 7 ≥M triggers (UNDERPOWERED).
+
+**How to read the v2 holdout2 numbers.** The 11 days are one quiet stretch and one very active stretch. Both the models
+and a single "current flux" threshold separate the two:
+- Pooled TSS is high: 0.49–0.73 for C.
+- On active days alone TSS is about 0, because the models alert almost all the time there.
+- November alone gives 0.31–0.56.
+
+**The nowcast is the only clearly confirmed skill.** The forecasts do not beat the current-flux baseline on holdout2, and
+on development data they beat it by only 0.01–0.04 TSS (≥C) or not at all (≥M). Calibration: raw M probabilities are far
+too high (Brier 0.16–0.19 vs climatology 0.01–0.05). Use the isotonic outputs (Brier ≈ climatology).
+
+---
+
+## Version 1 (champions of `docs/FINAL_CHOICE.md`, one-time test 2026-06-01 → 2026-09-12)
 
 ## Models
 | Registry name (alias `champion`) | Target | Model | Inputs |
@@ -99,5 +153,8 @@ few alerts that switched on inside the window, the median lead was about 50 min 
 - **No personal data is involved.** All inputs are public scientific data (ISRO, NOAA).
 
 ## How to reproduce
-`dvc repro test_analysis` (the frozen models are cached). The test is scored by the single stage `evaluate_test`.
-Tests: `pytest tests/test_final.py`.
+- **v1:** `dvc repro test_analysis` (the frozen models are cached; the stage is DVC-frozen since 2026-11-13). The test
+  was scored by the single stage `evaluate_test`.
+- **v2:** run `dvc repro dev2_final`. Holdout2 is scored only by `evaluate_holdout2`, which refuses to run unless
+  `docs/FINAL_CHOICE_2.md` is committed, the model hashes match, and the holdout2 files match `docs/HOLDOUT2_LOCK.md`.
+- **Tests:** `pytest tests/test_final.py tests/test_holdout2_lock.py tests/test_holdout2_pipeline.py`.

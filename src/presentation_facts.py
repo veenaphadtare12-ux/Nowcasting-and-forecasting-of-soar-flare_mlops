@@ -484,6 +484,49 @@ def write_facts() -> None:
         a(f"- SHAP (XGBoost nowcast, test): top features {', '.join(top)} — `docs/final_figures/shap_nowcast.png`")
         a("- Registry: " + ", ".join(f"`{r['registry']}`" for r in tm["targets"].values()) + " — alias `champion`, version 1 "
           "(`mlflow.db`; tags with thresholds, fit dates, git commit, dvc.lock hash, test TSS). Model card: `docs/MODEL_CARD.md`.")
+    # ---- M. development protocol 2 + holdout2 (task of 2026-11-13)
+    if (R / "reports" / "holdout2" / "metrics.json").exists():
+        ref2 = _j("reports/dev2/ref.json")["summary"]
+        ch = _j("reports/dev2/choice.json")["targets"]
+        h2 = _j("reports/holdout2/metrics.json")
+        ing = _j("reports/holdout2/ingest.json")
+        r1 = _j("reports/dev2/r1.json")
+        mp = _j("reports/dev2/r3_mapping.json")
+        a("")
+        a("## M. Development protocol 2 and holdout2 (frozen choice in `docs/FINAL_CHOICE_2.md`; details `docs/IMPROVEMENTS.md` sections 8–10)")
+        a("")
+        a("- Causal-ordering fix: split detector segments were visible a median 18 min (max 155 min) too early; 41 of 3,126 events "
+          "fixed at the source, truncation tests added — `docs/IMPROVEMENTS.md` section 8")
+        a(f"- Holdout2: {ing['usable_days']} usable days ({ing['holdout2_days'][0]} … {ing['holdout2_days'][1]}), GOES flares "
+          f"{ing['goes_flares_on_usable_days']}; {ing['m_or_larger_on_usable_days']} ≥M < {ing['min_m_flares']} → M results UNDERPOWERED; "
+          "locked by SHA-256 before any feature existed — `reports/holdout2/ingest.json`, `docs/HOLDOUT2_LOCK.md`")
+        a("")
+        a("| Target | Champion (Aditya-only) | Dev: mean monthly / pooled TSS (14 months) | Dev current-flux baseline (mean / pooled) | Holdout2 TSS at A [95%] | Holdout2 current flux | Holdout2 active / quiet days |")
+        a("|---|---|---|---|---|---|---|")
+        for t, v in ch.items():
+            x = ref2[t][v["learner"]] if v["learner"] in ref2[t] else None
+            dev = f"{x['mean_monthly_tss']:.3f} / {x['pooled_tss']:.3f}" if x and v["idea"] == "base" else \
+                f"{_j('reports/dev2/champ.json')['comparison_vs_ref'][t]['exp_mean']:.3f} / {_j('reports/dev2/champ.json')['comparison_vs_ref'][t]['exp_pooled']:.3f}"
+            hp = h2["forecasts"][t]["aditya"]
+            A = hp["points"]["A"]
+            fl = hp["baselines"]["flux"]
+            up = " (UNDERPOWERED)" if t.startswith("m_") else ""
+            a(f"| {t}{up} | {v['learner']}, {'+'.join(v['blocks']) or 'base 44'} | {dev} | {ref2[t]['flux']['mean_monthly_tss']:.3f} / "
+              f"{ref2[t]['flux']['pooled_tss']:.3f} | **{A['tss']:.3f}** [{A['ci95'][0]:.2f}, {A['ci95'][1]:.2f}] | {fl['tss']:.3f} | "
+              f"{A['tss_active_days']:.3f} / {A['tss_quiet_days']:.3f} |")
+        a("")
+        a("  Sources: `reports/dev2/ref.json`, `reports/dev2/champ.json`, `reports/holdout2/metrics.json` (`forecasts.<t>.aditya`).")
+        a("- Ideas that did NOT pass the unchanged acceptance rule (≥ 9 of 14 months): R2 own-event context, R2 GOES counts + SRS, "
+          "E6 GOES flux, R3 GOES-16 pretraining (zero-shot 0.05–0.10, fine-tuned ≤ +0.01 over SoLEXS-only) — `reports/dev2/{r2a,r2b,e6,r3}.json`")
+        a(f"- R3 mapping: SoLEXS peak excess ∝ GOES^{mp['power_law_slope_excess_vs_goes_flux']:.2f} (EDA 1.34); normalised ratio slope "
+          f"{mp['ratio_slope_solexs_vs_goes']:.2f}, r = {mp['ratio_corr']:.2f} over {mp['n_flares']} flares — `reports/dev2/r3_mapping.json`")
+        s0, s3 = r1["variants"]["k0_aditya"]["summary"], r1["variants"]["k3_aditya"]["summary"]
+        a(f"- R1 early class ({r1['n_triggers']} triggers, {r1['n_m']} ≥M): ≥M TSS at the trigger {s0['logreg']['m_pooled']['tss']:.2f} "
+          f"(flux {s0['flux']['m_pooled']['tss']:.2f}, median lead {s0['logreg']['lead_median_min']:.0f} min before NOAA M1); 3 min later "
+          f"{s3['logreg']['m_pooled']['tss']:.2f} (flux {s3['flux']['m_pooled']['tss']:.2f}, median {s3['logreg']['lead_median_min']:.0f} min) — `reports/dev2/r1.json`")
+        a("- One-minute message: the nowcast generalises (holdout2 0.76 vs persistence 0.66); the forecasts mostly recognise the "
+          "activity level, which a one-number current-flux baseline does almost as well; the first minutes of a rise (R1) are "
+          "where Aditya-L1 adds real-time information.")
     OUT.write_text("\n".join(L) + "\n", encoding="utf-8", newline="\n")
     print("wrote", OUT)
 
