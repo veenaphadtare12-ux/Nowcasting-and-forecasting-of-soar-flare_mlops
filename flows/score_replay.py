@@ -1,7 +1,7 @@
 """Prefect flow: score a past window with the registered champion models and store the predictions (Parquet + SQLite).
 
     python -m flows.score_replay 2026-04-01 2026-04-08     # tune/val window from the DVC data (developer machine)
-    python -m flows.score_replay --day 2026-04-24          # one demo-bundle day (any machine, Docker, CI, k8s)
+    python -m flows.score_replay --day 2026-04-24          # one model-bundle day (any machine, Docker, CI, k8s)
 
 Writes data/predictions/replay_<start>_<end>.parquet and data/predictions/predictions.db (table `predictions`).
 """
@@ -36,7 +36,7 @@ def score_replay(
     alias: str = "champion",
     day: str | None = None,
 ) -> dict:
-    """Either a tune/val window from the DVC data (start, end) or one demo-bundle day (day=YYYY-MM-DD)."""
+    """Either a tune/val window from the DVC data (start, end) or one model-bundle day (day=YYYY-MM-DD)."""
     log = get_run_logger()
     pred = score(start, end, targets, alias, day)
     out = store(pred)

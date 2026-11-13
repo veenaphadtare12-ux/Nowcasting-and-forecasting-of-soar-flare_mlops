@@ -9,13 +9,13 @@
 - Data after the development end (2026-09-13) is locked (`src/ops/locks.py`).
 - The product only **displays** frozen results and **replays** development days.
 
-## 1. One source of truth for models: the registry alias `champion` → the demo bundle
+## 1. One source of truth for models: the registry alias `champion` → the model bundle
 
 ```
 MLflow registry (mlflow.db, alias "champion")
         │  scripts/export_bundle.ps1  →  python -m src.serving.bundle export
         ▼
-demo_bundle/                                   (committed, < 50 MB, versioned)
+model_bundle/                                   (committed, < 50 MB, versioned)
   manifest.json      bundle version, git SHA, created_at, per model: registry name, version, run id, target,
                      learner, features, thresholds A/B/C, SHA-256 of the model file; replay days; results summary
   models/<target>.joblib      the champion estimator, exported from models:/<name>@champion
@@ -61,7 +61,7 @@ demo_bundle/                                   (committed, < 50 MB, versioned)
                       (developer machine, DVC data)                            (any machine, bundle only)
 Prefect daily_ingest ─► pandera checks ─► dvc repro (data stages only)
                                                │
-                                     scripts/export_bundle ─► demo_bundle/ ─────────────────────────┐
+                                     scripts/export_bundle ─► model_bundle/ ─────────────────────────┐
                                                                                                     ▼
 Prefect score_replay (bundle day) ─► predictions store data/predictions/{*.parquet, predictions.db} ─► FastAPI ─► React
 Prefect check_drift ─► reports/drift/latest.json ─► bundle drift/latest.json ─► FastAPI /drift/latest ─► React

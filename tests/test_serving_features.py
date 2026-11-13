@@ -1,7 +1,7 @@
 """Integration contract (docs/ARCHITECTURE.md): one source of truth for features and models.
 
 - Features the API computes (src/serving/features.py = the pipeline's src/features.py code) equal the pipeline's own
-  dataset rows, for every demo-bundle day (runs in CI: everything comes from the committed bundle).
+  dataset rows, for every model-bundle day (runs in CI: everything comes from the committed bundle).
 - The bundle is intact (SHA-256), its stored predictions are what its models produce, and (locally) its model versions
   are the registry champions.
 """
@@ -17,7 +17,7 @@ from src.serving import bundle as B
 from src.serving import features as sf
 
 ROOT = Path(__file__).resolve().parents[1]
-BUNDLE = B.Bundle(ROOT / "demo_bundle")
+BUNDLE = B.Bundle(ROOT / "model_bundle")
 DAYS = list(BUNDLE.days)
 
 
@@ -35,7 +35,7 @@ def test_api_features_equal_pipeline_features(day):
 
 def test_bundle_files_match_the_manifest():
     assert BUNDLE.verify() == []
-    size = sum(p.stat().st_size for p in (ROOT / "demo_bundle").rglob("*") if p.is_file())
+    size = sum(p.stat().st_size for p in (ROOT / "model_bundle").rglob("*") if p.is_file())
     assert size < 50e6
 
 
@@ -60,7 +60,7 @@ def test_stored_predictions_are_what_the_bundle_models_produce(day):
 def test_a_tampered_model_file_is_refused(tmp_path):
     import shutil
 
-    shutil.copytree(ROOT / "demo_bundle", tmp_path / "b")
+    shutil.copytree(ROOT / "model_bundle", tmp_path / "b")
     f = tmp_path / "b" / BUNDLE.model_meta("now")["file"]
     f.write_bytes(f.read_bytes() + b"x")
     with pytest.raises(RuntimeError, match="SHA-256"):

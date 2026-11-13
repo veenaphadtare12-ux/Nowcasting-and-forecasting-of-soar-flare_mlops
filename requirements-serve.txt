@@ -1,4 +1,4 @@
-# API image (src/serving): FastAPI + the champion models from the demo bundle (joblib), pinned to the training versions
+# API image (src/serving): FastAPI + the champion models from the model bundle (joblib), pinned to the training versions
 # so the pickled scikit-learn / XGBoost estimators load exactly as trained (docs/MODEL_CARD.md).
 fastapi==0.142.2
 starlette==1.7.0

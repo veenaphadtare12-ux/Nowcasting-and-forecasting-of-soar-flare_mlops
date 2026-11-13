@@ -1,4 +1,4 @@
-# flare-api: FastAPI service + Prefect flows, models and replay data from the committed demo bundle.
+# flare-api: FastAPI service + Prefect flows, models and replay data from the committed model bundle.
 FROM python:3.12-slim
 
 ARG GIT_SHA=dev
@@ -7,7 +7,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     FLARE_GIT_SHA=${GIT_SHA} \
-    FLARE_BUNDLE_DIR=/app/demo_bundle \
+    FLARE_BUNDLE_DIR=/app/model_bundle \
     FLARE_PREDICTIONS_DIR=/data/predictions \
     FLARE_DRIFT_FILE=/data/drift/latest.json \
     PREFECT_HOME=/data/prefect \
@@ -24,7 +24,7 @@ RUN pip install -r requirements-serve.txt -r requirements-worker.txt
 COPY params.yaml ./
 COPY src/ src/
 COPY flows/ flows/
-COPY demo_bundle/ demo_bundle/
+COPY model_bundle/ model_bundle/
 
 USER app
 EXPOSE 8000

@@ -1,4 +1,4 @@
-"""FastAPI service tests (TestClient). Everything comes from the committed demo bundle; the store is a temp folder."""
+"""FastAPI service tests (TestClient). Everything comes from the committed model bundle; the store is a temp folder."""
 
 import json
 from pathlib import Path
@@ -19,7 +19,7 @@ def client(tmp_path, monkeypatch):
 
     monkeypatch.setenv("FLARE_PREDICTIONS_DIR", str(tmp_path / "store"))
     monkeypatch.setenv("FLARE_DRIFT_FILE", str(tmp_path / "no_live_drift.json"))
-    monkeypatch.setenv("FLARE_BUNDLE_DIR", str(ROOT / "demo_bundle"))
+    monkeypatch.setenv("FLARE_BUNDLE_DIR", str(ROOT / "model_bundle"))
     monkeypatch.setenv("FLARE_MAX_REPLAY_SPEED", "1e9")  # tests: no real-time pacing
     get_settings.cache_clear()
     B.load.cache_clear()
@@ -80,7 +80,7 @@ def test_stream_sends_meta_frames_and_end(client):
 def test_predict_feature_rows_match_the_bundle(client):
     from src.serving import bundle as B
 
-    b = B.load(str(ROOT / "demo_bundle"))
+    b = B.load(str(ROOT / "model_bundle"))
     X = b.model_input(X_DAY, "c_60m").iloc[3000:3005]
     rows = [{k: (None if pd.isna(v) else float(v)) for k, v in r.items()} for r in X.to_dict(orient="records")]
     out = client.post("/predict", json={"target": "c_60m", "rows": rows}).json()
@@ -92,7 +92,7 @@ def test_predict_feature_rows_match_the_bundle(client):
 def test_predict_raw_counts_uses_the_pipeline_feature_code(client):
     from src.serving import bundle as B
 
-    b = B.load(str(ROOT / "demo_bundle"))
+    b = B.load(str(ROOT / "model_bundle"))
     c = b.table(QUIET_DAY, "inputs_solexs_1s")["counts"]
     end = pd.Timestamp(f"{QUIET_DAY}T12:00:00Z")
     c = c[c.index <= end]
@@ -137,7 +137,7 @@ def test_store_predictions_take_precedence_over_the_bundle(client, tmp_path):
     from src.ops import replay, runs
     from src.settings import get_settings
 
-    pred = replay.score_bundle_day(X_DAY, ROOT / "demo_bundle")
+    pred = replay.score_bundle_day(X_DAY, ROOT / "model_bundle")
     replay.store(pred, get_settings().predictions_dir)
     runs.record("score_replay", "Completed", {"rows": len(pred)}, get_settings().predictions_dir)
     r = client.get(f"/replay/{X_DAY}", params={"until": f"{X_DAY}T06:00:00Z"}).json()

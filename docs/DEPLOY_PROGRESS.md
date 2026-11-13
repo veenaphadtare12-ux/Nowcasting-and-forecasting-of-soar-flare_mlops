@@ -15,7 +15,7 @@ https://github.com/veenaphadtare12-ux/Nowcasting-and-forecasting-of-soar-flare_m
 | 8: submission docs, v1.0.0 | not started |
 
 ## Phase 2: what exists
-- **`demo_bundle/`** (22.1 MB, committed). It holds the 5 champion models exported from the registry alias
+- **`model_bundle/`** (22.1 MB, committed). It holds the 5 champion models exported from the registry alias
   `champion` (all v1), thresholds, `model_card.json` (frozen test + holdout2 results), `drift/latest.json`,
   `pipeline/status.json`, and 5 replay days, all from tune/val:
   - 2026-04-24: X day, HEL1OS;

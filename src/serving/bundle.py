@@ -1,6 +1,6 @@
-"""The demo bundle: the ONLY model/data source for the API, the containerised flows and Kubernetes.
+"""The model bundle: the ONLY model/data source for the API, the containerised flows and Kubernetes.
 
-    python -m src.serving.bundle export      # developer machine (needs mlflow.db + DVC data); writes demo_bundle/
+    python -m src.serving.bundle export      # developer machine (needs mlflow.db + DVC data); writes model_bundle/
     python -m src.serving.bundle verify      # any machine: checks every file against manifest.json
 
 Export reads the MLflow registry alias "champion" and the frozen result reports; it never retrains, re-tunes, re-scores
@@ -330,7 +330,7 @@ def export(out: Path | None = None, tracking_uri: str | None = None) -> dict:
     from src import features, hel1os
     from src.models.train import load_period
 
-    out = Path(out) if out else config.PROJECT_ROOT / "demo_bundle"
+    out = Path(out) if out else config.PROJECT_ROOT / "model_bundle"
     tmp = out.with_name(out.name + "_tmp")
     if tmp.exists():
         shutil.rmtree(tmp)
@@ -397,7 +397,7 @@ def export(out: Path | None = None, tracking_uri: str | None = None) -> dict:
 
 # ---------------------------------------------------------------- load (any machine)
 class Bundle:
-    """Read-only view of a demo bundle. Every model file is verified against its SHA-256 before it is loaded."""
+    """Read-only view of a model bundle. Every model file is verified against its SHA-256 before it is loaded."""
 
     def __init__(self, path: Path):
         self.path = Path(path)

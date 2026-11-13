@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="FLARE_", extra="ignore")
 
-    bundle_dir: Path = Field(ROOT / "demo_bundle", description="exported demo bundle (models + replay days)")
+    bundle_dir: Path = Field(ROOT / "model_bundle", description="exported model bundle (models + replay days)")
     predictions_dir: Path = Field(ROOT / "data" / "predictions", description="predictions store (Parquet + SQLite)")
     drift_file: Path = Field(
         ROOT / "reports" / "drift" / "latest.json", description="live drift summary (falls back to the bundle copy)"

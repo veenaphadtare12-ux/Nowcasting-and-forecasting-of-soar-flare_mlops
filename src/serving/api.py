@@ -2,7 +2,7 @@
 
     uvicorn src.serving.api:app --port 8000
 
-Models and replay data come ONLY from the demo bundle (FLARE_BUNDLE_DIR); features for raw inputs are computed with the
+Models and replay data come ONLY from the model bundle (FLARE_BUNDLE_DIR); features for raw inputs are computed with the
 pipeline's feature code (src/serving/features.py). Nothing here trains, tunes, or scores an evaluation period.
 """
 
@@ -138,7 +138,7 @@ async def lifespan(app: FastAPI):
     b = B.load(str(s.bundle_dir))
     bad = b.verify()
     if bad:
-        raise RuntimeError(f"demo bundle is corrupt: {bad}")
+        raise RuntimeError(f"model bundle is corrupt: {bad}")
     for t in b.manifest["models"]:
         b.model(t)  # load + SHA-256 check at startup, not on the first request
     global BASE_ONLY
