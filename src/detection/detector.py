@@ -6,7 +6,9 @@ Causality
 * The TRIGGER is causal: it fires at the end of the first minute whose excess crosses the threshold, using only
   data up to that minute (`trigger_time`).
 * Everything else in an event record (onset, peak, end, split points, cap) is the OFFLINE CATALOGUE: it uses the
-  finished event (e.g. the end needs the decay that follows the peak). Catalogue columns are label-side only and
+  finished event (e.g. the end needs the decay that follows the peak).
+* A detection split into several segments is known as several events only once it has ended: later segments get
+  `trigger_time` = `end_known_time` = the moment the whole detection's end is known (`_realtime_times`). Catalogue columns are label-side only and
   must never be used as model input features (see CLAUDE.md rule 2 and tests/test_leakage.py).
 
 Time convention
@@ -110,10 +112,44 @@ def _split(mv: np.ndarray, i0: int, i1: int, bg0: float, thr0: float, s: Detecto
     return [int(i0 + a + np.argmin(sm[a : b + 1])) for a, b in zip(pk[:-1], pk[1:])]
 
 
+def _segment_end_known(r: dict, s: DetectorSettings) -> pd.Timestamp:
+    """When the end of one catalogue segment is known (same rule as src/activity.py for an unsplit event)."""
+    if r["hit_cap"]:
+        return r["end"]
+    if r["ended_by_gap"]:
+        return r["end"] + pd.Timedelta(minutes=s.gap_end_min)
+    return r["end"] + pd.Timedelta(minutes=s.end_confirm_min)
+
+
+def _realtime_times(segs: list[dict], trigger: pd.Timestamp, merged_end_t: pd.Timestamp, by_gap: bool,
+                    s: DetectorSettings) -> list[dict]:
+    """Real-time times for the catalogue segments of ONE detection (fix of 2026-11-13, docs/IMPROVEMENTS.md section 8).
+
+    The detector follows a detection as one event and splits it at deep dips only after the whole event has ended.
+    So in real time:
+    * the detection exists from its trigger: the first kept segment keeps `trigger_time` = the trigger;
+    * every later segment becomes known as a separate event only when the whole detection's end is known:
+      its `trigger_time` = that moment;
+    * no segment's end is known before the whole detection's end: `end_known_time` = that moment for every segment.
+    For an unsplit detection nothing changes (`end_known_time` = the usual end + confirmation rule).
+    """
+    if not segs:
+        return []
+    known = max(_segment_end_known(r, s) for r in segs)
+    if not segs[-1]["_last"]:   # the last piece was too short to keep: the detection still ran until merged_end_t
+        known = max(known, merged_end_t + pd.Timedelta(minutes=s.gap_end_min if by_gap else s.end_confirm_min))
+    for i, r in enumerate(segs):
+        r.pop("_last")
+        r["trigger_time"] = trigger if i == 0 else known
+        r["segment"] = i
+        r["end_known_time"] = known
+    return segs
+
+
 def detect(frame: pd.DataFrame, s: DetectorSettings) -> pd.DataFrame:
     """Detect flares on a (m, bg) minute frame. See module docstring for causal vs catalogue fields."""
     cols = ["onset", "peak", "end", "trigger_time", "bg_counts_s", "peak_counts_s", "excess_counts_s",
-            "duration_s", "hit_cap", "was_split", "rise_steps", "open_at_end", "ended_by_gap"]
+            "duration_s", "hit_cap", "was_split", "rise_steps", "open_at_end", "ended_by_gap", "segment", "end_known_time"]
     mv, bv, lab = frame["m"].to_numpy(float), frame["bg"].to_numpy(float), frame.index
     N = len(mv)
     events: list[dict] = []
@@ -159,6 +195,7 @@ def detect(frame: pd.DataFrame, s: DetectorSettings) -> pd.DataFrame:
         # --- split merged events at deep dips, then cap duration
         cuts = _split(mv, st, end, bg0, thr0, s)
         edges = [st, *cuts, end]
+        segs: list[dict] = []
         for a, b in zip(edges[:-1], edges[1:]):
             seg = mv[a : b + 1]
             if not np.isfinite(seg).any():
@@ -172,16 +209,17 @@ def detect(frame: pd.DataFrame, s: DetectorSettings) -> pd.DataFrame:
             dur = (end_t - onset_t).total_seconds()
             if dur < s.min_duration_s:
                 continue
-            events.append(
+            segs.append(
                 {
-                    "onset": onset_t, "peak": lab[ipk] - pd.Timedelta(seconds=30), "end": end_t,
-                    "trigger_time": lab[k] if a == st else onset_t + MINUTE,
+                    "onset": onset_t, "peak": lab[ipk] - pd.Timedelta(seconds=30), "end": end_t, "_last": b == end,
                     "bg_counts_s": float(bg0), "peak_counts_s": float(mv[ipk]),
                     "excess_counts_s": float(mv[ipk] - bg0), "duration_s": dur, "hit_cap": bool(hit_cap),
                     "was_split": len(cuts) > 0, "rise_steps": int(steps) if a == st else 0,
                     "open_at_end": bool(open_end and b == end), "ended_by_gap": bool(by_gap and b == end),
                 }
             )
+        merged_end_t = lab[end] - MINUTE if end > st else lab[end]
+        events.extend(_realtime_times(segs, lab[k], merged_end_t, by_gap, s))
         k = max(end + 1, k + 1)
     return pd.DataFrame(events, columns=cols)
 

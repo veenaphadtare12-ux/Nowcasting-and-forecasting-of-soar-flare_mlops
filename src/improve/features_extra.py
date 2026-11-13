@@ -148,7 +148,7 @@ def extra_block(kind: str, rows: pd.DatetimeIndex) -> pd.DataFrame:
     P = params["improve"]
     if kind == "long":
         minute = pd.read_parquet(proc / "solexs_minute.parquet")["m"]
-        ev = pd.read_parquet(proc / "events.parquet", columns=["trigger_time", "end", "peak_counts_s", "hit_cap", "ended_by_gap"])
+        ev = pd.read_parquet(proc / "events.parquet", columns=["trigger_time", "end", "peak_counts_s", "hit_cap", "ended_by_gap", "end_known_time"])
         g = long_context_grid(minute, ev, P, params["flare_detection"])
     elif kind == "spectral":
         g = spectral_grid(pd.read_parquet(proc / "solexs_spectral_minute.parquet"))

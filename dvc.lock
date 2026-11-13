@@ -34,8 +34,8 @@ stages:
     deps:
     - path: src/detection/detector.py
       hash: md5
-      md5: 6d5eef5dee88322a972a1c295e9019bb
-      size: 8543
+      md5: c2a90a38c984be7de2a6d891971db014
+      size: 10682
     - path: src/pipeline.py
       hash: md5
       md5: 91adef6dba469bbf23064d6f2b019877
@@ -188,8 +188,8 @@ stages:
       size: 6050846
     - path: src/detection/detector.py
       hash: md5
-      md5: 6d5eef5dee88322a972a1c295e9019bb
-      size: 8543
+      md5: c2a90a38c984be7de2a6d891971db014
+      size: 10682
     - path: src/pipeline.py
       hash: md5
       md5: 91adef6dba469bbf23064d6f2b019877
@@ -226,8 +226,8 @@ stages:
     outs:
     - path: data/processed/events_raw.parquet
       hash: md5
-      md5: f1f4e2cfd01e93dfe6c828d2d2e76b83
-      size: 175965
+      md5: 2a92b5f13f48ffcdad562fd3b4bb5e83
+      size: 203274
   legacy_events:
     cmd: python -m src.pipeline legacy_events
     deps:
@@ -281,8 +281,8 @@ stages:
       nfiles: 523
     - path: data/processed/events_raw.parquet
       hash: md5
-      md5: f1f4e2cfd01e93dfe6c828d2d2e76b83
-      size: 175965
+      md5: 2a92b5f13f48ffcdad562fd3b4bb5e83
+      size: 203274
     - path: data/processed/legacy_events_raw.parquet
       hash: md5
       md5: d37339b0678312847271983bcb001a7a
@@ -316,8 +316,8 @@ stages:
     outs:
     - path: data/processed/events.parquet
       hash: md5
-      md5: 3f988b232e058661f3285af5e85dbe94
-      size: 188968
+      md5: 2b45af31c2e52392d34af193823356bf
+      size: 216275
     - path: data/processed/events_pairs.parquet
       hash: md5
       md5: 91a562c07296b1f834221604fae2f803
@@ -339,8 +339,8 @@ stages:
     deps:
     - path: data/processed/events.parquet
       hash: md5
-      md5: 3f988b232e058661f3285af5e85dbe94
-      size: 188968
+      md5: 2b45af31c2e52392d34af193823356bf
+      size: 216275
     - path: data/processed/events_pairs.parquet
       hash: md5
       md5: 91a562c07296b1f834221604fae2f803
@@ -447,8 +447,8 @@ stages:
       nfiles: 523
     - path: data/processed/events.parquet
       hash: md5
-      md5: 3f988b232e058661f3285af5e85dbe94
-      size: 188968
+      md5: 2b45af31c2e52392d34af193823356bf
+      size: 216275
     - path: data/processed/events_pairs.parquet
       hash: md5
       md5: 91a562c07296b1f834221604fae2f803
@@ -473,8 +473,8 @@ stages:
       size: 6050846
     - path: src/activity.py
       hash: md5
-      md5: c7f0292940d7f7ec30667d636c02b08b
-      size: 2010
+      md5: aad45969cb0b2ebf0e668d631784b32e
+      size: 2332
     - path: src/dataset.py
       hash: md5
       md5: d308e3f7c0b813f3a7ec6495d2494c71
@@ -523,12 +523,12 @@ stages:
     outs:
     - path: data/processed/dataset
       hash: md5
-      md5: 7a59987aeb8410528bcedbdc116f7e42.dir
+      md5: 194ca35bab9353da7cb8f2969e15de6a.dir
       size: 221276527
       nfiles: 3
     - path: reports/dataset_summary.json
       hash: md5
-      md5: 7b8155f137ee0dfc03cdc7d7ae0ef5f2
+      md5: b5fef657656651c0a4454875b2f0caa9
       size: 2564
     - path: reports/label_comparison.json
       hash: md5

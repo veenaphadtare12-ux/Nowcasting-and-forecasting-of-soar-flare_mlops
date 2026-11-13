@@ -5,456 +5,469 @@ stages:
   fetch_goes:
     cmd: python -m src.pipeline fetch_goes
     deps:
-      - src/goes.py
-      - src/pipeline.py
+    - src/goes.py
+    - src/pipeline.py
     params:
-      - periods
+    - periods
     outs:
-      - data/external/goes_events
+    - data/external/goes_events
 
   solexs_clean:
     cmd: python -m src.pipeline solexs_clean
     deps:
-      - src/solexs.py
-      - src/detection/detector.py
-      - src/pipeline.py
+    - src/solexs.py
+    - src/detection/detector.py
+    - src/pipeline.py
     params:
-      - paths.data_root_solexs
-      - periods
-      - solexs
-      - flare_detection.min_valid_s_per_min
+    - paths.data_root_solexs
+    - periods
+    - solexs
+    - flare_detection.min_valid_s_per_min
     outs:
-      - data/processed/solexs_clean
-      - data/processed/solexs_minute.parquet
-      - data/processed/solexs_qc.csv:
-          cache: false
+    - data/processed/solexs_clean
+    - data/processed/solexs_minute.parquet
+    - data/processed/solexs_qc.csv:
+        cache: false
 
   detect_events:
     cmd: python -m src.pipeline detect_events
     deps:
-      - src/detection/detector.py
-      - src/pipeline.py
-      - data/processed/solexs_minute.parquet
+    - src/detection/detector.py
+    - src/pipeline.py
+    - data/processed/solexs_minute.parquet
     params:
-      - flare_detection
-      - periods
+    - flare_detection
+    - periods
     outs:
-      - data/processed/events_raw.parquet
+    - data/processed/events_raw.parquet
 
   legacy_events:
     cmd: python -m src.pipeline legacy_events
     deps:
-      - src/detection/legacy.py
-      - src/pipeline.py
-      - data/processed/solexs_clean
+    - src/detection/legacy.py
+    - src/pipeline.py
+    - data/processed/solexs_clean
     params:
-      - flare_detection_legacy
-      - periods
+    - flare_detection_legacy
+    - periods
     outs:
-      - data/processed/legacy_events_raw.parquet
+    - data/processed/legacy_events_raw.parquet
 
   match_goes:
     cmd: python -m src.pipeline match_goes
     deps:
-      - src/detection/matching.py
-      - src/goes.py
-      - src/pipeline.py
-      - data/processed/events_raw.parquet
-      - data/processed/legacy_events_raw.parquet
-      - data/external/goes_events
+    - src/detection/matching.py
+    - src/goes.py
+    - src/pipeline.py
+    - data/processed/events_raw.parquet
+    - data/processed/legacy_events_raw.parquet
+    - data/external/goes_events
     params:
-      - goes_match
-      - periods
+    - goes_match
+    - periods
     outs:
-      - data/processed/events.parquet
-      - data/processed/events_pairs.parquet
-      - data/processed/legacy_events.parquet
-      - data/processed/legacy_events_pairs.parquet
-      - data/processed/goes_matched.parquet
+    - data/processed/events.parquet
+    - data/processed/events_pairs.parquet
+    - data/processed/legacy_events.parquet
+    - data/processed/legacy_events_pairs.parquet
+    - data/processed/goes_matched.parquet
 
   evaluate_detector:   # tune + val only; the test period is never evaluated here
     cmd: python -m src.pipeline evaluate_detector
     deps:
-      - src/detection/matching.py
-      - src/detection/plots.py
-      - src/pipeline.py
-      - data/processed/solexs_minute.parquet
-      - data/processed/events.parquet
-      - data/processed/events_pairs.parquet
-      - data/processed/legacy_events.parquet
-      - data/processed/legacy_events_pairs.parquet
-      - data/processed/goes_matched.parquet
+    - src/detection/matching.py
+    - src/detection/plots.py
+    - src/pipeline.py
+    - data/processed/solexs_minute.parquet
+    - data/processed/events.parquet
+    - data/processed/events_pairs.parquet
+    - data/processed/legacy_events.parquet
+    - data/processed/legacy_events_pairs.parquet
+    - data/processed/goes_matched.parquet
     params:
-      - evaluation
-      - periods
+    - evaluation
+    - periods
     metrics:
-      - reports/detection_metrics.json:
-          cache: false
+    - reports/detection_metrics.json:
+        cache: false
     outs:   # listed file by file so the stage does not own docs/figures/ (docs/figures/eda/ belongs to the EDA notebook)
-      - docs/figures/before_after_examples.png:
-          cache: false
-      - docs/figures/duration_histogram.png:
-          cache: false
-      - docs/figures/example_1.png:
-          cache: false
-      - docs/figures/example_2.png:
-          cache: false
-      - docs/figures/example_3.png:
-          cache: false
-      - docs/figures/example_4.png:
-          cache: false
-      - docs/figures/example_5.png:
-          cache: false
-      - docs/figures/example_6.png:
-          cache: false
-      - docs/figures/examples.json:
-          cache: false
+    - docs/figures/before_after_examples.png:
+        cache: false
+    - docs/figures/duration_histogram.png:
+        cache: false
+    - docs/figures/example_1.png:
+        cache: false
+    - docs/figures/example_2.png:
+        cache: false
+    - docs/figures/example_3.png:
+        cache: false
+    - docs/figures/example_4.png:
+        cache: false
+    - docs/figures/example_5.png:
+        cache: false
+    - docs/figures/example_6.png:
+        cache: false
+    - docs/figures/examples.json:
+        cache: false
 
   build_dataset:
     cmd: python -m src.pipeline build_dataset
     deps:
-      - src/features.py
-      - src/labels.py
-      - src/dataset.py
-      - src/activity.py
-      - src/pipeline.py
-      - data/processed/solexs_clean
-      - data/processed/solexs_minute.parquet
-      - data/processed/events.parquet
-      - data/processed/events_pairs.parquet
-      - data/processed/goes_matched.parquet
-      - data/external/goes_events
-      - data/processed/hel1os   # optional in code (no HEL1OS -> no hx_* columns); declared so DVC reruns on new sessions
+    - src/features.py
+    - src/labels.py
+    - src/dataset.py
+    - src/activity.py
+    - src/pipeline.py
+    - data/processed/solexs_clean
+    - data/processed/solexs_minute.parquet
+    - data/processed/events.parquet
+    - data/processed/events_pairs.parquet
+    - data/processed/goes_matched.parquet
+    - data/external/goes_events
+    - data/processed/hel1os     # optional in code (no HEL1OS -> no hx_* columns); declared so DVC reruns on new sessions
     params:
-      - features
-      - labels
-      - periods
-      - flare_detection.end_confirm_min
-      - flare_detection.gap_end_min
+    - features
+    - labels
+    - periods
+    - flare_detection.end_confirm_min
+    - flare_detection.gap_end_min
     outs:
-      - data/processed/dataset
+    - data/processed/dataset
     metrics:
-      - reports/dataset_summary.json:
-          cache: false
-      - reports/label_comparison.json:
-          cache: false
+    - reports/dataset_summary.json:
+        cache: false
+    - reports/label_comparison.json:
+        cache: false
 
   train:   # fit on tune (inner time split), select on val; the test file is never opened
     cmd: python -m src.pipeline train
     deps:
-      - src/models/train.py
-      - src/models/metrics.py
-      - src/models/plots.py
-      - src/models/report.py
-      - src/models/ablation.py
-      - src/mlflow_utils.py
-      - src/dataset.py
-      - src/pipeline.py
-      - data/processed/dataset
+    - data/processed/dataset
+    - src/dataset.py
+    - src/mlflow_utils.py
+    - src/models/ablation.py
+    - src/models/metrics.py
+    - src/models/plots.py
+    - src/models/report.py
+    - src/models/train.py
+    - src/pipeline.py
     params:
-      - models
-      - periods
+    - models
+    - periods
     outs:
-      - models
-      - docs/model_figures:
-          cache: false
-      - reports/validation_table.md:
-          cache: false
-      - reports/xgb_cv.csv:
-          cache: false
+    - docs/model_figures:
+        cache: false
+    - models
+    - reports/validation_table.md:
+        cache: false
+    - reports/xgb_cv.csv:
+        cache: false
     metrics:
-      - reports/model_metrics.json:
-          cache: false
+    - reports/model_metrics.json:
+        cache: false
 
   # Optional: HEL1OS is not a dependency of any other stage.
+    frozen: true
   hel1os_index:
     cmd: python -m src.pipeline hel1os_index
     deps:
-      - src/hel1os.py
-      - src/pipeline.py
+    - src/hel1os.py
+    - src/pipeline.py
     params:
-      - paths.data_root_hel1os
+    - paths.data_root_hel1os
     outs:
-      - data/processed/hel1os
+    - data/processed/hel1os
 
   # ---- improvement experiments (src/improve); tune + val only, the test period is never read
   solexs_spectral:   # E5: 1-min low/high band rates from the SDD2 .pi spectra
     cmd: python -m src.improve.spectral
     deps:
-      - src/improve/spectral.py
-      - src/solexs.py
-      - data/processed/solexs_qc.csv
+    - src/improve/spectral.py
+    - src/solexs.py
+    - data/processed/solexs_qc.csv
     params:
-      - improve.spectral
-      - periods
+    - improve.spectral
+    - periods
     outs:
-      - data/processed/solexs_spectral_minute.parquet
+    - data/processed/solexs_spectral_minute.parquet
 
   goes_xrs_fetch:    # E6: public NOAA GOES-19 XRS 1-min daily files, only up to the last validation day
     cmd: python -m src.improve.goes_xrs fetch
     deps:
-      - src/improve/goes_xrs.py
+    - src/improve/goes_xrs.py
     params:
-      - improve.goes_xrs
-      - periods
+    - improve.goes_xrs
+    - periods
     outs:
-      - data/external/goes_xrs
+    - data/external/goes_xrs
 
   goes_xrs_minute:
     cmd: python -m src.improve.goes_xrs process
     deps:
-      - src/improve/goes_xrs.py
-      - data/external/goes_xrs
+    - src/improve/goes_xrs.py
+    - data/external/goes_xrs
     outs:
-      - data/processed/goes_xrs_minute.parquet
+    - data/processed/goes_xrs_minute.parquet
 
   improve_reference:   # rolling monthly protocol, current features; also derives E1 (adaptive thresholds) and E7 (ensemble)
     cmd: python -m src.improve.run reference
     deps:
-      - src/improve/run.py
-      - src/improve/protocol.py
-      - src/improve/features_extra.py
-      - src/models/train.py
-      - src/models/metrics.py
-      - src/mlflow_utils.py
-      - data/processed/dataset
-      - reports/model_metrics.json
+    - data/processed/dataset
+    - reports/model_metrics.json
+    - src/improve/features_extra.py
+    - src/improve/protocol.py
+    - src/improve/run.py
+    - src/mlflow_utils.py
+    - src/models/metrics.py
+    - src/models/train.py
     params:
-      - improve
-      - models
+    - improve
+    - models
     outs:
-      - reports/improve/reference.json:
-          cache: false
-      - reports/improve/E1.json:
-          cache: false
-      - reports/improve/E7.json:
-          cache: false
-
+    - reports/improve/E1.json:
+        cache: false
+    - reports/improve/E7.json:
+        cache: false
+    - reports/improve/reference.json:
+        cache: false
+    frozen: true
   improve_E2:   # long-context features
     cmd: python -m src.improve.run E2
     deps:
-      - src/improve/run.py
-      - src/improve/protocol.py
-      - src/improve/features_extra.py
-      - src/models/train.py
-      - src/models/metrics.py
-      - src/mlflow_utils.py
-      - data/processed/dataset
-      - reports/model_metrics.json
-      - reports/improve/reference.json
-      - data/processed/solexs_minute.parquet
-      - data/processed/events.parquet
+    - data/processed/dataset
+    - data/processed/events.parquet
+    - data/processed/solexs_minute.parquet
+    - reports/improve/reference.json
+    - reports/model_metrics.json
+    - src/improve/features_extra.py
+    - src/improve/protocol.py
+    - src/improve/run.py
+    - src/mlflow_utils.py
+    - src/models/metrics.py
+    - src/models/train.py
     params:
-      - improve
-      - models
+    - improve
+    - models
     outs:
-      - reports/improve/E2.json:
-          cache: false
+    - reports/improve/E2.json:
+        cache: false
 
+    frozen: true
   improve_E3:   # drift-robust features
     cmd: python -m src.improve.run E3
     deps:
-      - src/improve/run.py
-      - src/improve/protocol.py
-      - src/improve/features_extra.py
-      - src/models/train.py
-      - src/models/metrics.py
-      - src/mlflow_utils.py
-      - data/processed/dataset
-      - reports/model_metrics.json
-      - reports/improve/reference.json
+    - data/processed/dataset
+    - reports/improve/reference.json
+    - reports/model_metrics.json
+    - src/improve/features_extra.py
+    - src/improve/protocol.py
+    - src/improve/run.py
+    - src/mlflow_utils.py
+    - src/models/metrics.py
+    - src/models/train.py
     params:
-      - improve
-      - models
+    - improve
+    - models
     outs:
-      - reports/improve/E3.json:
-          cache: false
+    - reports/improve/E3.json:
+        cache: false
 
+    frozen: true
   improve_E4:   # feature pruning
     cmd: python -m src.improve.run E4
     deps:
-      - src/improve/run.py
-      - src/improve/protocol.py
-      - src/improve/features_extra.py
-      - src/models/train.py
-      - src/models/metrics.py
-      - src/mlflow_utils.py
-      - data/processed/dataset
-      - reports/model_metrics.json
-      - reports/improve/reference.json
+    - data/processed/dataset
+    - reports/improve/reference.json
+    - reports/model_metrics.json
+    - src/improve/features_extra.py
+    - src/improve/protocol.py
+    - src/improve/run.py
+    - src/mlflow_utils.py
+    - src/models/metrics.py
+    - src/models/train.py
     params:
-      - improve
-      - models
+    - improve
+    - models
     outs:
-      - reports/improve/E4.json:
-          cache: false
+    - reports/improve/E4.json:
+        cache: false
 
+    frozen: true
   improve_E5:   # SoLEXS spectral features
     cmd: python -m src.improve.run E5
     deps:
-      - src/improve/run.py
-      - src/improve/protocol.py
-      - src/improve/features_extra.py
-      - src/models/train.py
-      - src/models/metrics.py
-      - src/mlflow_utils.py
-      - data/processed/dataset
-      - reports/model_metrics.json
-      - reports/improve/reference.json
-      - data/processed/solexs_spectral_minute.parquet
+    - data/processed/dataset
+    - data/processed/solexs_spectral_minute.parquet
+    - reports/improve/reference.json
+    - reports/model_metrics.json
+    - src/improve/features_extra.py
+    - src/improve/protocol.py
+    - src/improve/run.py
+    - src/mlflow_utils.py
+    - src/models/metrics.py
+    - src/models/train.py
     params:
-      - improve
-      - models
+    - improve
+    - models
     outs:
-      - reports/improve/E5.json:
-          cache: false
+    - reports/improve/E5.json:
+        cache: false
 
+    frozen: true
   improve_E6:   # GOES XRS ablation
     cmd: python -m src.improve.run E6
     deps:
-      - src/improve/run.py
-      - src/improve/protocol.py
-      - src/improve/features_extra.py
-      - src/models/train.py
-      - src/models/metrics.py
-      - src/mlflow_utils.py
-      - data/processed/dataset
-      - reports/model_metrics.json
-      - reports/improve/reference.json
-      - data/processed/goes_xrs_minute.parquet
+    - data/processed/dataset
+    - data/processed/goes_xrs_minute.parquet
+    - reports/improve/reference.json
+    - reports/model_metrics.json
+    - src/improve/features_extra.py
+    - src/improve/protocol.py
+    - src/improve/run.py
+    - src/mlflow_utils.py
+    - src/models/metrics.py
+    - src/models/train.py
     params:
-      - improve
-      - models
+    - improve
+    - models
     outs:
-      - reports/improve/E6.json:
-          cache: false
+    - reports/improve/E6.json:
+        cache: false
 
+    frozen: true
   improve_final:   # only the KEPT ideas, rolling protocol + the original validation block
     cmd: python -m src.improve.run final
     deps:
-      - src/improve/run.py
-      - src/improve/protocol.py
-      - src/improve/features_extra.py
-      - src/models/train.py
-      - src/models/metrics.py
-      - src/mlflow_utils.py
-      - data/processed/dataset
-      - reports/model_metrics.json
-      - reports/improve/reference.json
-      - reports/improve/E1.json
-      - reports/improve/E2.json
-      - reports/improve/E3.json
-      - reports/improve/E4.json
-      - reports/improve/E5.json
-      - reports/improve/E6.json
-      - reports/improve/E7.json
-      - data/processed/solexs_minute.parquet
-      - data/processed/events.parquet
-      - data/processed/solexs_spectral_minute.parquet
-      - data/processed/goes_xrs_minute.parquet
+    - data/processed/dataset
+    - data/processed/events.parquet
+    - data/processed/goes_xrs_minute.parquet
+    - data/processed/solexs_minute.parquet
+    - data/processed/solexs_spectral_minute.parquet
+    - reports/improve/E1.json
+    - reports/improve/E2.json
+    - reports/improve/E3.json
+    - reports/improve/E4.json
+    - reports/improve/E5.json
+    - reports/improve/E6.json
+    - reports/improve/E7.json
+    - reports/improve/reference.json
+    - reports/model_metrics.json
+    - src/improve/features_extra.py
+    - src/improve/protocol.py
+    - src/improve/run.py
+    - src/mlflow_utils.py
+    - src/models/metrics.py
+    - src/models/train.py
     params:
-      - improve
-      - models
+    - improve
+    - models
     outs:
-      - reports/improve/final.json:
-          cache: false
+    - reports/improve/final.json:
+        cache: false
 
   # ---- stage 5 close: frozen final models (docs/FINAL_CHOICE.md) and the ONE-TIME test evaluation
+    frozen: true
   final_models:      # fit + thresholds on tune/val only (May 2026 = threshold block); registers alias "champion"
     cmd: python -m src.final.freeze
     deps:
-      - src/final/freeze.py
-      - src/final/features.py
-      - src/improve/features_extra.py
-      - src/improve/protocol.py
-      - src/models/train.py
-      - src/mlflow_utils.py
-      - data/processed/dataset
-      - data/processed/solexs_minute.parquet
-      - data/processed/events.parquet
-      - data/processed/solexs_spectral_minute.parquet
-      - data/processed/goes_xrs_minute.parquet
-      - reports/model_metrics.json
+    - data/processed/dataset
+    - data/processed/events.parquet
+    - data/processed/goes_xrs_minute.parquet
+    - data/processed/solexs_minute.parquet
+    - data/processed/solexs_spectral_minute.parquet
+    - reports/model_metrics.json
+    - src/final/features.py
+    - src/final/freeze.py
+    - src/improve/features_extra.py
+    - src/improve/protocol.py
+    - src/mlflow_utils.py
+    - src/models/train.py
     params:
-      - final
-      - models
-      - improve
+    - final
+    - improve
+    - models
     outs:
-      - models_final
-      - reports/final/freeze.json:
-          cache: false
+    - models_final
+    - reports/final/freeze.json:
+        cache: false
 
+    frozen: true
   solexs_spectral_test:   # test-day inputs for the one-time scoring only (same code as solexs_spectral)
     cmd: python -m src.final.test_inputs spectral
     deps:
-      - src/final/test_inputs.py
-      - src/improve/spectral.py
-      - data/processed/solexs_qc.csv
+    - data/processed/solexs_qc.csv
+    - src/final/test_inputs.py
+    - src/improve/spectral.py
     params:
-      - improve.spectral
-      - periods
+    - improve.spectral
+    - periods
     outs:
-      - data/processed/final/solexs_spectral_minute_test.parquet
+    - data/processed/final/solexs_spectral_minute_test.parquet
 
+    frozen: true
   goes_xrs_test_fetch:
     cmd: python -m src.final.test_inputs goes_fetch
     deps:
-      - src/final/test_inputs.py
+    - src/final/test_inputs.py
     params:
-      - improve.goes_xrs
-      - periods
+    - improve.goes_xrs
+    - periods
     outs:
-      - data/external/goes_xrs_test
+    - data/external/goes_xrs_test
 
+    frozen: true
   goes_xrs_test_minute:
     cmd: python -m src.final.test_inputs goes_process
     deps:
-      - src/final/test_inputs.py
-      - src/improve/goes_xrs.py
-      - data/external/goes_xrs_test
+    - data/external/goes_xrs_test
+    - src/final/test_inputs.py
+    - src/improve/goes_xrs.py
     outs:
-      - data/processed/final/goes_xrs_minute_test.parquet
+    - data/processed/final/goes_xrs_minute_test.parquet
 
+    frozen: true
   evaluate_test:     # the ONLY stage that reads data/processed/dataset/test.parquet; scores the frozen models once
     cmd: python -m src.final.evaluate_test
     deps:
-      - src/final/evaluate_test.py
-      - src/final/features.py
-      - src/final/freeze.py
-      - src/improve/features_extra.py
-      - models_final
-      - data/processed/dataset
-      - data/processed/solexs_minute.parquet
-      - data/processed/events.parquet
-      - data/processed/solexs_spectral_minute.parquet
-      - data/processed/goes_xrs_minute.parquet
-      - data/processed/final/solexs_spectral_minute_test.parquet
-      - data/processed/final/goes_xrs_minute_test.parquet
+    - data/processed/dataset
+    - data/processed/events.parquet
+    - data/processed/final/goes_xrs_minute_test.parquet
+    - data/processed/final/solexs_spectral_minute_test.parquet
+    - data/processed/goes_xrs_minute.parquet
+    - data/processed/solexs_minute.parquet
+    - data/processed/solexs_spectral_minute.parquet
+    - models_final
+    - src/final/evaluate_test.py
+    - src/final/features.py
+    - src/final/freeze.py
+    - src/improve/features_extra.py
     params:
-      - final
+    - final
     outs:
-      - reports/final/test_metrics.json:
-          cache: false
-      - data/processed/final/test_scores.parquet
-      - data/processed/final/shap_nowcast_sample.parquet
+    - data/processed/final/shap_nowcast_sample.parquet
+    - data/processed/final/test_scores.parquet
 
+    - reports/final/test_metrics.json:
+        cache: false
+    frozen: true
   test_analysis:     # calibration, event-based scores, NOAA M1 lead time, errors, SHAP figure (no test.parquet read)
     cmd: python -m src.final.analysis
     deps:
-      - src/final/analysis.py
-      - data/processed/final/test_scores.parquet
-      - data/processed/final/shap_nowcast_sample.parquet
-      - data/processed/final/goes_xrs_minute_test.parquet
-      - reports/final/test_metrics.json
-      - models_final
-      - data/processed/goes_matched.parquet
-      - data/processed/events.parquet
-      - data/processed/events_pairs.parquet
-      - data/processed/solexs_minute.parquet
+    - data/processed/events.parquet
+    - data/processed/events_pairs.parquet
+    - data/processed/final/goes_xrs_minute_test.parquet
+    - data/processed/final/shap_nowcast_sample.parquet
+    - data/processed/final/test_scores.parquet
+    - data/processed/goes_matched.parquet
+    - data/processed/solexs_minute.parquet
+    - models_final
+    - reports/final/test_metrics.json
+    - src/final/analysis.py
     params:
-      - final
+    - final
     outs:
-      - reports/final/analysis.json:
-          cache: false
-      - docs/final_figures:
-          cache: false
+    - docs/final_figures:
+        cache: false
+    - reports/final/analysis.json:
+        cache: false
+    frozen: true

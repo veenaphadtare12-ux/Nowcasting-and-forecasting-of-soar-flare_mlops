@@ -76,7 +76,7 @@ def add_blocks(df: pd.DataFrame, blocks: list[str]) -> tuple[pd.DataFrame, list[
         if b not in blocks:
             continue
         if b == "ax":
-            ev = pd.read_parquet(proc / "events.parquet", columns=["trigger_time", "end", "peak_counts_s", "hit_cap", "ended_by_gap"])
+            ev = pd.read_parquet(proc / "events.parquet", columns=["trigger_time", "end", "peak_counts_s", "hit_cap", "ended_by_gap", "end_known_time"])
             g = cx.aditya_grid(ev[ev["trigger_time"] < hi], lo, hi)
         elif b == "gc":
             fl = goes.load_flare_list()

@@ -193,3 +193,13 @@ dev2:
   goes_count_latency_h: 24             # R2: a GOES flare is known from its end + 24 h
   srs_available_after_min: 60          # R2: SRS is issued at 00:30 UT; used from 01:00 UT of its date
   srs_dir: "data/external/srs"
+  r3:                                  # GOES XRS pretraining (no overlap with any evaluation month)
+    satellite: goes16
+    start: "2017-02-07"                # first GOES-16 XRS science day on the server (asked: 2017-01-01)
+    end: "2025-03-28"                  # ends before the 72 h lookback of the first SoLEXS-era day, 2025-04-09
+    xrs_dir: "data/external/goes16_xrs"
+    events_dir: "data/external/goes_events_hist"
+    old_sat_scale: 0.7                 # NOAA classes from GOES-13/14/15 reports carry the 0.7 factor: flux / 0.7
+    stride_min: 5                      # pretraining rows: one per 5 minutes
+    bg_window_min: 60                  # background = trailing 60-min 20 % quantile (same as the detector)
+    bg_quantile: 0.2

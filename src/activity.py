@@ -20,7 +20,12 @@ def _ns(x) -> np.ndarray:
 
 
 def end_known_time(events: pd.DataFrame, end_confirm_min: int, gap_end_min: int) -> pd.Series:
-    """When the detector knows each event has ended."""
+    """When the detector knows each event has ended.
+
+    Catalogues written since the 2026-11-13 fix carry `end_known_time` (for split detections: the end of the whole
+    detection, see detector._realtime_times); it is used as is. Older frames fall back to the per-event rule below."""
+    if "end_known_time" in events.columns:
+        return events["end_known_time"].copy()
     end = events["end"].copy()
     normal = ~events["hit_cap"].astype(bool) & ~events["ended_by_gap"].astype(bool)
     end[normal] = end[normal] + pd.Timedelta(minutes=end_confirm_min)

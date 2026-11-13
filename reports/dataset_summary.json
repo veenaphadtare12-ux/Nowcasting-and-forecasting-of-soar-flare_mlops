@@ -8,7 +8,7 @@
       "file_mb": 121.1,
       "n_features": 44,
       "nowcast_pos_rate": 0.08431000792402889,
-      "flare_in_progress_frac": 0.08762215706834393,
+      "flare_in_progress_frac": 0.08759118058104662,
       "30m": {
         "ok_rows": 1919000,
         "pos_rate_C": 0.14671235018238665,

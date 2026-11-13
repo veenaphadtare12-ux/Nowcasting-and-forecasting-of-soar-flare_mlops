@@ -66,7 +66,7 @@ def build(df: pd.DataFrame, ideas: list[str], end: pd.Timestamp | None = None, i
             if kind == "long":
                 proc = config.processed_dir()
                 minute = pd.read_parquet(proc / "solexs_minute.parquet")["m"]
-                ev = pd.read_parquet(proc / "events.parquet", columns=["trigger_time", "end", "peak_counts_s", "hit_cap", "ended_by_gap"])
+                ev = pd.read_parquet(proc / "events.parquet", columns=["trigger_time", "end", "peak_counts_s", "hit_cap", "ended_by_gap", "end_known_time"])
                 g = fx.long_context_grid(minute, ev, P["improve"], P["flare_detection"])
             elif kind == "spectral":
                 g = fx.spectral_grid(_source("spectral", include_test))
