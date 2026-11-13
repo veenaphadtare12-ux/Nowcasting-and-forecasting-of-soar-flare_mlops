@@ -230,3 +230,38 @@ Decision needed from the user: download new SoLEXS/GOES data, or redefine the ev
   - On the 10 SoLEXS days only: 29 B, 117 C, **7 M** (11-05: 1, 11-07: 3, 11-08: 3).
 - So with the current files every M result on holdout2 would be UNDERPOWERED (7 < 15). Even with every missing day,
   holdout2 would hold only 17 M flares, a quiet stretch of the cycle.
+
+## 8. Holdout2 task STOPPED again (2026-11-13): causal-ordering bug in split detector events
+
+**Where we were.** Holdout2 is ingested and locked (`docs/HOLDOUT2_LOCK.md`, commit 3a6140c: 11 usable days, 7 M
+flares, so M results there are UNDERPOWERED). The 14-month development protocol is written (`src/dev2/`). It reproduces
+the old protocol exactly on an overlapping fold (m_60m, Mar 2026: TSS −0.0536, same rows and alerts). R1–R4,
+FINAL_CHOICE_2 and the holdout2 scoring were **not** started.
+
+**The bug (found while building R1's trigger population).** When the detector splits a merged event at a deep dip
+(`src/detection/detector.py`, the `_split` loop), every later segment gets `trigger_time = segment onset + 1 min`
+and `rise_steps = 0`. The split is only decided once the whole merged event has ended, so in real time the detector
+cannot know about these segments that early. The same holds for the *end* of every earlier segment: its cut-point end
+is known only when the merged event ends.
+
+| | Count | How much too early |
+|---|---|---|
+| Merged detections that were split | 40 (81 segments, of 3,126 events) | |
+| Later segments with a stand-in trigger | 41 (tune 18, val 16, old test 7); 32 GOES-matched (21 C, 9 M, 2 X) | median 18 min, max 155 min |
+| Segments whose end counts as "known" too early | 41 | median 17 min, max 154 min |
+
+**What it touches.**
+- **E2 long-context features** (`src/improve/features_extra.long_context_grid`): `ev_n_6h/24h` and
+  `ev_hours_since_last` count events from `trigger_time`; `ev_max_peak_6h/24h` use the end-known time. E2 is part of
+  the frozen **c_30m champion** (FINAL_CHOICE.md) and of the E2/final rows of section 3. The E2 future-perturbation tests
+  did not catch it because they perturb the light curve but keep the catalogue fixed.
+- **R2 primary features** (new, not yet run) would inherit it.
+- **`flare_in_progress_at_t`** (persistence baseline, quiet-start split): in practice not affected, because the
+  segments' [trigger, end-known) intervals join up into the same span as the merged event.
+- The reveal always comes after the second segment's onset, which is that flare's label start, so the bug cannot reveal
+  the label of the flare it concerns. The size of any indirect effect on c_30m is unknown until it is re-run.
+
+**Proposed fix (not applied, per the stop rule):** give every segment of a split detection a `known_time` equal to
+the merged event's real end-known time; count later segments only from that moment; add a test that rebuilds the
+catalogue from a truncated light curve and checks that no event or end is visible before the cut. Then re-run E2, and
+the c_30m champion check, under the 14-month protocol.

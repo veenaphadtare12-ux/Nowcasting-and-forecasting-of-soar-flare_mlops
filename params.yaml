@@ -171,3 +171,25 @@ holdout2:
   end: "2026-11-12"                       # last day with GOES XRS on the server at ingest time
   external_dir: "data/external/holdout2"  # GOES events, GOES-19 XRS and NOAA SRS for the holdout2 days only
   min_m_flares: 15                        # fewer >=M flares -> every M result on holdout2 is UNDERPOWERED
+
+# --- development protocol 2 (task of 2026-11-13; src/dev2). The old test period (2026-06-01..09-12) is ordinary
+# development data now; its old test scores are never re-reported, re-scored or used for any choice.
+dev2:
+  months: ["2025-08", "2025-09", "2025-10", "2025-11", "2025-12", "2026-01", "2026-02", "2026-03", "2026-04",
+           "2026-05", "2026-06", "2026-07", "2026-08", "2026-09"]
+  targets: [now, c_30m, c_60m, c_120m, m_30m, m_60m, m_120m]
+  r2_targets: [c_60m, c_120m, m_60m, m_120m]
+  purge_min: 120
+  seed: 42
+  train_stride: 6
+  # acceptance rule of docs/IMPROVEMENTS.md, unchanged: mean monthly TSS up AND >= 6 of 10 months better. With 14
+  # months the same 60 % share is kept: >= 9 of 14 (decided before any dev2 result existed).
+  acceptance: {min_share_months_improved: 0.6}
+  active_lookback_h: 72        # active day: a GOES >=M flare ended in the 72 h before the day starts (evaluation only)
+  far_cap: 0.80                # R4: lowest threshold with FAR <= cap on the threshold month
+  cost_fn_fp: 10               # R4: a missed positive row costs 10 false-alarm rows (headline)
+  cost_sensitivity: [5, 20]
+  context_windows_h: [24, 48, 72]      # R2
+  goes_count_latency_h: 24             # R2: a GOES flare is known from its end + 24 h
+  srs_available_after_min: 60          # R2: SRS is issued at 00:30 UT; used from 01:00 UT of its date
+  srs_dir: "data/external/srs"
