@@ -91,6 +91,8 @@ freed inside WSL is not returned to D: until the disk is compacted or made spars
 | 2026-11-14 | after phase 4 (one rebuild, drills, screenshots) | 38.9 GB | 12.08 GB | build cache pruned by `up.ps1`; limit lowered to 10 GB for D: by the user (option chosen 2026-11-14), old tag `9d36afd2b402` deleted with approval |
 | 2026-11-14 | after phases 5-8 (no local images built; CI builds on GitHub) | 38.8 GB | 12.0 GB | kind is exercised in CI, not locally, to keep the WSL disk from growing by about 6 GB |
 
+| 2026-11-14 | after the v1.0.1 fix rebuild | 38.5 GB | **8.33 GB** | **STOP: D: below 10 GB.** Each rebuild after a cache prune re-creates the 2 GB pip layer; three flare-api tags are kept (`e48339fa084f` running, `f6d346f773a4`, `6dfe4acc700e`). Proposed rule change: keep the build cache, delete older flare tags after a successful start. |
+
 ## Phase 4: monitoring (2026-11-14)
 - `scripts\alert_drill.ps1 -Rule down`: API container stopped; `FlareApiDown` pending after 15 s, **firing after 135 s**
   (`for: 2m`), API restarted and healthy. Screenshot `docs/screenshots/prometheus_alert_api_down_firing.jpg`.
@@ -138,4 +140,10 @@ freed inside WSL is not returned to D: until the disk is compacted or made spars
   `docs/INTERVIEW_PREP.md`, lesson `docs/learn/21-alerts-kubernetes-cd-terraform.md`.
 - Fresh-clone check: `git clone` into `D:\tmp\fresh` (37 MB without .git): `pytest -m "not data"` 126 passed, 6 skipped;
   `docker compose config` valid. The CI `compose-e2e` job is the full fresh-clone build and end-to-end run.
+
+## v1.0.1 (2026-11-14)
+- Found after v1.0.0: `/production/latest` served 2026-02-21 (the day the end-to-end test scores with a temporary
+  production start) as the latest production day. `production.scored_days()` now applies the production start, like
+  `available_days()`; test `test_days_before_the_production_start_are_never_reported`. Local stack rebuilt
+  (`e48339fa084f`): `/production/latest` = `no_data`, smoke test passed.
 
