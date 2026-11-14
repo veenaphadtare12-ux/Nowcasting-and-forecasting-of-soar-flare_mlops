@@ -7,6 +7,7 @@ metadata:
 spec:
   replicas: 2
   revisionHistoryLimit: 5
+  minReadySeconds: 5
   strategy:
     type: RollingUpdate
     rollingUpdate: { maxSurge: 1, maxUnavailable: 0 }   # never fewer ready pods than replicas during an update
@@ -16,6 +17,7 @@ spec:
     metadata:
       labels: { app: api }
     spec:
+      terminationGracePeriodSeconds: 30
       securityContext:
         runAsNonRoot: true
         runAsUser: 10001
@@ -27,6 +29,10 @@ spec:
           imagePullPolicy: IfNotPresent
           ports: [{ name: http, containerPort: 8000 }]
           envFrom: [{ configMapRef: { name: flare-config } }]
+          lifecycle:
+            # keep serving while the endpoint is removed from the Service, so a rolling update drops no requests
+            preStop:
+              exec: { command: ["sleep", "10"] }
           resources:
             requests: { cpu: 100m, memory: 512Mi }
             limits: { cpu: "1", memory: 1536Mi }
