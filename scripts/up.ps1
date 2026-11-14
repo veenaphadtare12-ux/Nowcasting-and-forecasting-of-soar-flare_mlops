@@ -26,11 +26,7 @@ Wait-Http "http://localhost:8080/" 120 | Out-Null
 & "$PSScriptRoot\smoke_test.ps1"
 if ($LASTEXITCODE -ne 0) { throw "smoke test failed: older images are kept for a rollback (.\scripts\up.ps1 -Tag <old sha>)" }
 
-if (-not $KeepOldImages) {
-    $repo = "ghcr.io/veenaphadtare12-ux"
-    Invoke-Bash ("for img in flare-api flare-frontend; do docker images $repo/`$img --format '{{.Tag}}' | grep -vx '$tag' | " +
-        "while read t; do docker rmi $repo/`$img:`$t >/dev/null && echo removed $repo/`$img:`$t; done; done; true")
-}
+if (-not $KeepOldImages) { Invoke-Bash "bash scripts/prune_old_images.sh $tag" }
 Write-Host ""
 Write-Host "Website     http://localhost:8080      (via Caddy: http://localhost)"
 Write-Host "API docs    http://localhost:8000/docs"
