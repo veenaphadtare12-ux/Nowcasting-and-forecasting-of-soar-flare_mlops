@@ -16,5 +16,8 @@ data:
   FLARE_PREFECT_API_URL: http://prefect-server:4200/api
   FLARE_MLFLOW_URL: http://mlflow:5000
   FLARE_FAULT_INJECT_RATE: "0"
+  FLARE_TRUST_PROXY_HEADERS: "true"
+  FLARE_RATE_LIMIT_PER_MINUTE: "300"
+  FLARE_RATE_LIMIT_KEY_PER_MINUTE: "6000"
   PREFECT_API_URL: http://prefect-server:4200/api
   PREFECT_HOME: /tmp/prefect

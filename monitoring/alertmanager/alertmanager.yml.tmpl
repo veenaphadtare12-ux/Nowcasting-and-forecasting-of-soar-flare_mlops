@@ -1,0 +1,34 @@
+# Alertmanager configuration template. entrypoint.sh fills the __PLACEHOLDERS__ from environment variables at start, so no
+# address or credential is ever committed. Without SMTP_SMARTHOST every alert still reaches Alertmanager (UI :9093) and
+# goes to the "log-only" receiver; with it, alerts are e-mailed to ALERT_EMAIL_TO.
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: __RECEIVER__
+  group_by: [alertname, severity]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  routes:
+    - matchers: [severity="critical"]
+      receiver: __RECEIVER__
+      repeat_interval: 1h
+
+receivers:
+  - name: log-only
+  - name: email
+    email_configs:
+      - to: "__ALERT_EMAIL_TO__"
+        from: "__SMTP_FROM__"
+        smarthost: "__SMTP_SMARTHOST__"
+        auth_username: "__SMTP_USERNAME__"
+        auth_password_file: /tmp/smtp_password
+        require_tls: true
+        send_resolved: true
+
+inhibit_rules:
+  # while the API is down, the error-rate alert adds nothing
+  - source_matchers: [alertname="FlareApiDown"]
+    target_matchers: [alertname="FlareApiHighErrorRate"]
+    equal: [job]

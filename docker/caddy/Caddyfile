@@ -1,0 +1,35 @@
+# Public entry point. Two modes, chosen by the environment variable SITE_ADDRESS (docs/RUNBOOK.md#https):
+#   SITE_ADDRESS unset        -> ":80": plain HTTP on the server IP (no certificate possible for a bare IP)
+#   SITE_ADDRESS=flare.example.org -> automatic HTTPS (Let's Encrypt), HTTP redirects to HTTPS, certificates renewed
+#                                     by Caddy; DNS A record must point at the server and ports 80 + 443 must be open.
+{
+	email {$ACME_EMAIL:admin@localhost}
+	admin 127.0.0.1:2019
+}
+
+{$SITE_ADDRESS::80} {
+	encode zstd gzip
+
+	request_body {
+		max_size 4MB
+	}
+
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		-Server
+	}
+
+	# The website and its /api proxy (nginx in the frontend container forwards /api to the API service).
+	reverse_proxy frontend:8080 {
+		header_up X-Forwarded-For {remote_host}
+		flush_interval -1
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}

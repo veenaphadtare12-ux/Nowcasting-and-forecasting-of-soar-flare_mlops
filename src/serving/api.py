@@ -21,7 +21,7 @@ from typing import Literal
 
 import numpy as np
 import pandas as pd
-from fastapi import FastAPI, HTTPException, Query, Request, Response
+from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from prometheus_client import CONTENT_TYPE_LATEST, CollectorRegistry, Counter, Gauge, Histogram, generate_latest
@@ -30,6 +30,7 @@ from pydantic import BaseModel, Field
 from src.ops import production, replay, runs
 from src.serving import bundle as B
 from src.serving import features as sf
+from src.serving import security
 from src.settings import get_settings
 
 log = logging.getLogger("flare.api")
@@ -156,7 +157,13 @@ app = FastAPI(
     lifespan=lifespan,
     description="Replays development days with the frozen champion models. Not an operational alert service.",
 )
-app.add_middleware(CORSMiddleware, allow_origins=get_settings().cors_list, allow_methods=["GET", "POST"], allow_headers=["*"])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=get_settings().cors_list,  # explicit allow-list; "*" is never used
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type", security.API_KEY_HEADER],
+    max_age=600,
+)
 
 
 FAULT_EXEMPT = ("/health", "/metrics")
@@ -175,6 +182,10 @@ async def log_and_measure(request: Request, call_next):
     t0 = time.perf_counter()
     status = 500
     try:
+        blocked = security.check_request(request)
+        if blocked is not None:
+            status = blocked.status_code
+            return blocked
         if _inject_fault(request.url.path):
             status = 503
             return JSONResponse({"detail": "fault injected (FLARE_FAULT_INJECT_RATE)"}, status_code=503)
@@ -422,7 +433,7 @@ async def replay_stream(
     )
 
 
-@app.post("/predict", response_model=Prediction)
+@app.post("/predict", response_model=Prediction, dependencies=[Depends(security.require_api_key)])
 def predict(body: PredictRows | PredictRaw) -> Prediction:
     """Feature rows -> probabilities; or a raw 1-s SoLEXS window -> features with the pipeline code -> probabilities."""
     b = bundle()

@@ -1,6 +1,8 @@
 # One connected product (docs/ARCHITECTURE.md). Start: scripts\up.ps1   Stop: scripts\down.ps1   Check: scripts\smoke_test.ps1
 # Images are tagged with the git SHA (FLARE_TAG); the same images run in CI and in Kubernetes.
 # Secrets come from the environment / an uncommitted .env file (see .env.example); defaults are for local use only.
+# Hardening: pinned image versions, healthchecks, memory/CPU limits, restart policies and no-new-privileges everywhere;
+# only Caddy (80/443) listens on all interfaces, every other port is bound to 127.0.0.1 for local tools.
 name: flare
 
 x-flare-env: &flare-env
@@ -10,11 +12,15 @@ x-flare-env: &flare-env
   FLARE_INBOX_DIR: /data/inbox
   FLARE_RAW_SOLEXS_DIR: /raw/solexs
   FLARE_PRODUCTION_START: ${FLARE_PRODUCTION_START:-2026-11-13}
-  FLARE_CORS_ORIGINS: "http://localhost:8080,http://127.0.0.1:8080"
+  FLARE_CORS_ORIGINS: ${FLARE_CORS_ORIGINS:-http://localhost:8080,http://127.0.0.1:8080,http://localhost}
   FLARE_LOG_LEVEL: INFO
   FLARE_MAX_REPLAY_SPEED: "600"
   FLARE_PREFECT_API_URL: http://prefect-server:4200/api
   FLARE_MLFLOW_URL: http://mlflow:5000
+  FLARE_API_KEYS: ${FLARE_API_KEYS:-}            # POST /predict; generated into .env by scripts\up.ps1 if missing
+  FLARE_RATE_LIMIT_PER_MINUTE: ${FLARE_RATE_LIMIT_PER_MINUTE:-300}
+  FLARE_RATE_LIMIT_KEY_PER_MINUTE: ${FLARE_RATE_LIMIT_KEY_PER_MINUTE:-6000}
+  FLARE_TRUST_PROXY_HEADERS: "true"               # the API is only reachable through nginx (and Caddy) or localhost
   FLARE_FAULT_INJECT_RATE: ${FLARE_FAULT_INJECT_RATE:-0}  # alert drills only (docs/RUNBOOK.md#alert-drills)
 
 x-flare-volumes: &flare-volumes
@@ -23,8 +29,45 @@ x-flare-volumes: &flare-volumes
   - inbox:/data/inbox
   - ${FLARE_RAW_SOLEXS_HOST:-./data/raw_empty}:/raw/solexs:ro
 
+x-hardening: &hardening
+  restart: unless-stopped
+  security_opt: ["no-new-privileges:true"]
+  logging:
+    driver: json-file
+    options: { max-size: "10m", max-file: "3" }
+
 services:
+  # Public entry: HTTP on :80, or automatic HTTPS when SITE_ADDRESS is a domain name (docs/RUNBOOK.md#https).
+  caddy:
+    <<: *hardening
+    image: caddy:2.10.2-alpine
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+      ACME_EMAIL: ${ACME_EMAIL:-admin@localhost}
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      frontend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:2019/config/"]
+      interval: 15s
+      timeout: 4s
+      retries: 5
+    deploy:
+      resources:
+        limits: { memory: 128M, cpus: "0.5" }
+
   api:
+    <<: *hardening
     image: ghcr.io/veenaphadtare12-ux/flare-api:${FLARE_TAG:-local}
     build:
       context: .
@@ -34,31 +77,39 @@ services:
     environment:
       <<: *flare-env
     volumes: *flare-volumes
+    cap_drop: [ALL]
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     depends_on:
       prefect-server:
         condition: service_healthy
       mlflow:
         condition: service_healthy
-    restart: unless-stopped
+    deploy:
+      resources:
+        limits: { memory: 1536M, cpus: "2" }
 
   frontend:
+    <<: *hardening
     image: ghcr.io/veenaphadtare12-ux/flare-frontend:${FLARE_TAG:-local}
     build:
       context: .
       dockerfile: docker/frontend.Dockerfile
       args:
         GIT_SHA: ${FLARE_TAG:-local}
+    cap_drop: [ALL]
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     depends_on:
       api:
         condition: service_healthy
-    restart: unless-stopped
+    deploy:
+      resources:
+        limits: { memory: 128M, cpus: "0.5" }
 
   # Prefect worker: serves the deployments (daily_ingest + check_drift on a schedule, score_replay on demand).
   worker:
+    <<: *hardening
     image: ghcr.io/veenaphadtare12-ux/flare-api:${FLARE_TAG:-local}
     command: ["python", "-m", "flows.serve"]
     environment:
@@ -66,6 +117,7 @@ services:
       PREFECT_API_URL: http://prefect-server:4200/api
       PREFECT_HOME: /data/prefect
     volumes: *flare-volumes
+    cap_drop: [ALL]
     depends_on:
       prefect-server:
         condition: service_healthy
@@ -74,9 +126,12 @@ services:
       interval: 30s
       timeout: 6s
       retries: 5
-    restart: unless-stopped
+    deploy:
+      resources:
+        limits: { memory: 2G, cpus: "2" }
 
   prefect-server:
+    <<: *hardening
     image: prefecthq/prefect:3.8.7-python3.12
     command: ["prefect", "server", "start", "--host", "0.0.0.0", "--port", "4200"]
     environment:
@@ -85,17 +140,20 @@ services:
     volumes:
       - prefect:/root/.prefect
     ports:
-      - "4200:4200"
+      - "127.0.0.1:4200:4200"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:4200/api/health', timeout=4)"]
       interval: 10s
       timeout: 6s
       retries: 20
       start_period: 20s
-    restart: unless-stopped
+    deploy:
+      resources:
+        limits: { memory: 1G, cpus: "1" }
 
   # MLflow tracking + registry server. The API only reads from it (champion/challenger versions for /pipeline/status).
   mlflow:
+    <<: *hardening
     image: ghcr.io/mlflow/mlflow:v3.16.1
     command:
       - mlflow
@@ -106,17 +164,20 @@ services:
       - --artifacts-destination=/mlflow/artifacts
       - --serve-artifacts
       - --allowed-hosts=*
+      - --workers=1
     volumes:
       - mlflow:/mlflow
     ports:
-      - "5000:5000"
+      - "127.0.0.1:5000:5000"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/health', timeout=4)"]
       interval: 10s
       timeout: 6s
       retries: 20
       start_period: 20s
-    restart: unless-stopped
+    deploy:
+      resources:
+        limits: { memory: 2G, cpus: "1" }
 
   # One-off: registers the model bundle's champions in the MLflow server (idempotent).
   mlflow-seed:
@@ -128,12 +189,17 @@ services:
     volumes:
       - ./model_bundle:/bundle:ro
       - ./scripts/seed_registry.py:/seed/seed_registry.py:ro
+    security_opt: ["no-new-privileges:true"]
     depends_on:
       mlflow:
         condition: service_healthy
     restart: "no"
+    deploy:
+      resources:
+        limits: { memory: 768M, cpus: "1" }
 
   prometheus:
+    <<: *hardening
     image: prom/prometheus:v3.5.0
     command:
       - --config.file=/etc/prometheus/prometheus.yml
@@ -142,11 +208,46 @@ services:
     volumes:
       - ./monitoring/prometheus:/etc/prometheus:ro
       - prometheus:/prometheus
+    cap_drop: [ALL]
     ports:
-      - "9090:9090"
-    restart: unless-stopped
+      - "127.0.0.1:9090:9090"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:9090/-/ready"]
+      interval: 15s
+      timeout: 4s
+      retries: 5
+    deploy:
+      resources:
+        limits: { memory: 512M, cpus: "0.5" }
+
+  # Routes Prometheus alerts: e-mail when SMTP_* and ALERT_EMAIL_TO are set (in .env), otherwise log-only.
+  alertmanager:
+    <<: *hardening
+    image: prom/alertmanager:v0.28.1
+    entrypoint: ["/bin/sh", "/etc/alertmanager/entrypoint.sh"]
+    environment:
+      SMTP_SMARTHOST: ${SMTP_SMARTHOST:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      ALERT_EMAIL_TO: ${ALERT_EMAIL_TO:-}
+    volumes:
+      - ./monitoring/alertmanager:/etc/alertmanager:ro
+      - alertmanager:/alertmanager
+    cap_drop: [ALL]
+    ports:
+      - "127.0.0.1:9093:9093"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:9093/-/ready"]
+      interval: 15s
+      timeout: 4s
+      retries: 5
+    deploy:
+      resources:
+        limits: { memory: 128M, cpus: "0.25" }
 
   grafana:
+    <<: *hardening
     image: grafana/grafana:12.1.1
     environment:
       GF_SECURITY_ADMIN_USER: admin
@@ -155,15 +256,24 @@ services:
       GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
       GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/flare-api.json
       GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
     volumes:
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
       - grafana:/var/lib/grafana
+    cap_drop: [ALL]
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     depends_on:
       - prometheus
-    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/health"]
+      interval: 15s
+      timeout: 4s
+      retries: 5
+    deploy:
+      resources:
+        limits: { memory: 512M, cpus: "0.5" }
 
   # Runs one flow with the same image, e.g.  docker compose run --rm tools python -m flows.score_replay --day 2026-04-24
   tools:
@@ -174,6 +284,7 @@ services:
       PREFECT_API_URL: http://prefect-server:4200/api
       PREFECT_HOME: /data/prefect
     volumes: *flare-volumes
+    security_opt: ["no-new-privileges:true"]
     command: ["python", "-m", "flows.daily_ingest"]
 
 volumes:
@@ -184,3 +295,6 @@ volumes:
   mlflow:
   prometheus:
   grafana:
+  alertmanager:
+  caddy_data:
+  caddy_config:

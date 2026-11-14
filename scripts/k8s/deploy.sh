@@ -13,7 +13,7 @@ NS=flare
 TIMEOUT=${ROLLOUT_TIMEOUT:-300s}
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 cd "$ROOT"
-DEPLOYS="mlflow prefect-server prometheus grafana api worker frontend"
+DEPLOYS="mlflow prefect-server prometheus alertmanager grafana api worker frontend"
 
 kubectl apply -f k8s/base/namespace.yaml
 
@@ -28,12 +28,22 @@ fi
 kubectl -n $NS create configmap prometheus-config --from-file=monitoring/prometheus --dry-run=client -o yaml | kubectl apply -f -
 kubectl -n $NS create configmap grafana-datasources --from-file=monitoring/grafana/provisioning/datasources --dry-run=client -o yaml | kubectl apply -f -
 kubectl -n $NS create configmap grafana-dashboard-provider --from-file=monitoring/grafana/provisioning/dashboards --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n $NS create configmap alertmanager-config --from-file=monitoring/alertmanager --dry-run=client -o yaml | kubectl apply -f -
 kubectl -n $NS create configmap grafana-dashboards --from-file=monitoring/grafana/dashboards --dry-run=client -o yaml | kubectl apply -f -
 if [ -n "${GRAFANA_ADMIN_PASSWORD:-}" ]; then
   kubectl -n $NS create secret generic grafana-admin --from-literal=password="$GRAFANA_ADMIN_PASSWORD" --dry-run=client -o yaml | kubectl apply -f -
 elif ! kubectl -n $NS get secret grafana-admin >/dev/null 2>&1; then
   kubectl -n $NS create secret generic grafana-admin --from-literal=password="$(head -c 18 /dev/urandom | base64 | tr -d '/+=')"
   echo "created Secret grafana-admin with a random password (read it: kubectl -n $NS get secret grafana-admin -o jsonpath='{.data.password}' | base64 -d)"
+fi
+
+# API keys for POST /predict (GitHub secret FLARE_API_KEYS in CD); without it /predict refuses every call (fail closed).
+if [ -n "${FLARE_API_KEYS:-}" ]; then
+  kubectl -n $NS create secret generic flare-api-keys --from-literal=FLARE_API_KEYS="$FLARE_API_KEYS" --dry-run=client -o yaml | kubectl apply -f -
+fi
+# Optional SMTP settings for Alertmanager (GitHub secrets SMTP_*, ALERT_EMAIL_TO).
+if [ -n "${SMTP_SMARTHOST:-}" ]; then
+  kubectl -n $NS create secret generic alertmanager-smtp --from-literal=SMTP_SMARTHOST="$SMTP_SMARTHOST"     --from-literal=SMTP_FROM="${SMTP_FROM:-}" --from-literal=SMTP_USERNAME="${SMTP_USERNAME:-}"     --from-literal=SMTP_PASSWORD="${SMTP_PASSWORD:-}" --from-literal=ALERT_EMAIL_TO="${ALERT_EMAIL_TO:-}"     --dry-run=client -o yaml | kubectl apply -f -
 fi
 
 # Temporary overlay that pins the image tag (the committed overlays stay tag-free).

@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 
 ROOT = Path(__file__).resolve().parents[1]
 X_DAY, QUIET_DAY = "2026-04-24", "2026-02-21"
+API_KEY = "test-key-123"
 
 
 @pytest.fixture
@@ -21,11 +22,14 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setenv("FLARE_DRIFT_FILE", str(tmp_path / "no_live_drift.json"))
     monkeypatch.setenv("FLARE_BUNDLE_DIR", str(ROOT / "model_bundle"))
     monkeypatch.setenv("FLARE_MAX_REPLAY_SPEED", "1e9")  # tests: no real-time pacing
+    monkeypatch.setenv("FLARE_API_KEYS", f"old-key,{API_KEY}")
     get_settings.cache_clear()
     B.load.cache_clear()
     from src.serving.api import app
+    from src.serving.security import LIMITER
 
-    with TestClient(app) as c:
+    LIMITER.reset()
+    with TestClient(app, headers={"X-API-Key": API_KEY}) as c:
         yield c
     get_settings.cache_clear()
 
@@ -165,4 +169,61 @@ def test_fault_injection_is_off_by_default_and_counted_when_on(client, monkeypat
     monkeypatch.setenv("FLARE_ENVIRONMENT", "production")
     get_settings.cache_clear()
     assert client.get("/models").status_code == 200  # never in production
+
+
+# ---------------------------------------------------------------- security: API key, rate limit, body size, CORS
+def _rows(client):
+    m = {x["target"]: x for x in client.get("/models").json()}["now"]
+    return {"target": "now", "rows": [dict.fromkeys(m["features"], 0.0)]}
+
+
+def test_predict_needs_a_valid_api_key(client):
+    body = _rows(client)
+    assert client.post("/predict", json=body, headers={"X-API-Key": ""}).status_code == 401
+    assert client.post("/predict", json=body, headers={"X-API-Key": "wrong"}).status_code == 401
+    assert client.post("/predict", json=body).status_code == 200  # fixture sends the valid key
+    assert client.post("/predict", json=body, headers={"X-API-Key": "old-key"}).status_code == 200  # rotation: both valid
+    assert client.get("/models", headers={"X-API-Key": ""}).status_code == 200  # read-only endpoints stay open
+
+
+def test_predict_fails_closed_without_configured_keys(client, monkeypatch):
+    from src.settings import get_settings
+
+    monkeypatch.setenv("FLARE_API_KEYS", "")
+    get_settings.cache_clear()
+    assert client.post("/predict", json={"target": "now", "rows": []}).status_code == 401
+
+
+def test_rate_limit_returns_429_and_spares_health(client, monkeypatch):
+    from src.settings import get_settings
+
+    monkeypatch.setenv("FLARE_RATE_LIMIT_PER_MINUTE", "5")
+    get_settings.cache_clear()
+    anon = {"X-API-Key": ""}
+    codes = [client.get("/replay/days", headers=anon).status_code for _ in range(7)]
+    assert codes[:5] == [200] * 5 and codes[5:] == [429, 429]
+    r = client.get("/replay/days", headers=anon)
+    assert r.status_code == 429 and int(r.headers["Retry-After"]) >= 1
+    assert client.get("/health", headers=anon).status_code == 200  # probes are never limited
+    assert client.get("/metrics", headers=anon).status_code == 200
+    assert client.get("/replay/days").status_code == 200  # a valid key has its own, larger budget
+
+
+def test_large_bodies_are_refused(client, monkeypatch):
+    from src.settings import get_settings
+
+    monkeypatch.setenv("FLARE_MAX_BODY_BYTES", "1000")
+    get_settings.cache_clear()
+    r = client.post("/predict", content=b"{" + b" " * 2000 + b"}", headers={"Content-Type": "application/json"})
+    assert r.status_code == 413
+
+
+def test_cors_allow_list_never_wildcards(client, monkeypatch):
+    from src.settings import Settings
+
+    assert Settings(cors_origins="*,http://a.example").cors_list == ["http://a.example"]
+    r = client.options(
+        "/models", headers={"Origin": "http://evil.example", "Access-Control-Request-Method": "GET"}
+    )
+    assert r.headers.get("access-control-allow-origin") is None
 

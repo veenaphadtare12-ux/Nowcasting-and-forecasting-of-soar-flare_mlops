@@ -28,7 +28,9 @@ spec:
           image: ghcr.io/veenaphadtare12-ux/flare-api
           imagePullPolicy: IfNotPresent
           ports: [{ name: http, containerPort: 8000 }]
-          envFrom: [{ configMapRef: { name: flare-config } }]
+          envFrom:
+            - configMapRef: { name: flare-config }
+            - secretRef: { name: flare-api-keys, optional: true }   # FLARE_API_KEYS, created by deploy.sh, never in git
           lifecycle:
             # keep serving while the endpoint is removed from the Service, so a rolling update drops no requests
             preStop:

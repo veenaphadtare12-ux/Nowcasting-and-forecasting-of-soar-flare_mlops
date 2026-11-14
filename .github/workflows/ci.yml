@@ -102,3 +102,58 @@ jobs:
       - run: terraform fmt -check -recursive
       - run: terraform init -backend=false -input=false
       - run: terraform validate
+
+  # Security scans: Python dependencies (pip-audit), frontend packages (npm audit), both images (trivy, fail on CRITICAL).
+  # Accepted risks are listed with reasons in docs/SECURITY.md and .trivyignore.
+  security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: pip-audit (API/worker image dependencies, CI test dependencies)
+        run: |
+          pip install pip-audit
+          pip-audit -r requirements-serve.txt -r requirements-worker.txt --progress-spinner off
+          # mlflow 3.16.1 CVEs: accepted (internal-only MLflow server, docs/SECURITY.md); upgrade tracked there
+          pip-audit -r requirements-ci.txt --progress-spinner off \
+            --ignore-vuln CVE-2026-53995 --ignore-vuln CVE-2026-115886 --ignore-vuln CVE-2026-116691
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: npm audit (frontend, production and dev dependencies)
+        working-directory: frontend
+        run: |
+          npm ci --no-fund
+          npm audit --audit-level=high
+      - name: Build images
+        run: |
+          echo "FLARE_TAG=$(git rev-parse --short=12 HEAD)" >> "$GITHUB_ENV"
+          FLARE_TAG=$(git rev-parse --short=12 HEAD) docker compose build api frontend
+      - name: Trivy (flare-api)
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: ghcr.io/veenaphadtare12-ux/flare-api:${{ env.FLARE_TAG }}
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          trivyignores: .trivyignore
+      - name: Trivy (flare-frontend)
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: ghcr.io/veenaphadtare12-ux/flare-frontend:${{ env.FLARE_TAG }}
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          trivyignores: .trivyignore
+      - name: Trivy report (HIGH and CRITICAL, informational)
+        if: always()
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: ghcr.io/veenaphadtare12-ux/flare-api:${{ env.FLARE_TAG }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "0"
+          format: table

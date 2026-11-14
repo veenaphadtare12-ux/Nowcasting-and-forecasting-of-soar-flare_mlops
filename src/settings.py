@@ -34,6 +34,11 @@ class Settings(BaseSettings):
     mlflow_url: str | None = Field(None, description="MLflow tracking server (read-only use), for /pipeline/status")
     environment: str = Field("local", description="local | compose | k8s | ci")
     git_sha: str = Field("unknown", description="set at image build time")
+    api_keys: str = Field("", description="comma-separated API keys for POST /predict (X-API-Key); empty = refuse all")
+    rate_limit_per_minute: int = Field(300, description="requests per minute per anonymous client IP (0 = off)")
+    rate_limit_key_per_minute: int = Field(6000, description="requests per minute per valid API key (0 = off)")
+    max_body_bytes: int = Field(4_000_000, description="largest accepted request body (a raw 1-s day is about 2 MB)")
+    trust_proxy_headers: bool = Field(False, description="use X-Forwarded-For for the client IP (only behind our proxy)")
     fault_inject_rate: float = Field(
         0.0,
         ge=0.0,
@@ -44,7 +49,7 @@ class Settings(BaseSettings):
 
     @property
     def cors_list(self) -> list[str]:
-        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+        return [o.strip() for o in self.cors_origins.split(",") if o.strip() and o.strip() != "*"]  # never a wildcard
 
 
 @lru_cache

@@ -18,6 +18,12 @@ function Check([string]$Name, [scriptblock]$Test) {
     }
 }
 function Get-Json([string]$Path) { Invoke-RestMethod -Uri "$Api$Path" -TimeoutSec 30 }
+# API key for POST /predict: $env:FLARE_API_KEY, else the first key of FLARE_API_KEYS in the uncommitted .env.
+$ApiKey = $env:FLARE_API_KEY
+if (-not $ApiKey -and (Test-Path "$PSScriptRoot\..\.env")) {
+    $line = Get-Content "$PSScriptRoot\..\.env" | Where-Object { $_ -match '^FLARE_API_KEYS=' } | Select-Object -First 1
+    if ($line) { $ApiKey = ($line -replace '^FLARE_API_KEYS=', '').Split(',')[0].Trim() }
+}
 
 Write-Host "API $Api"
 Check "GET /health" { $h = Get-Json "/health"; if ($h.status -ne "ok") { throw "status $($h.status)" }; "bundle $($h.bundle_version), image $($h.image_git_sha)" }
@@ -39,9 +45,15 @@ Check "POST /predict (feature rows)" {
     $m = Get-Json "/models" | Where-Object { $_.target -eq "c_60m" }
     $row = @{}; foreach ($f in $m.features) { $row[$f] = 0.0 }
     $body = @{ target = "c_60m"; rows = @($row) } | ConvertTo-Json -Depth 5
-    $p = Invoke-RestMethod -Method Post -Uri "$Api/predict" -Body $body -ContentType "application/json"
+    if (-not $ApiKey) { throw "no API key (set FLARE_API_KEY or FLARE_API_KEYS in .env)" }
+    $p = Invoke-RestMethod -Method Post -Uri "$Api/predict" -Body $body -ContentType "application/json" -Headers @{ "X-API-Key" = $ApiKey }
     if ($p.p_flare[0] -lt 0 -or $p.p_flare[0] -gt 1) { throw "p out of range" }
     "p=$([math]::Round($p.p_flare[0],3)) threshold=$([math]::Round($p.threshold,3))"
+}
+Check "POST /predict without key" {
+    try { Invoke-RestMethod -Method Post -Uri "$Api/predict" -Body '{"target":"now","rows":[]}' -ContentType "application/json" | Out-Null; throw "accepted without a key" }
+    catch { if ($_.Exception.Response.StatusCode.value__ -ne 401) { throw $_ } }
+    "401 as expected"
 }
 Check "GET /results" { $r = Get-Json "/results"; if ($null -eq $r.test.targets.now.tss) { throw "no test results" }; "test nowcast TSS $([math]::Round($r.test.targets.now.tss,3))" }
 Check "GET /drift/latest" { $d = Get-Json "/drift/latest"; "drifted share $([math]::Round($d.drifted_share,2)), flag=$($d.drift_flag)" }

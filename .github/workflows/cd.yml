@@ -106,15 +106,24 @@ jobs:
         env:
           GRAFANA_ADMIN_PASSWORD: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
           GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
+          FLARE_API_KEYS: ${{ secrets.FLARE_API_KEYS }}
+          SMTP_SMARTHOST: ${{ secrets.SMTP_SMARTHOST }}
+          SMTP_FROM: ${{ secrets.SMTP_FROM }}
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          ALERT_EMAIL_TO: ${{ secrets.ALERT_EMAIL_TO }}
+          GHCR_USER: ${{ github.repository_owner }}
         run: |
-          ssh -i ~/.ssh/deploy "$DEPLOY_USER@$DEPLOY_HOST" \
-            "GRAFANA_ADMIN_PASSWORD='$GRAFANA_ADMIN_PASSWORD' GHCR_PULL_TOKEN='$GHCR_PULL_TOKEN' GHCR_USER='${{ github.repository_owner }}' bash -s" <<EOF
-          set -euo pipefail
-          rm -rf ~/flare-deploy && mkdir -p ~/flare-deploy && tar xzf /tmp/flare-deploy.tgz -C ~/flare-deploy
-          export KUBECONFIG=\${KUBECONFIG:-\$HOME/.kube/config}
-          cd ~/flare-deploy
-          bash scripts/k8s/deploy.sh prod "$TAG"
-          EOF
+          # Secrets travel inside the script on stdin (never as command-line arguments, which other users could see).
+          {
+            echo "set -euo pipefail"
+            for v in GRAFANA_ADMIN_PASSWORD GHCR_PULL_TOKEN GHCR_USER FLARE_API_KEYS SMTP_SMARTHOST SMTP_FROM SMTP_USERNAME SMTP_PASSWORD ALERT_EMAIL_TO TAG; do
+              printf 'export %s=%q\n' "$v" "${!v}"
+            done
+            echo 'rm -rf ~/flare-deploy && mkdir -p ~/flare-deploy && tar xzf /tmp/flare-deploy.tgz -C ~/flare-deploy'
+            echo 'export KUBECONFIG=${KUBECONFIG:-$HOME/.kube/config}'
+            echo 'cd ~/flare-deploy && bash scripts/k8s/deploy.sh prod "$TAG"'
+          } | ssh -i ~/.ssh/deploy "$DEPLOY_USER@$DEPLOY_HOST" bash -s
       - name: Smoke test the public URL
         if: steps.secrets.outputs.ok == 'true'
         run: bash scripts/k8s/smoke.sh "http://$DEPLOY_HOST"

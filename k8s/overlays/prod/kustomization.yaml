@@ -9,4 +9,4 @@ patches:
   - target: { kind: ConfigMap, name: flare-config }
     patch: |-
       - { op: replace, path: /data/FLARE_ENVIRONMENT, value: production }
-      - { op: replace, path: /data/FLARE_CORS_ORIGINS, value: "*" }
+      - { op: replace, path: /data/FLARE_CORS_ORIGINS, value: "" }   # same-origin website: no cross-origin callers

@@ -1,5 +1,5 @@
 # flare-api: FastAPI service + Prefect flows, models and replay data from the committed model bundle.
-FROM python:3.12-slim
+FROM python:3.12.16-slim-trixie
 
 ARG GIT_SHA=dev
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -15,6 +15,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     MLFLOW_DISABLE_AGENT_HINT=1
 
 WORKDIR /app
+# OS security updates at build time (trivy scans the result in CI)
+RUN apt-get update && apt-get upgrade -y --no-install-recommends && rm -rf /var/lib/apt/lists/*
 RUN useradd --create-home --uid 10001 app \
  && mkdir -p /data/predictions /data/drift /data/prefect /data/inbox \
  && chown -R app:app /data

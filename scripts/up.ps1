@@ -10,7 +10,16 @@ param([switch]$NoBuild, [string]$Tag = "", [switch]$KeepOldImages)
 $tag = if ($Tag) { $Tag } else { Get-FlareTag }
 Write-Host "FLARE_TAG = $tag  (docker: $(if ($script:Native) {'native'} else {"WSL $Distro"}))"
 if (-not $NoBuild -and -not $Tag) { Invoke-Bash "FLARE_TAG=$tag docker compose build api frontend" }
-Invoke-Bash "FLARE_TAG=$tag docker compose up -d --pull never"
+# A local API key for POST /predict lives only in the uncommitted .env (generated once, never printed).
+$envFile = Join-Path $Root ".env"
+if (-not (Test-Path $envFile) -or -not (Select-String -Path $envFile -Pattern '^FLARE_API_KEYS=.+' -Quiet)) {
+    $bytes = New-Object byte[] 24; [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
+    $key = [Convert]::ToBase64String($bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_')
+    $lines = if (Test-Path $envFile) { @(Get-Content $envFile | Where-Object { $_ -notmatch '^FLARE_API_KEYS=' }) } else { @() }
+    [IO.File]::WriteAllText($envFile, ((@($lines) + "FLARE_API_KEYS=$key") -join "`n") + "`n")
+    Write-Host "generated a local API key in .env (FLARE_API_KEYS)"
+}
+Invoke-Bash "FLARE_TAG=$tag docker compose up -d --pull missing"
 Wait-Http "http://localhost:8000/health" 240 | Out-Null
 Wait-Http "http://localhost:8080/" 120 | Out-Null
 

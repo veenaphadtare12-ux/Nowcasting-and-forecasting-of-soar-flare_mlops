@@ -20,6 +20,7 @@ resources:
   - mlflow.yaml
   - prometheus.yaml
   - grafana.yaml
+  - alertmanager.yaml
 images:
   - name: ghcr.io/veenaphadtare12-ux/flare-api
     newTag: local

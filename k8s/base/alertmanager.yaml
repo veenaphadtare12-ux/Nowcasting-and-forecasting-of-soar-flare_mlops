@@ -1,0 +1,57 @@
+# Alert routing (same template and entrypoint as Docker Compose, ConfigMap alertmanager-config created by deploy.sh).
+# SMTP settings come from the optional Secret alertmanager-smtp (keys SMTP_SMARTHOST, SMTP_FROM, SMTP_USERNAME,
+# SMTP_PASSWORD, ALERT_EMAIL_TO); without it alerts stay in Alertmanager (log-only receiver).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager
+  labels: { app: alertmanager }
+spec:
+  replicas: 1
+  strategy: { type: Recreate }
+  selector:
+    matchLabels: { app: alertmanager }
+  template:
+    metadata:
+      labels: { app: alertmanager }
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        fsGroup: 65534
+      containers:
+        - name: alertmanager
+          image: prom/alertmanager:v0.28.1
+          command: ["/bin/sh", "/etc/alertmanager/entrypoint.sh"]
+          envFrom:
+            - secretRef: { name: alertmanager-smtp, optional: true }
+          ports: [{ name: http, containerPort: 9093 }]
+          resources:
+            requests: { cpu: 20m, memory: 32Mi }
+            limits: { cpu: 250m, memory: 128Mi }
+          readinessProbe:
+            httpGet: { path: /-/ready, port: http }
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /-/healthy, port: http }
+            periodSeconds: 30
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+          volumeMounts:
+            - { name: config, mountPath: /etc/alertmanager, readOnly: true }
+            - { name: data, mountPath: /alertmanager }
+            - { name: tmp, mountPath: /tmp }
+      volumes:
+        - { name: config, configMap: { name: alertmanager-config } }
+        - { name: data, emptyDir: {} }
+        - { name: tmp, emptyDir: {} }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager
+  labels: { app: alertmanager }
+spec:
+  selector: { app: alertmanager }
+  ports: [{ name: http, port: 9093, targetPort: http }]
