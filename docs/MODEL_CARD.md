@@ -1,5 +1,11 @@
 # Model card — Aditya-L1 solar-flare nowcast and forecast models
 
+> **Current state (2026-11-14, release v1.1.0).** This document is a dated record and its older counts are kept as they
+> were. Today: 146 tests (145 pass, 1 skipped; CI runs 140 data-free ones), 37 DVC stages (24 frozen), 767 MLflow runs,
+> 5 champions (alias `champion`, version 1). Final metrics are unchanged: test TSS nowcast 0.758, c_30m 0.358,
+> c_60m 0.304, m_30m 0.518, m_60m 0.494; holdout2 nowcast 0.760 [0.69, 0.81] (M targets underpowered).
+> Operations: `docs/PRODUCTION_READINESS.md`.
+
 ## Version 2 (added 2026-11-13): FINAL_CHOICE_2 models, scored once on holdout2
 
 **What changed since v1.**

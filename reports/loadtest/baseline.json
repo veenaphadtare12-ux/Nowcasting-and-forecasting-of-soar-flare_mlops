@@ -1,0 +1,13 @@
+{
+  "vus": 50,
+  "duration": "2m",
+  "requests": 5950,
+  "rps": 48.98701741770828,
+  "error_rate": 0,
+  "p50_ms": 2.195884,
+  "p95_ms": 8.34695,
+  "p99_ms": 20.51144325000014,
+  "max_ms": 135.652392,
+  "slo_p95_lt_300ms": true,
+  "slo_errors_lt_1pct": true
+}

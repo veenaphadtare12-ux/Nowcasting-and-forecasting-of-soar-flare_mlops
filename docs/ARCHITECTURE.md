@@ -51,10 +51,12 @@ model_bundle/                                   (committed, < 50 MB, versioned)
 
 ## 3. One config
 - `params.yaml` holds all science/pipeline settings. `src/settings.py` (pydantic-settings) holds runtime/service
-  settings: bundle path, predictions store, CORS origins, log level, replay speed limits, Prometheus.
+  settings: bundle path, predictions store, CORS origins, log level, replay speed limits, API keys, rate limits,
+  body-size limit, proxy trust, fault injection (drills only).
 - Services get settings **only** through environment variables (`FLARE_*`):
   - in Docker Compose: `docker-compose.yml` `environment:` / `.env`;
-  - in Kubernetes: a ConfigMap (`k8s/configmap.yaml`) mapped to the same variables.
+  - in Kubernetes: a ConfigMap (`k8s/base/configmap.yaml`) mapped to the same variables, plus Secrets created at
+    deploy time (`flare-api-keys`, `grafana-admin`, optional `alertmanager-smtp`), never committed.
 
 ## 4. One data flow, end to end
 ```
@@ -65,7 +67,7 @@ Prefect daily_ingest ─► pandera checks ─► dvc repro (data stages only)
                                                                                                     ▼
 Prefect score_replay (bundle day) ─► predictions store data/predictions/{*.parquet, predictions.db} ─► FastAPI ─► React
 Prefect check_drift ─► reports/drift/latest.json ─► bundle drift/latest.json ─► FastAPI /drift/latest ─► React
-FastAPI /metrics ─► Prometheus ─► Grafana (+ 1 alert rule)
+FastAPI /metrics ─► Prometheus (2 alert rules) ─► Alertmanager (e-mail if SMTP set) ; Prometheus ─► Grafana
 Prefect retrain_candidate ─► MLflow alias "challenger" ─► bundle pipeline/status.json ─► /pipeline/status ─► React
                               (never auto-promoted)
 ```
@@ -76,14 +78,20 @@ Prefect retrain_candidate ─► MLflow alias "challenger" ─► bundle pipelin
   bundle's precomputed predictions. The response says which (`source`, `run_id`).
 
 ## 5. Images and deployment
-- Two images: `flare-api` (python:3.12-slim, non-root, healthcheck; also runs the flows) and `flare-frontend` (nginx,
-  static build).
-- Tags: the git SHA (and `v*` on releases).
-- The same images run in Docker Compose (local + the CI e2e job), in kind (Kubernetes) and, prepared only, on AWS.
-- Compose services: `api`, `frontend`, `prometheus`, `grafana`; `worker` = the `flare-api` image running a flow
-  (`docker compose run --rm worker python -m flows.score_replay …`).
-- Kubernetes (kind): `api` (2 replicas, probes, limits), `frontend`, Services, NodePort, ConfigMap. The bundle is
-  baked into the API image.
+- Two images: `flare-api` (python:3.12.16-slim-trixie, OS updates at build, non-root uid 10001, healthcheck; also
+  runs the flows) and `flare-frontend` (nginx-unprivileged 1.29.8, uid 101, static build). Every base and third-party
+  image is pinned to an exact version; trivy scans both of ours in CI (fails on CRITICAL).
+- Tags: the git SHA, plus `master` or `vX.Y.Z` when CD publishes to GHCR (public packages).
+- The same images run in Docker Compose (local + the CI e2e job), in kind (CI) and on a k3s server (CD, when the
+  deploy secrets exist). Terraform for that server is written, not applied.
+- Compose services (all with healthcheck, memory/CPU limit, restart policy, no-new-privileges, logs rotated):
+  `caddy` (the only public listener, 80/443: HTTP on an IP, automatic HTTPS when `SITE_ADDRESS` is a domain),
+  `frontend` (nginx: website + `/api` proxy; `/api/metrics` blocked), `api`, `worker` (Prefect worker, same image),
+  `prefect-server`, `mlflow` (+ one-off `mlflow-seed`), `prometheus`, `alertmanager`, `grafana`; `tools` profile for
+  one-off flows. Every port except Caddy's is bound to 127.0.0.1.
+- Kubernetes (`k8s/`, kustomize base + overlays `kind` and `prod`): the same services as Deployments with startup,
+  readiness and liveness probes, requests/limits, non-root security contexts, PVCs, a preStop delay and
+  `maxUnavailable: 0` for zero-downtime updates; Ingress in `prod`. The bundle is baked into the API image.
 
 ## 6. API surface (FastAPI, `src/serving/api.py`)
 | Method | Path | Returns |
@@ -93,11 +101,17 @@ Prefect retrain_candidate ─► MLflow alias "challenger" ─► bundle pipelin
 | GET | `/replay/days` | bundle replay days with flare counts and notes |
 | GET | `/replay/{day}?until=` | light curves, predictions (all targets), GOES flares and detector events known by `until` |
 | GET | `/replay/{day}/stream?speed=&start=` | server-sent events, one frame per 10-s step |
-| POST | `/predict` | probabilities + alerts for feature rows, or for a raw SoLEXS 1-s window (features computed with the pipeline code) |
+| POST | `/predict` | probabilities + alerts for feature rows, or for a raw SoLEXS 1-s window (features computed with the pipeline code). **Needs `X-API-Key`** |
 | GET | `/results` | frozen test and holdout2 results with 95% intervals, baselines, per month |
 | GET | `/drift/latest` | latest Evidently summary |
 | GET | `/pipeline/status` | DVC stages, Prefect runs, registry, tools |
-| GET | `/metrics` | Prometheus metrics |
+| GET | `/metrics` | Prometheus metrics (internal: not served through the public website) |
+
+**Security** (`src/serving/security.py`): API key on `POST /predict` (several keys at once for rotation; no key
+configured = refuse all); sliding one-minute rate limit per client IP (300/min) and per valid key (6000/min) → 429 with
+`Retry-After`; bodies over 4 MB → 413; CORS allow-list without wildcards. `/health` and `/metrics` are never limited and
+are `async`, so probes and scrapes never queue behind slow requests. Replay days are prepared once per predictions-store
+version and sliced per request.
 
 **Causality in the replay:** a GOES flare is shown only once its begin time ≤ the replay clock. A detector event is
 shown only once its trigger time ≤ the clock, and its end only once that is known. Probabilities at t use features

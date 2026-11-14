@@ -20,5 +20,9 @@ check "website"            "$WEB/"               "<div id=\"root\""
 check "api health"         "$API/health"         '"status":"ok"'
 check "api via website"    "$WEB/api/models"     '"target"'
 check "replay days"        "$API/replay/days"    '2026-04-24'
-check "metrics"            "$API/metrics"        'flare_api_requests_total'
+if [ -n "${2:-}" ]; then
+  check "metrics (internal URL)" "$API/metrics"     'flare_api_requests_total'
+fi
+code=$(curl -s -o /dev/null -w '%{http_code}' -m 10 "$WEB/api/metrics")
+if [ "$code" = "404" ]; then echo "OK    metrics not public"; else echo "FAIL  /api/metrics is public (HTTP $code)"; exit 1; fi
 echo "SMOKE OK"

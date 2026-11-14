@@ -72,8 +72,23 @@ Nothing secret is in git. Locally an uncommitted `.env`; in Kubernetes the Grafa
 deploy script from a GitHub secret (or random); the SSH key, host and user are GitHub repository secrets.
 
 **Q: What does CI check?**
-Four jobs: lint + unit tests; the whole Compose stack end to end (`scripts/e2e.sh`); the manifests deployed to kind with a
-smoke test, rolling update and rollback; Terraform fmt + validate.
+Five jobs: lint + unit tests; the whole Compose stack end to end (`scripts/e2e.sh`); the manifests deployed to kind with a
+smoke test, rolling update and rollback; Terraform fmt + validate; security scans (pip-audit, npm audit, trivy fails on
+CRITICAL).
+
+**Q: How is the API protected?**
+`POST /predict` needs an `X-API-Key` (several keys at once, so rotation has no downtime; with no key configured it refuses
+everything). A sliding one-minute rate limit answers 429, bodies over 4 MB get 413, CORS is an allow-list. Only Caddy is
+public; `/metrics` is never served through the website.
+
+**Q: What did the load test find?**
+At 50 users the replay endpoint re-parsed a whole day per request and starved `/health`, which in Kubernetes would have
+restarted healthy pods. I cached each prepared day per store version (responses byte-identical) and made `/health` async.
+After: 5,950 requests, 0 % errors, p95 8.3 ms against an SLO of 300 ms.
+
+**Q: How do you back up and restore?**
+`scripts/backup.ps1` pauses the writers for a few seconds and archives every volume with SHA-256 checksums; restore verifies
+the checksums first. I restored into fresh volumes and the MLflow registry and 68,933 prediction rows were identical.
 
 **Q: Why Terraform if you did not apply it?**
 It documents the server as code (VM, firewall, k3s via cloud-init) so it can be recreated in minutes; applying it costs money,
@@ -87,4 +102,5 @@ so that is a deliberate decision for the owner.
 
 ## Numbers to remember
 424 usable SoLEXS days · 44 base features · 37 DVC stages · 767 MLflow runs · 5 champions · nowcast TSS 0.758 (test),
-0.760 (holdout2) · 136 tests · alerts fire after 135 s (down) and with a 0.51 error ratio (errors).
+0.760 (holdout2) · 146 tests · 5 CI jobs · alerts fire after 135 s (down) and with a 0.51 error ratio (errors) · load
+test p95 8.3 ms at 50 users.

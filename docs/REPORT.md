@@ -79,7 +79,11 @@ SoLEXS L1 day ─► Prefect daily_ingest ─► pandera contracts ─► pipeli
 | Website | React 19, TypeScript, Tailwind 4, ECharts, three.js + GSAP | `frontend/` |
 | Packaging | Docker images tagged with the git SHA; Docker Compose for the whole stack | `docker/`, `docker-compose.yml` |
 | Kubernetes | kustomize manifests (probes, limits, ConfigMaps, Secrets, PVCs), kind locally and in CI | `k8s/` |
-| CI | GitHub Actions: lint + tests, full Compose e2e, kind deploy + rollout/rollback, Terraform validate | `.github/workflows/ci.yml` |
+| CI | GitHub Actions, 5 jobs: lint + tests, full Compose e2e, kind deploy + rollout/rollback, Terraform validate, security scans | `.github/workflows/ci.yml` |
+| Edge and security | Caddy (HTTP/auto-HTTPS), API key + rate limit + size limit on the API, CORS allow-list, non-root containers | `docker/caddy/`, `src/serving/security.py` |
+| Alert routing | Alertmanager (e-mail via SMTP from env, log-only otherwise) | `monitoring/alertmanager/` |
+| Backups | volume archives with SHA-256 manifest, verified restore | `scripts/backup.*`, `scripts/restore.*` |
+| Load testing | k6 with SLO thresholds | `loadtest/k6.js`, `docs/SLO.md` |
 | CD | GHCR images (git SHA + version), SSH deploy to k3s with automatic rollback | `.github/workflows/cd.yml` |
 | Infrastructure as code | Terraform: AWS VM + k3s (validated, not applied) | `infra/terraform/` |
 
@@ -88,12 +92,15 @@ retraining only registers a challenger, all evaluation stages are frozen, and fa
 production.
 
 ## 6. Verification (2026-11-14)
-- `pytest`: 136 passed, 1 skipped; `ruff`: clean.
+- `pytest`: 145 passed, 1 skipped (146 tests); `ruff`: clean. CI: 5 of 5 jobs green.
 - `scripts\e2e.ps1`: passed (raw day in the inbox → Prefect deployment → contracts → features → champions → store → API →
   website; replay, drift, Prometheus, Grafana).
 - Alerts: FlareApiDown fired after 135 s with the API stopped; FlareApiHighErrorRate fired with a 0.51 error ratio under
   50 % injected 503s (`docs/screenshots/`).
 - CI on GitHub runs the same e2e script and deploys the manifests to kind on every push.
+- Hardening (v1.1.0): API key, rate limit (429), body limit (413), Caddy HTTPS mode (local CA test), Alertmanager
+  (fake and real alert delivered), backup → restore → identical registry and predictions, k6 50 users p95 8.3 ms with 0 %
+  errors (SLO p95 < 300 ms, errors < 1 %), trivy 0 CRITICAL. Full table: `docs/PRODUCTION_READINESS.md`.
 
 ## 7. Limitations and next steps
 - Research and teaching system: NOAA SWPC issues official alerts.
@@ -101,4 +108,6 @@ production.
 - Trained near solar maximum; drift is monitored because skill will change in quieter years.
 - HEL1OS overlap is small, so the soft-vs-hard comparison is underpowered.
 - Next: a fresh one-time evaluation on new production days before any champion change; calibrated probabilities in the
-  API (isotonic, already measured); a public deployment once a server is provided.
+  API (isotonic, already measured); a public deployment once a server is provided (`docs/DEPLOY_STEPS.md`).
+- Operational limits: SoLEXS L1 days are downloaded from ISRO PRADAN by hand; one node; HEL1OS covers about 5 % of
+  rows; forecasts mostly read the current activity level; the M-class holdout sample is small.

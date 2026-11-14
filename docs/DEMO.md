@@ -5,7 +5,7 @@ Before the audience arrives (5 minutes):
 .\scripts\up.ps1 -NoBuild        # or .\scripts\up.ps1 if the code changed
 .\scripts\smoke_test.ps1         # must end with "all checks passed"
 ```
-Open these tabs in order: http://localhost:8080, http://localhost:8080/replay, http://localhost:4200/runs,
+Open these tabs in order: http://localhost (through Caddy; http://localhost:8080 also works), http://localhost:8080/replay, http://localhost:4200/runs,
 http://localhost:5000/#/models, http://localhost:3000, http://localhost:9090/alerts, the GitHub Actions page.
 Fallback if anything fails live: the screenshots in `docs/screenshots/`.
 
@@ -21,6 +21,7 @@ Fallback if anything fails live: the screenshots in `docs/screenshots/`.
 | 7:00 | Grafana | "Prometheus scrapes the API: request rate, latency, errors, alerts per target. You can see the two alert drills we ran on purpose." |
 | 8:00 | Prometheus alerts, `docs/screenshots/prometheus_alert_*.jpg` | "Both alert rules were proven: we stopped the API and FlareApiDown fired after about two minutes; we injected 50 % errors and FlareApiHighErrorRate fired. `scripts\alert_drill.ps1` repeats it." |
 | 9:00 | GitHub Actions | "Every push: lint and tests, the whole stack end to end in Docker Compose, and a Kubernetes deployment on kind with a rolling update and a rollback. CD publishes the images to GHCR tagged with the version and git SHA and deploys to k3s with automatic rollback." |
+| 9:20 | `docs/PRODUCTION_READINESS.md` | "Every production item is marked PASS, FAIL or NOT RUN with the command that proved it: API key and rate limit, HTTPS mode, Alertmanager, a verified backup and restore, and a load test at 50 users with p95 8 ms." |
 | 9:40 | Close | "All three start commands are in the README. Questions?" |
 
 Optional live extras (if time):

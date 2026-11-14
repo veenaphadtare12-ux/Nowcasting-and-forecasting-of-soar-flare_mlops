@@ -14,6 +14,7 @@ https://github.com/veenaphadtare12-ux/Nowcasting-and-forecasting-of-soar-flare_m
 | 6: Kubernetes | **done**: `k8s/` (kustomize base + kind/prod overlays), `scripts\k8s_kind.ps1`, rolling update + rollback demonstrated in the CI `kind` job |
 | 7: CD + Terraform | **done (deploy waits for secrets)**: images to GHCR (git SHA + version); SSH deploy to k3s with automatic rollback needs DEPLOY_HOST / DEPLOY_USER / DEPLOY_SSH_KEY; Terraform validated, not applied |
 | 8: submission docs, v1.0.0 | **done**: README, RUNBOOK, REPORT, DEMO, INTERVIEW_PREP, lesson 21, fresh-clone check, tag `v1.0.0` |
+| 9: release readiness v1.1.0 | **done** (2026-11-14): health check, hardening, load test, backups, docs; public deploy waits for secrets (`docs/DEPLOY_STEPS.md`). Table: `docs/PRODUCTION_READINESS.md` |
 
 ## How to run
 Docker Engine runs inside WSL Ubuntu (Docker Desktop is not used, see "Docker history" below). The scripts call
@@ -93,6 +94,12 @@ freed inside WSL is not returned to D: until the disk is compacted or made spars
 
 | 2026-11-14 | after the v1.0.1 fix rebuild | 38.5 GB | **8.33 GB** | **STOP: D: below 10 GB.** Each rebuild after a cache prune re-creates the 2 GB pip layer; three flare-api tags are kept (`e48339fa084f` running, `f6d346f773a4`, `6dfe4acc700e`). Proposed rule change: keep the build cache, delete older flare tags after a successful start. |
 
+| 2026-11-14 | v1.1.0: before work | 38.4 GB | 8.33 GB | approved: old tags `f6d346f773a4`, `6dfe4acc700e` deleted, compaction by the user |
+| 2026-11-14 | after compaction 1 | 38.6 GB | 14.92 GB | VHDX 17.08 -> 12.36 GB |
+| 2026-11-14 | after hardening build | 38.7 GB | 9.73 GB | **stop**; tag `e48339fa084f` deleted; compaction 2 -> 13.54 GB |
+| 2026-11-14 | after perf-fix build | 38.6 GB | 8.07 GB | **stop**; root cause: GIT_SHA above the apt/pip layers (0 cached steps); fixed, stale cache (6.9 GB) pruned once; compaction 3 -> 16.47 GB |
+| 2026-11-14 | before the v1.1.0 build | 38.5 GB | 14.57 GB | backups on D: 29 MB |
+
 ## Phase 4: monitoring (2026-11-14)
 - `scripts\alert_drill.ps1 -Rule down`: API container stopped; `FlareApiDown` pending after 15 s, **firing after 135 s**
   (`for: 2m`), API restarted and healthy. Screenshot `docs/screenshots/prometheus_alert_api_down_firing.jpg`.
@@ -146,4 +153,19 @@ freed inside WSL is not returned to D: until the disk is compacted or made spars
   production start) as the latest production day. `production.scored_days()` now applies the production start, like
   `available_days()`; test `test_days_before_the_production_start_are_never_reported`. Local stack rebuilt
   (`e48339fa084f`): `/production/latest` = `no_data`, smoke test passed.
+
+## v1.1.0: release readiness and hardening (2026-11-14)
+Full PASS / FAIL / NOT RUN table with proof: `docs/PRODUCTION_READINESS.md`. Highlights:
+- Health check: git clean, DVC up to date, pytest 145 passed / 1 skipped, stack + smoke + e2e passed, all four Prefect
+  flows ran (retrain only created challenger v4 in the stack's MLflow; project registry untouched), Prometheus targets
+  UP, Grafana data, CI green.
+- Fixed: retrain tz bug, Prefect test isolation, replay starvation under load, public `/metrics`, old-image cleanup,
+  Docker layer-cache order.
+- Hardening: API key / rate limit / size limit / CORS (5 new API tests), Caddy (HTTP + auto-HTTPS, local-CA test),
+  Alertmanager (fake + real alert delivered; e-mail NOT RUN), backup -> restore -> identical, k6 50 users p95 8.3 ms 0 %
+  errors, CI `security` job (pip-audit, npm audit, trivy 0 CRITICAL), Compose hardening (non-root, limits, healthchecks,
+  restart, no-new-privileges, localhost-only ports, pinned images), k8s Alertmanager + API-key Secret, CD secrets on stdin.
+- Deploy: secrets absent -> `docs/DEPLOY_STEPS.md`; GHCR packages public; CD deploy script dry run passed locally.
+- Docs: SECURITY, SLO, DEPLOY_STEPS, PRODUCTION_READINESS, VIVA_CHEATSHEET, RUNBOOK sections, lesson 22, current-state
+  banners on dated documents.
 

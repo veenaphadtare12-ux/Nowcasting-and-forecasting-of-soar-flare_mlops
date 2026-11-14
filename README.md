@@ -13,11 +13,14 @@ This is an MLOps project that combines soft X-ray data from SoLEXS and hard X-ra
 ```
 | URL | What |
 |---|---|
+| http://localhost | the public entry through Caddy (HTTPS automatically when `SITE_ADDRESS` is a domain) |
 | http://localhost:8080 | website: 3D landing page and the console (latest day, replay, performance, models, drift) |
 | http://localhost:8000/docs | FastAPI (frozen champion models) |
 | http://localhost:4200 | Prefect (daily ingest 02:15 UTC, drift check 03:30 UTC, replay on demand) |
 | http://localhost:5000 | MLflow model registry |
-| http://localhost:9090 / :3000 | Prometheus (2 alert rules) / Grafana dashboard |
+| http://localhost:9090 / :9093 / :3000 | Prometheus (2 alert rules) / Alertmanager / Grafana dashboard |
+
+`POST /predict` needs the header `X-API-Key`; `up.ps1` creates a local key in the git-ignored `.env` (`FLARE_API_KEYS`).
 
 Kubernetes: `.\scripts\k8s_kind.ps1 -Demo` (kind cluster, rolling update and rollback). Deployment: GitHub Actions CD to
 GHCR and a k3s server (`docs/RUNBOOK.md`). Docker Engine runs in WSL Ubuntu; the scripts call it themselves.
@@ -26,7 +29,11 @@ GHCR and a k3s server (`docs/RUNBOOK.md`). Docker Engine runs in WSL Ubuntu; the
 |---|---|
 | `docs/REPORT.md` | the project report: problem, data, method, results, MLOps, limitations |
 | `docs/DEMO.md` | a 10-minute live demo script |
-| `docs/RUNBOOK.md` | operating, alerts, Kubernetes, CD secrets, Terraform |
+| `docs/RUNBOOK.md` | start/stop, alerts, HTTPS, API-key rotation, backup/restore, rollback, Kubernetes, CD, Terraform |
+| `docs/PRODUCTION_READINESS.md` | PASS / FAIL / NOT RUN for every production item, with proof |
+| `docs/SECURITY.md`, `docs/SLO.md` | security controls, scans, accepted risks; load-test results against the SLOs |
+| `docs/DEPLOY_STEPS.md` | exactly what is needed for the public deployment |
+| `docs/VIVA_CHEATSHEET.md` | one page for the viva |
 | `docs/INTERVIEW_PREP.md` | questions and answers about every design choice |
 | `docs/ARCHITECTURE.md` | the system contract |
 | `docs/DEPLOY_PROGRESS.md` | what was built and verified, with dates and disk log |
@@ -65,7 +72,8 @@ GitHub Actions on every push and pull request (`.github/workflows/ci.yml`):
 - `test`: ruff and `pytest -m "not data"` on Python 3.12;
 - `compose-e2e`: builds the images and runs `scripts/e2e.sh` against the full Docker Compose stack;
 - `kind`: deploys `k8s/` to a kind cluster (automatic rollback on failure), smoke test, rolling update and rollback demo;
-- `terraform`: `terraform fmt -check` and `terraform validate` for `infra/terraform` (never applied).
+- `terraform`: `terraform fmt -check` and `terraform validate` for `infra/terraform` (never applied);
+- `security`: pip-audit, npm audit, trivy on both images (fails on CRITICAL).
 
 `.github/workflows/cd.yml` publishes the images to GHCR (git SHA + version tag) after CI passes on master or on a `v*` tag,
 and deploys to the k3s server over SSH when the secrets `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY` exist.
