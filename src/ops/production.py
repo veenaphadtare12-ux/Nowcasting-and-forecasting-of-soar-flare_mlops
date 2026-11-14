@@ -71,7 +71,11 @@ def available_days() -> dict[str, str]:
 
 
 def scored_days() -> list[str]:
-    return sorted(p.name.removesuffix(".json") for p in prod_dir().glob("????-??-??.json"))
+    """Scored production days on or after the production start. Older files in the store (e.g. a development day that
+    the end-to-end test scored with a temporary production start) are never reported as production."""
+    t0 = start()
+    days = (p.name.removesuffix(".json") for p in prod_dir().glob("????-??-??.json"))
+    return sorted(d for d in days if pd.Timestamp(d, tz="UTC") >= t0)
 
 
 def pending_days() -> list[str]:

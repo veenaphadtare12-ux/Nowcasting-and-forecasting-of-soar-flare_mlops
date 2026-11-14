@@ -125,3 +125,19 @@ def test_check_drift_bundle_mode(prod):
     s2 = drift.run_bundle()
     assert s2["current_label"].startswith("production")
     assert json.loads(Path(get_settings().drift_file).read_text())["mode"] == "bundle"
+
+
+def test_days_before_the_production_start_are_never_reported(tmp_path, monkeypatch):
+    """A day scored under a temporary (test) production start must disappear once the real start is back."""
+    from src.ops import production
+    from src.settings import get_settings
+
+    monkeypatch.setenv("FLARE_PREDICTIONS_DIR", str(tmp_path / "store"))
+    monkeypatch.setenv("FLARE_PRODUCTION_START", "2026-11-13")
+    get_settings.cache_clear()
+    d = production.prod_dir()
+    for day in ("2026-02-21", "2026-11-13", "2026-11-14"):
+        (d / f"{day}.json").write_text("{}", encoding="utf-8")
+    assert production.scored_days() == ["2026-11-13", "2026-11-14"]
+    get_settings.cache_clear()
+
