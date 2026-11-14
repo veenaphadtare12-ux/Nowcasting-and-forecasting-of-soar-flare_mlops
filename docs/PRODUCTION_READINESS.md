@@ -78,4 +78,6 @@ gh secret list ; gh run list
 - **Not run:** public deployment and rollback on a server, a public Let's Encrypt certificate, alert e-mail.
 
 ## Release
-v1.1.0: see the git tag message and the final CI run recorded in `docs/DEPLOY_PROGRESS.md`.
+v1.1.0 (tag on the commit after `e6f0f3b`): CI run 43578152118 on `e6f0f3b` → test, compose-e2e, kind, terraform,
+security: 5/5 success. Local on image `e6f0f3b7f1f3`: smoke test passed, `e2e.ps1` → E2E PASSED, `smoke.sh http://localhost`
+→ SMOKE OK (incl. "metrics not public").

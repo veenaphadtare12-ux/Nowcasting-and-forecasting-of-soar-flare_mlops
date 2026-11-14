@@ -168,4 +168,4 @@ Full PASS / FAIL / NOT RUN table with proof: `docs/PRODUCTION_READINESS.md`. Hig
 - Deploy: secrets absent -> `docs/DEPLOY_STEPS.md`; GHCR packages public; CD deploy script dry run passed locally.
 - Docs: SECURITY, SLO, DEPLOY_STEPS, PRODUCTION_READINESS, VIVA_CHEATSHEET, RUNBOOK sections, lesson 22, current-state
   banners on dated documents.
-
+- Release check: CI run 43578152118 (commit e6f0f3b) 5/5 green; local image e6f0f3b7f1f3: smoke, e2e and public smoke passed.
