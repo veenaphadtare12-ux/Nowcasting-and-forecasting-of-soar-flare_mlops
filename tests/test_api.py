@@ -150,3 +150,19 @@ def test_data_coverage_is_development_only(client):
     assert c["days"][-1] <= "2026-09-12" and c["summary"]["usable_days"] == 424
     assert len(c["days"]) == len(c["valid_fraction"]) == len(c["usable"])
     assert all(m <= "2026-09" for m in c["goes_monthly"])
+
+
+def test_fault_injection_is_off_by_default_and_counted_when_on(client, monkeypatch):
+    from src.settings import get_settings
+
+    assert client.get("/models").status_code == 200  # default rate 0: nothing injected
+    monkeypatch.setenv("FLARE_FAULT_INJECT_RATE", "1")
+    get_settings.cache_clear()
+    assert client.get("/models").status_code == 503
+    assert client.get("/health").status_code == 200  # probes are never affected
+    metrics = client.get("/metrics").text
+    assert 'flare_api_requests_total{method="GET",route="unmatched",status="503"}' in metrics
+    monkeypatch.setenv("FLARE_ENVIRONMENT", "production")
+    get_settings.cache_clear()
+    assert client.get("/models").status_code == 200  # never in production
+

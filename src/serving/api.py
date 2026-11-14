@@ -12,6 +12,7 @@ import asyncio
 import json
 import logging
 import math
+import random
 import time
 from contextlib import asynccontextmanager
 from functools import lru_cache
@@ -22,7 +23,7 @@ import numpy as np
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from prometheus_client import CONTENT_TYPE_LATEST, CollectorRegistry, Counter, Gauge, Histogram, generate_latest
 from pydantic import BaseModel, Field
 
@@ -158,11 +159,25 @@ app = FastAPI(
 app.add_middleware(CORSMiddleware, allow_origins=get_settings().cors_list, allow_methods=["GET", "POST"], allow_headers=["*"])
 
 
+FAULT_EXEMPT = ("/health", "/metrics")
+
+
+def _inject_fault(path: str) -> bool:
+    """Chaos switch for alert drills: off by default, never in production, never on /health or /metrics."""
+    s = get_settings()
+    if s.fault_inject_rate <= 0 or s.environment == "production" or path in FAULT_EXEMPT:
+        return False
+    return random.random() < s.fault_inject_rate
+
+
 @app.middleware("http")
 async def log_and_measure(request: Request, call_next):
     t0 = time.perf_counter()
     status = 500
     try:
+        if _inject_fault(request.url.path):
+            status = 503
+            return JSONResponse({"detail": "fault injected (FLARE_FAULT_INJECT_RATE)"}, status_code=503)
         response = await call_next(request)
         status = response.status_code
         return response

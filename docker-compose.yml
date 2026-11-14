@@ -15,6 +15,7 @@ x-flare-env: &flare-env
   FLARE_MAX_REPLAY_SPEED: "600"
   FLARE_PREFECT_API_URL: http://prefect-server:4200/api
   FLARE_MLFLOW_URL: http://mlflow:5000
+  FLARE_FAULT_INJECT_RATE: ${FLARE_FAULT_INJECT_RATE:-0}  # alert drills only (docs/RUNBOOK.md#alert-drills)
 
 x-flare-volumes: &flare-volumes
   - predictions:/data/predictions

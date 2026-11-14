@@ -34,6 +34,13 @@ class Settings(BaseSettings):
     mlflow_url: str | None = Field(None, description="MLflow tracking server (read-only use), for /pipeline/status")
     environment: str = Field("local", description="local | compose | k8s | ci")
     git_sha: str = Field("unknown", description="set at image build time")
+    fault_inject_rate: float = Field(
+        0.0,
+        ge=0.0,
+        le=1.0,
+        description="chaos testing only: share of requests answered with 503 (to prove the error-rate alert); "
+        "always ignored when environment is 'production'; /health and /metrics are never affected",
+    )
 
     @property
     def cors_list(self) -> list[str]:
