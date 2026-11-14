@@ -7,13 +7,13 @@ https://github.com/veenaphadtare12-ux/Nowcasting-and-forecasting-of-soar-flare_m
 |---|---|
 | Ops-1: CI, contracts, flows, push | **done**: CI green on GitHub |
 | 2: model bundle, API, Docker | **done** |
-| 2b: full Compose stack + smoke test + e2e | **done**: `scripts\up.ps1`, `scripts\smoke_test.ps1`, `scripts\e2e.ps1` all pass (2026-11-13) |
+| 2b: full Compose stack + smoke test + e2e | **done**: `scripts\up.ps1`, `scripts\smoke_test.ps1`, `scripts\e2e.ps1` all pass (re-verified 2026-11-14) |
 | 3: frontend | **done**: dashboard (6 pages + pipeline panel) and the cinematic landing page at `/` (2026-11-14) |
-| 4: monitoring | partly done: Prometheus, Grafana dashboard `flare-api` (9 panels), 2 alert rules, drift in the frontend. Remaining: check the alert fires, screenshots |
-| 5: CI with full Compose + kind | not started |
-| 6: Kubernetes (kind) | not started |
-| 7: CD + Terraform | not started |
-| 8: submission docs, v1.0.0 | not started |
+| 4: monitoring | **done** (2026-11-14): both alert rules proven firing by drills, screenshots in `docs/screenshots/` |
+| 5: CI with full Compose + kind | **done**: CI jobs `test`, `compose-e2e`, `kind`, `terraform` |
+| 6: Kubernetes | **done**: `k8s/` (kustomize base + kind/prod overlays), `scripts\k8s_kind.ps1`, rolling update + rollback demonstrated in the CI `kind` job |
+| 7: CD + Terraform | **done (deploy waits for secrets)**: images to GHCR (git SHA + version); SSH deploy to k3s with automatic rollback needs DEPLOY_HOST / DEPLOY_USER / DEPLOY_SSH_KEY; Terraform validated, not applied |
+| 8: submission docs, v1.0.0 | **done**: README, RUNBOOK, REPORT, DEMO, INTERVIEW_PREP, lesson 21, fresh-clone check, tag `v1.0.0` |
 
 ## How to run
 Docker Engine runs inside WSL Ubuntu (Docker Desktop is not used, see "Docker history" below). The scripts call
@@ -88,4 +88,54 @@ freed inside WSL is not returned to D: until the disk is compacted or made spars
   for the disk compaction; nothing was broken.
 - `scripts\smoke_test.ps1`: all checks passed. `ruff check .`: clean. `pytest`: 136 passed, 1 skipped (105 s).
 - `scripts\e2e.ps1`: **E2E PASSED (6dfe4acc700e)**.
+| 2026-11-14 | after phase 4 (one rebuild, drills, screenshots) | 38.9 GB | 12.08 GB | build cache pruned by `up.ps1`; limit lowered to 10 GB for D: by the user (option chosen 2026-11-14), old tag `9d36afd2b402` deleted with approval |
+| 2026-11-14 | after phases 5-8 (no local images built; CI builds on GitHub) | 38.8 GB | 12.0 GB | kind is exercised in CI, not locally, to keep the WSL disk from growing by about 6 GB |
+
+## Phase 4: monitoring (2026-11-14)
+- `scripts\alert_drill.ps1 -Rule down`: API container stopped; `FlareApiDown` pending after 15 s, **firing after 135 s**
+  (`for: 2m`), API restarted and healthy. Screenshot `docs/screenshots/prometheus_alert_api_down_firing.jpg`.
+- `scripts\alert_drill.ps1 -Rule errors`: `FLARE_FAULT_INJECT_RATE=0.5` plus 4 requests/s; `FlareApiHighErrorRate`
+  **firing after 480 s with an error ratio of 0.51** (`> 0.05` for 5 m), then restored (rate 0, `/models` 200).
+  Screenshot `docs/screenshots/prometheus_alert_error_rate_firing.jpg`.
+- Fault injection (`src/settings.py` `fault_inject_rate`, `src/serving/api.py` `_inject_fault`): off by default, ignored in
+  `production`, never on `/health` or `/metrics`; test `test_fault_injection_is_off_by_default_and_counted_when_on`.
+- Grafana stat panels got thresholds (error rate green < 1 % < orange < 5 % < red; API up shows UP/DOWN).
+- Screenshots: `grafana_flare_api_dashboard.jpg` (both drills visible), `prefect_flow_runs.jpg`, `mlflow_registry.jpg`,
+  `landing_hero_1440.jpg`, `landing_mobile_390.jpg`. Headless capture returned a stale frame for WebGL pages until the page
+  was repainted (a 2-px scroll); recorded so the next capture is quick.
+- Found: `scripts/e2e.sh` ran `docker compose down --volumes` (deleted named volumes) and left the test production start
+  active. Now volumes are only wiped with `E2E_FRESH=1` (CI), and the real production start is restored at the end.
+
+## Phases 5-7: CI, Kubernetes, CD, Terraform (2026-11-14)
+- CI (`.github/workflows/ci.yml`): `test` (ruff + pytest), `compose-e2e` (build + `scripts/e2e.sh` with fresh volumes on the
+  runner: **passed**), `kind` (build, kind cluster from `k8s/kind/cluster.yaml`, `scripts/k8s/kind_up.sh`: deploy with
+  automatic rollback + smoke test, then `scripts/k8s/rollout_demo.sh`), `terraform` (fmt + validate: **passed**).
+- Kubernetes (`k8s/base`): Deployments for api (2 replicas, maxSurge 1 / maxUnavailable 0, startup/readiness/liveness probes,
+  preStop sleep, non-root, limits), worker (Recreate), frontend (2 replicas), prefect-server, mlflow (+ seed Job that copies
+  the bundle from the API image), prometheus, grafana; 7 PVCs; ConfigMap `flare-config`; ConfigMaps for Prometheus/Grafana
+  and the Secret `grafana-admin` are created by `scripts/k8s/deploy.sh` (never committed). Overlays: `kind` (NodePorts on
+  host ports 18080/18000/13000/19090/14200/15000) and `prod` (Ingress, `FLARE_ENVIRONMENT=production`).
+- kind fixes found by CI: kustomize refuses absolute resource paths (temporary overlay now inside `k8s/`); 2 of 29
+  requests failed during the first rolling update (fixed with a preStop sleep, grace period and minReadySeconds); MLflow
+  measured 2.1 GiB with 4 workers in Compose, so Kubernetes runs it with `--workers=1` and a 2 Gi limit.
+- **CI run 43561999582 (commit dd12a63): all 4 jobs green.** kind job: `DEPLOY OK (kind, tag dd12a633d5b8)`, smoke test
+  5/5 OK, rolling update **67 requests, 0 failed**, bad image release: rollout failed as expected while the old pods kept
+  serving, `rollout undo` restored `flare-api:dd12a633d5b8`, `ROLLOUT DEMO OK`.
+- **CD run 43562573972: success.** Published `ghcr.io/veenaphadtare12-ux/flare-api:dd12a633d5b8` and `:master` (same for
+  flare-frontend). Deploy job: "Deploy skipped: repository secrets missing: DEPLOY_HOST DEPLOY_USER DEPLOY_SSH_KEY".
+- Local kind: `scripts\k8s_kind.ps1 [-Demo] [-Down]`. Not run on this PC: kind/kubectl are not installed in WSL (installing
+  needs the user's approval for downloads) and the kind node would add about 6 GB to the WSL disk on D:. CI runs the same
+  scripts on every push.
+- CD (`.github/workflows/cd.yml`): after CI succeeds on master, on a `v*.*.*` tag, or by hand: push
+  `ghcr.io/veenaphadtare12-ux/flare-{api,frontend}:<sha>` and `:master` / `:vX.Y.Z`; deploy job checks DEPLOY_HOST,
+  DEPLOY_USER, DEPLOY_SSH_KEY (not set yet, so it prints a notice), copies `k8s/ scripts/k8s monitoring/` over SSH and runs
+  `deploy.sh prod <sha>` (rollout undo on failure), then smoke-tests `http://<host>/`.
+- Terraform (`infra/terraform`): AWS ap-south-1, t3.large, Ubuntu 24.04, 40 GB gp3 encrypted, IMDSv2, security group
+  22/80/443, Elastic IP, cloud-init installs k3s + `deploy` user. Not applied.
+
+## Phase 8: docs and release (2026-11-14)
+- `README.md` (3 start commands, URLs, CI/CD), `docs/RUNBOOK.md`, `docs/REPORT.md`, `docs/DEMO.md`,
+  `docs/INTERVIEW_PREP.md`, lesson `docs/learn/21-alerts-kubernetes-cd-terraform.md`.
+- Fresh-clone check: `git clone` into `D:\tmp\fresh` (37 MB without .git): `pytest -m "not data"` 126 passed, 6 skipped;
+  `docker compose config` valid. The CI `compose-e2e` job is the full fresh-clone build and end-to-end run.
 
