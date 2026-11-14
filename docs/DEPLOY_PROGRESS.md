@@ -79,3 +79,13 @@ freed inside WSL is not returned to D: until the disk is compacted or made spars
 | Date | Point | C: free | D: free | Notes |
 |---|---|---|---|---|
 | 2026-11-14 | pre-flight before phase 4 | 39.0 GB | 9.69 GB | **STOP: D: below 15 GB.** Build cache 0 B, no dangling images. 4.69 GB is held by old, non-dangling image tags (`flare-api:6dbb958be90b`, `flare-api:7c9b20e183ef-dirty` and their frontends), which the prune rule does not cover. |
+| 2026-11-14 | after deleting 2 old image tags + diskpart compact | 39.0 GB | 17.02 GB | VHDX 17.6 -> 10.3 GB. Sparse mode refused by WSL ("disabled due to potential data corruption"); not forced. |
+| 2026-11-14 | after step 1 (up.ps1 rebuild, pytest, e2e) | 38.9 GB | 11.43 GB | **STOP: D: below 15 GB.** VHDX grew 10.3 -> 14.0 GB from the image rebuild (build cache pruned afterwards, 2.2 GB, but a non-sparse VHDX never shrinks by itself). |
+
+## Step 1 re-verification (2026-11-14)
+- `scripts\up.ps1` rebuilt images `6dfe4acc700e`; all services healthy: site :8080, API :8000, Prometheus :9090,
+  Grafana :3000, Prefect :4200, MLflow :5000 (all HTTP 200). Cause of the earlier outage: WSL had been shut down
+  for the disk compaction; nothing was broken.
+- `scripts\smoke_test.ps1`: all checks passed. `ruff check .`: clean. `pytest`: 136 passed, 1 skipped (105 s).
+- `scripts\e2e.ps1`: **E2E PASSED (6dfe4acc700e)**.
+
