@@ -6,7 +6,9 @@
 #   add -KeepFiring to leave the fault in place (for screenshots) and run  .\scripts\alert_drill.ps1 -Restore  afterwards
 param([ValidateSet("down", "errors")][string]$Rule = "down", [switch]$KeepFiring, [switch]$Restore, [int]$TimeoutSec = 600, [int]$HoldSec = 0)
 . "$PSScriptRoot\_common.ps1"
-$tag = Get-FlareTag
+# reuse the tag of the running API image (a new commit must not make compose rebuild in the middle of a drill)
+$img = (Invoke-Bash "docker inspect flare-api-1 --format '{{.Config.Image}}' 2>/dev/null || true" | Select-Object -Last 1)
+$tag = if ($img -match ':([^:]+)$') { $Matches[1] } else { Get-FlareTag }
 $names = @{ down = "FlareApiDown"; errors = "FlareApiHighErrorRate" }
 
 function Get-AlertState([string]$Name) {
