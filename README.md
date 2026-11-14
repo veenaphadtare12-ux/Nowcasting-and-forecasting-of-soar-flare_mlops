@@ -1,8 +1,35 @@
 # Solar Flare Nowcasting/Forecasting with Aditya-L1 SoLEXS + HEL1OS Data
 
 [![CI](https://github.com/veenaphadtare12-ux/Nowcasting-and-forecasting-of-soar-flare_mlops/actions/workflows/ci.yml/badge.svg)](https://github.com/veenaphadtare12-ux/Nowcasting-and-forecasting-of-soar-flare_mlops/actions/workflows/ci.yml)
+[![CD](https://github.com/veenaphadtare12-ux/Nowcasting-and-forecasting-of-soar-flare_mlops/actions/workflows/cd.yml/badge.svg)](https://github.com/veenaphadtare12-ux/Nowcasting-and-forecasting-of-soar-flare_mlops/actions/workflows/cd.yml)
 
 This is an MLOps project that combines soft X-ray data from SoLEXS and hard X-ray data from HEL1OS, both instruments aboard India's Aditya-L1 mission, to detect and forecast solar flares. The project builds an end-to-end pipeline — from raw data ingestion and preprocessing through model training and evaluation — aimed at identifying flare onset in near real time (nowcasting) and predicting flare activity ahead of time (forecasting).
+
+## Run the product (3 commands, Windows PowerShell)
+```
+.\scripts\up.ps1            # build the images (tagged with the git SHA) and start the whole stack in Docker
+.\scripts\smoke_test.ps1    # check every service
+.\scripts\e2e.ps1           # raw day -> Prefect -> data contracts -> features -> champions -> store -> API -> website
+```
+| URL | What |
+|---|---|
+| http://localhost:8080 | website: 3D landing page and the console (latest day, replay, performance, models, drift) |
+| http://localhost:8000/docs | FastAPI (frozen champion models) |
+| http://localhost:4200 | Prefect (daily ingest 02:15 UTC, drift check 03:30 UTC, replay on demand) |
+| http://localhost:5000 | MLflow model registry |
+| http://localhost:9090 / :3000 | Prometheus (2 alert rules) / Grafana dashboard |
+
+Kubernetes: `.\scripts\k8s_kind.ps1 -Demo` (kind cluster, rolling update and rollback). Deployment: GitHub Actions CD to
+GHCR and a k3s server (`docs/RUNBOOK.md`). Docker Engine runs in WSL Ubuntu; the scripts call it themselves.
+
+| Document | For |
+|---|---|
+| `docs/REPORT.md` | the project report: problem, data, method, results, MLOps, limitations |
+| `docs/DEMO.md` | a 10-minute live demo script |
+| `docs/RUNBOOK.md` | operating, alerts, Kubernetes, CD secrets, Terraform |
+| `docs/INTERVIEW_PREP.md` | questions and answers about every design choice |
+| `docs/ARCHITECTURE.md` | the system contract |
+| `docs/DEPLOY_PROGRESS.md` | what was built and verified, with dates and disk log |
 
 Results and decisions: `docs/MODEL_CARD.md`, `docs/FINAL_CHOICE.md`, `docs/FINAL_CHOICE_2.md`, `docs/IMPROVEMENTS.md`.
 Plain-language overview: `docs/WHAT_WE_DID.md`. Lessons: `docs/learn/INDEX.md`.
@@ -34,7 +61,14 @@ pytest -q                     # everything (needs the local DVC data)
 pytest -q -m "not data"       # what CI runs: uses tests/fixtures only
 ruff check .
 ```
-GitHub Actions (`.github/workflows/ci.yml`) runs ruff and `pytest -m "not data"` on Python 3.12 on every push and pull request.
+GitHub Actions on every push and pull request (`.github/workflows/ci.yml`):
+- `test`: ruff and `pytest -m "not data"` on Python 3.12;
+- `compose-e2e`: builds the images and runs `scripts/e2e.sh` against the full Docker Compose stack;
+- `kind`: deploys `k8s/` to a kind cluster (automatic rollback on failure), smoke test, rolling update and rollback demo;
+- `terraform`: `terraform fmt -check` and `terraform validate` for `infra/terraform` (never applied).
+
+`.github/workflows/cd.yml` publishes the images to GHCR (git SHA + version tag) after CI passes on master or on a `v*` tag,
+and deploys to the k3s server over SSH when the secrets `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY` exist.
 
 ## Data contracts (pandera)
 `src/validation/schemas.py` defines contracts for the SoLEXS minute series, HEL1OS sessions, GOES events, the 10-s feature

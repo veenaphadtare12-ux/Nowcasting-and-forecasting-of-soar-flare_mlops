@@ -37,13 +37,13 @@ elif ! kubectl -n $NS get secret grafana-admin >/dev/null 2>&1; then
 fi
 
 # Temporary overlay that pins the image tag (the committed overlays stay tag-free).
-BUILD=$(mktemp -d)
+BUILD=$(mktemp -d "$ROOT/k8s/.build.XXXXXX")   # inside k8s/: kustomize only accepts relative resource paths
 trap 'rm -rf "$BUILD"' EXIT
 cat > "$BUILD/kustomization.yaml" <<EOF
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - $ROOT/k8s/overlays/$OVERLAY
+  - ../overlays/$OVERLAY
 images:
   - name: ghcr.io/veenaphadtare12-ux/flare-api
     newTag: "$TAG"
@@ -59,7 +59,7 @@ done
 
 # The seed Job is immutable once created: replace it on every deploy.
 kubectl -n $NS delete job mlflow-seed --ignore-not-found
-kubectl kustomize "$BUILD" --load-restrictor LoadRestrictionsNone | kubectl apply -f -
+kubectl kustomize "$BUILD" | kubectl apply -f -
 kubectl -n $NS annotate deploy api frontend worker kubernetes.io/change-cause="deploy $TAG" --overwrite >/dev/null
 
 failed=""

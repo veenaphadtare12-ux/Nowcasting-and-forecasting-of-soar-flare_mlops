@@ -25,10 +25,11 @@ spec:
             - --artifacts-destination=/mlflow/artifacts
             - --serve-artifacts
             - --allowed-hosts=*
+            - --workers=1   # one worker: about 2 GiB with the default 4 (measured in Compose)
           ports: [{ name: http, containerPort: 5000 }]
           resources:
-            requests: { cpu: 100m, memory: 384Mi }
-            limits: { cpu: "1", memory: 1Gi }
+            requests: { cpu: 100m, memory: 512Mi }
+            limits: { cpu: "1", memory: 2Gi }
           startupProbe:
             httpGet: { path: /health, port: http }
             periodSeconds: 5
