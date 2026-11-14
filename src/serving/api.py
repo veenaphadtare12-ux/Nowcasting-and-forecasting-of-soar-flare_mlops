@@ -289,7 +289,7 @@ def _known_events(day: str, until: pd.Timestamp) -> tuple[list, list]:
 
 
 @app.get("/health", response_model=Health)
-def health() -> Health:
+async def health() -> Health:  # async: probes never wait behind busy worker threads
     b, s = bundle(), get_settings()
     return Health(
         status="ok",
@@ -304,6 +304,11 @@ def health() -> Health:
 
 @app.get("/models", response_model=list[ModelInfo])
 def models() -> list[ModelInfo]:
+    return _models(bundle().version)
+
+
+@lru_cache(maxsize=4)
+def _models(version: str) -> list[ModelInfo]:
     out = []
     for t, m in bundle().manifest["models"].items():
         out.append(
@@ -337,40 +342,82 @@ def replay_days() -> list[DayInfo]:
     return [DayInfo(day=d, **v) for d, v in bundle().days.items()]
 
 
+def _store_key(predictions_dir) -> int:
+    """Changes whenever score_replay rewrites the predictions store (cache key for prepared replay days)."""
+    db = Path(predictions_dir) / "predictions.db"
+    try:
+        return db.stat().st_mtime_ns
+    except OSError:
+        return 0
+
+
+@lru_cache(maxsize=16)
+def _prepared_day(bundle_version: str, day: str, predictions_dir: str, store_key: int) -> dict:
+    """Everything /replay/{day} needs, parsed and formatted once per day and store version (then sliced per request).
+    Before this cache every request re-read SQLite and re-formatted ~10,000 timestamps; 50 users saturated the API."""
+    b = bundle()
+    lc = b.table(day, "lightcurve")
+    pred, source, run = _predictions(day)
+    targets = {}
+    for t, g in pred.groupby("target"):
+        g = g.sort_values("time")
+        targets[t] = {
+            "model": g["model"].iloc[0],
+            "model_version": str(g["model_version"].iloc[0]),
+            "threshold": float(g["threshold"].iloc[0]),
+            "ts": pd.DatetimeIndex(g["time"]).as_unit("ns").asi8,  # ns, whatever unit the source used
+            "time": _iso(g["time"]),
+            "p": g["p_flare"].to_numpy(dtype="float64"),
+            "p_json": _num(g["p_flare"]),
+            "alert": [bool(x) for x in g["alert"]],
+            "alert_np": g["alert"].to_numpy(dtype=bool),
+        }
+    return {
+        "lc_ts": pd.DatetimeIndex(lc.index).as_unit("ns").asi8,
+        "lc_time": _iso(lc.index),
+        "lc_cols": {c: _num(lc[c]) for c in lc.columns},
+        "targets": targets,
+        "source": source,
+        "run": run,
+    }
+
+
 @app.get("/replay/{day}")
 def replay_day(day: str, until: str | None = None, step: int = Query(1, ge=1, le=60), targets: str | None = None) -> dict:
     """Everything known about a replay day up to `until` (default: end of day): light curves, predictions, events."""
     d0 = _day(day)
     u = _until(d0, until)
     b = bundle()
-    lc = b.table(day, "lightcurve")
-    lc = lc[lc.index <= u].iloc[::step]
-    pred, source, run = _predictions(day)
-    pred = pred[pred["time"] <= u]
+    s = get_settings()
+    prep = _prepared_day(b.version, day, str(s.predictions_dir), _store_key(s.predictions_dir))
+    cut = pd.Timestamp(u).as_unit("ns").value
+    n_lc = int(np.searchsorted(prep["lc_ts"], cut, side="right"))
     want = set(targets.split(",")) if targets else set(b.manifest["models"])
     series = {}
-    for t, g in pred.groupby("target"):
+    for t, g in prep["targets"].items():
         if t not in want:
             continue
-        g = g.sort_values("time").iloc[::step]
+        n = int(np.searchsorted(g["ts"], cut, side="right"))
+        if n == 0:
+            continue  # nothing known yet for this target (same as the original groupby on an empty frame)
         series[t] = {
-            "model": g["model"].iloc[0],
-            "model_version": str(g["model_version"].iloc[0]),
-            "threshold": float(g["threshold"].iloc[0]),
-            "time": _iso(g["time"]),
-            "p_flare": _num(g["p_flare"]),
-            "alert": [bool(x) for x in g["alert"]],
+            "model": g["model"],
+            "model_version": g["model_version"],
+            "threshold": g["threshold"],
+            "time": g["time"][:n:step],
+            "p_flare": g["p_json"][:n:step],
+            "alert": g["alert"][:n:step],
         }
-        observe(t, g["p_flare"].to_numpy(), g["alert"].to_numpy())
+        observe(t, g["p"][:n:step], g["alert_np"][:n:step])
     goes, det = _known_events(day, u)
     return {
         "day": day,
         "until": u.strftime("%Y-%m-%dT%H:%M:%SZ"),
         "note": b.days[day]["note"],
         "in_fit_period": b.days[day]["in_fit_period"],
-        "source": source,
-        "run": run,
-        "lightcurve": {"time": _iso(lc.index), **{c: _num(lc[c]) for c in lc.columns}},
+        "source": prep["source"],
+        "run": prep["run"],
+        "lightcurve": {"time": prep["lc_time"][:n_lc:step], **{c: v[:n_lc:step] for c, v in prep["lc_cols"].items()}},
         "predictions": series,
         "goes_flares": goes,
         "detector_events": det,
@@ -485,9 +532,15 @@ def predict(body: PredictRows | PredictRaw) -> Prediction:
     )
 
 
+@lru_cache(maxsize=8)
+def _bundle_json(version: str, name: str) -> dict:
+    """Frozen bundle files never change for a bundle version: read them once."""
+    return bundle().json(name)
+
+
 @app.get("/results")
 def results() -> dict:
-    return bundle().json("model_card.json")
+    return _bundle_json(bundle().version, "model_card.json")
 
 
 @app.get("/data/coverage")
@@ -655,5 +708,5 @@ def pipeline_status() -> dict:
 
 
 @app.get("/metrics")
-def metrics() -> Response:
+async def metrics() -> Response:  # async: Prometheus scrapes are never queued behind slow requests
     return Response(generate_latest(REGISTRY), media_type=CONTENT_TYPE_LATEST)

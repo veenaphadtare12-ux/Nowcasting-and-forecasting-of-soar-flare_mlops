@@ -227,3 +227,17 @@ def test_cors_allow_list_never_wildcards(client, monkeypatch):
     )
     assert r.headers.get("access-control-allow-origin") is None
 
+
+
+def test_replay_cache_key_follows_the_store(tmp_path):
+    """Prepared replay days are cached per store version: rewriting predictions.db must change the key."""
+    import os
+
+    from src.serving.api import _store_key
+
+    assert _store_key(tmp_path) == 0  # no store yet
+    db = tmp_path / "predictions.db"
+    db.write_bytes(b"v1")
+    k1 = _store_key(tmp_path)
+    os.utime(db, ns=(k1 + 10_000_000_000, k1 + 10_000_000_000))
+    assert _store_key(tmp_path) != k1 and k1 != 0

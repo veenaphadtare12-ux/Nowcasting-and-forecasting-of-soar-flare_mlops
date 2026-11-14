@@ -26,8 +26,6 @@ export const options = {
   summaryTrendStats: ["avg", "min", "med", "p(90)", "p(95)", "p(99)", "max"],
 };
 
-let predictBody = null;
-
 export function setup() {
   const models = http.get(`${BASE}/models`, HDR).json();
   const now = models.find((m) => m.target === "now");
@@ -37,7 +35,7 @@ export function setup() {
 }
 
 export default function (data) {
-  predictBody = data.predictBody;
+  const predictBody = data.predictBody;
   const r = Math.random();
   let res;
   if (r < 0.25) {
@@ -65,8 +63,8 @@ export function handleSummary(data) {
   const m = data.metrics;
   const d = m.http_req_duration.values;
   const out = {
-    vus: options.scenarios.website_mix.vus,
-    duration: options.scenarios.website_mix.duration,
+    vus: Number(__ENV.VUS || 50),
+    duration: __ENV.DURATION || "2m",
     requests: m.http_reqs.values.count,
     rps: m.http_reqs.values.rate,
     error_rate: m.http_req_failed.values.rate,
