@@ -19,6 +19,14 @@ from src.ops.locks import check_window
 CHALLENGER, CHAMPION = "challenger", "champion"
 
 
+def _like_index(t, index) -> pd.Timestamp:
+    """Timestamp with the same timezone handling as `index` (the dataset index is UTC, small test frames may be naive)."""
+    t, tz = pd.Timestamp(t), getattr(index, "tz", None)
+    if tz is None:
+        return t.tz_localize(None) if t.tzinfo is not None else t
+    return t.tz_localize(tz) if t.tzinfo is None else t.tz_convert(tz)
+
+
 def fit_candidate(
     df: pd.DataFrame,
     feats: list[str],
@@ -35,7 +43,7 @@ def fit_candidate(
 
     y_col, ok_col = train.TARGETS[target]
     purge = pd.Timedelta(minutes=purge_min)
-    b0, e = pd.Timestamp(block_start), pd.Timestamp(end)
+    b0, e = _like_index(block_start, df.index), _like_index(end, df.index)
     ok = df[ok_col].to_numpy().astype(bool)
     fit = df[(df.index < b0 - purge) & ok].iloc[::stride]
     blk = df[(df.index >= b0) & (df.index < e - purge) & ok]
@@ -61,7 +69,8 @@ def register_challenger(cand: dict, registry_name: str, target: str, tracking_ur
     from mlflow import MlflowClient
     from mlflow.models import infer_signature
 
-    uri = tracking_uri or config.mlflow_uri()
+    # MLFLOW_TRACKING_URI lets a drill register into the stack's MLflow server instead of the project registry
+    uri = tracking_uri or os.environ.get("MLFLOW_TRACKING_URI") or config.mlflow_uri()
     client = MlflowClient(tracking_uri=uri)
     before = _alias_version(client, registry_name, CHAMPION)
     mlflow.set_tracking_uri(uri)

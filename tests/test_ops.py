@@ -189,3 +189,15 @@ def test_flows_are_defined_with_retries():
     assert score_replay.score_replay.name == "score_replay" and score_replay.score.retries == 1
     assert check_drift.check_drift.name == "check_drift"
     assert retrain_candidate.retrain_candidate.name == "retrain_candidate" and retrain_candidate.fit_and_register.retries == 1
+
+
+def test_retrain_accepts_date_strings_on_a_utc_index():
+    """The CLI passes plain dates; the real dataset index is UTC (this raised a tz TypeError before 2026-11-14)."""
+    f = fixture_frame()
+    if f.index.tz is None:
+        f = f.tz_localize("UTC")
+    cols = [c for c in FEATS if f[c].notna().all()][:6]
+    block = f.index[180].strftime("%Y-%m-%d %H:%M:%S")
+    end = (f.index.max() + pd.Timedelta(seconds=10)).strftime("%Y-%m-%d %H:%M:%S")
+    cand = retrain.fit_candidate(f, cols, "c_30m", "logreg", block, end, purge_min=0, stride=1)
+    assert cand["fit_rows"] > 0 and cand["block_rows"] > 0
