@@ -2,6 +2,7 @@
 # End-to-end test of the whole product (docs/ARCHITECTURE.md section 4). Used by CI and by scripts/e2e.ps1.
 #   scripts/e2e.sh            build images, start the stack, run every check, leave the stack running
 #   E2E_DOWN=1 scripts/e2e.sh stop the stack (and delete its volumes) at the end
+#   E2E_FRESH=1 scripts/e2e.sh start from empty volumes (CI). Locally the named volumes are kept (never deleted).
 # Production path: inbox day -> Prefect deployment daily_ingest (run by the worker) -> pandera -> features -> champions
 # -> predictions store -> API /production/latest -> frontend. Replay path: score_replay -> store -> API /replay (source=store).
 set -euo pipefail
@@ -24,7 +25,11 @@ step "build images (tag $FLARE_TAG)"
 if [ "${E2E_SKIP_BUILD:-0}" != "1" ]; then docker compose build api frontend; fi
 
 step "start the stack (production start overridden to $DAY for the test)"
-docker compose down --volumes --remove-orphans >/dev/null 2>&1 || true
+if [ "${E2E_FRESH:-0}" = "1" ]; then
+  docker compose down --volumes --remove-orphans >/dev/null 2>&1 || true
+else
+  docker compose down --remove-orphans >/dev/null 2>&1 || true
+fi
 docker compose up -d
 wait_for "$API/health" 240
 wait_for "$FRONTEND/" 60
@@ -41,7 +46,9 @@ curl -fsS "$API/drift/latest" | json "'drifted_share' in d" | grep -q True || fa
 curl -fsS "$API/pipeline/status" | json "d['mlflow']['models']['flare-nowcast']['champion']" | grep -q 1 || fail "MLflow champion not visible"
 curl -fsS "$API/pipeline/status" | json "len(d['prefect']['deployments'])>=3" | grep -q True || fail "Prefect deployments missing"
 curl -fsS "$API/metrics" | grep -q flare_api_requests_total || fail "/metrics"
-[ "$(curl -fsS "$API/production/latest" | json "d['status']")" = "no_data" ] || fail "production should start empty"
+if [ "${E2E_FRESH:-0}" = "1" ]; then
+  [ "$(curl -fsS "$API/production/latest" | json "d['status']")" = "no_data" ] || fail "production should start empty"
+fi
 
 step "production: put a new day into the inbox and run the daily_ingest deployment through Prefect"
 docker compose run --rm -T tools python -c "
@@ -74,5 +81,11 @@ done
 [ "$n" -gt 0 ] || fail "Prometheus has no API metrics"
 curl -fsS "http://localhost:3000/api/health" | json "d['database']" | grep -q ok || fail "Grafana"
 
-if [ "${E2E_DOWN:-0}" = "1" ]; then docker compose down --volumes; fi
+if [ "${E2E_DOWN:-0}" = "1" ]; then
+  docker compose down --volumes
+else
+  step "restore the real production start (the test override must not stay active)"
+  env -u FLARE_PRODUCTION_START docker compose up -d api worker >/dev/null
+  wait_for "$API/health" 240
+fi
 printf '\nE2E PASSED (%s)\n' "$FLARE_TAG"

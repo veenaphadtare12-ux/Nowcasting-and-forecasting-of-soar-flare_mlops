@@ -17,3 +17,10 @@ reports/drift/*.html
 .env
 frontend/node_modules/
 frontend/dist/
+
+# Terraform (never commit state or real variables)
+infra/terraform/.terraform/
+infra/terraform/*.tfstate*
+infra/terraform/terraform.tfvars
+infra/terraform/.terraform.lock.hcl
+.playwright-mcp/

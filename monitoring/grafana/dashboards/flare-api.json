@@ -1,346 +1,419 @@
 {
- "uid": "flare-api",
- "title": "Solar flare API",
- "tags": [
-  "flare"
- ],
- "timezone": "utc",
- "schemaVersion": 39,
- "version": 1,
- "refresh": "30s",
- "time": {
-  "from": "now-3h",
-  "to": "now"
- },
- "panels": [
-  {
-   "id": 1,
-   "type": "stat",
-   "title": "API up",
-   "datasource": {
-    "type": "prometheus",
-    "uid": "prometheus"
-   },
-   "gridPos": {
-    "x": 0,
-    "y": 0,
-    "w": 6,
-    "h": 4
-   },
-   "targets": [
-    {
-     "refId": "A",
-     "expr": "up{job=\"flare-api\"}",
-     "datasource": {
-      "type": "prometheus",
-      "uid": "prometheus"
-     }
-    }
-   ],
-   "fieldConfig": {
-    "defaults": {
-     "unit": "short"
-    },
-    "overrides": []
-   }
+  "uid": "flare-api",
+  "title": "Solar flare API",
+  "tags": [
+    "flare"
+  ],
+  "timezone": "utc",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": {
+    "from": "now-3h",
+    "to": "now"
   },
-  {
-   "id": 2,
-   "type": "stat",
-   "title": "Requests / s",
-   "datasource": {
-    "type": "prometheus",
-    "uid": "prometheus"
-   },
-   "gridPos": {
-    "x": 6,
-    "y": 0,
-    "w": 6,
-    "h": 4
-   },
-   "targets": [
+  "panels": [
     {
-     "refId": "A",
-     "expr": "sum(rate(flare_api_requests_total[5m]))",
-     "datasource": {
-      "type": "prometheus",
-      "uid": "prometheus"
-     }
-    }
-   ],
-   "fieldConfig": {
-    "defaults": {
-     "unit": "reqps"
+      "id": 1,
+      "type": "stat",
+      "title": "API up",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "up{job=\"flare-api\"}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "DOWN"
+                },
+                "1": {
+                  "text": "UP"
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value"
+      }
     },
-    "overrides": []
-   }
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Requests / s",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(flare_api_requests_total[5m]))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value"
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Error rate (5xx)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(flare_api_requests_total{status=~\"5..\"}[5m])) / clamp_min(sum(rate(flare_api_requests_total[5m])), 1e-9)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 0.01
+              },
+              {
+                "color": "red",
+                "value": 0.05
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value"
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Open replay streams",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(flare_active_streams)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value"
+      }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Requests per second by route",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (route) (rate(flare_api_requests_total[5m]))",
+          "legendFormat": "{{route}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Latency p50 / p95 (s)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 4,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(flare_api_request_seconds_bucket[5m])))",
+          "legendFormat": "p50",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(flare_api_request_seconds_bucket[5m])))",
+          "legendFormat": "p95",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Errors per second by route",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 12,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (route) (rate(flare_api_errors_total[5m]))",
+          "legendFormat": "{{route}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Alerts per hour by target",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 12,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (target) (increase(flare_alerts_total[1h]))",
+          "legendFormat": "{{target}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Mean flare probability by target (last served batch)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 20,
+        "w": 24,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "flare_probability_mean",
+          "legendFormat": "{{target}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    }
+  ],
+  "templating": {
+    "list": []
   },
-  {
-   "id": 3,
-   "type": "stat",
-   "title": "Error rate (5xx)",
-   "datasource": {
-    "type": "prometheus",
-    "uid": "prometheus"
-   },
-   "gridPos": {
-    "x": 12,
-    "y": 0,
-    "w": 6,
-    "h": 4
-   },
-   "targets": [
-    {
-     "refId": "A",
-     "expr": "sum(rate(flare_api_requests_total{status=~\"5..\"}[5m])) / clamp_min(sum(rate(flare_api_requests_total[5m])), 1e-9)",
-     "datasource": {
-      "type": "prometheus",
-      "uid": "prometheus"
-     }
-    }
-   ],
-   "fieldConfig": {
-    "defaults": {
-     "unit": "percentunit"
-    },
-    "overrides": []
-   }
-  },
-  {
-   "id": 4,
-   "type": "stat",
-   "title": "Open replay streams",
-   "datasource": {
-    "type": "prometheus",
-    "uid": "prometheus"
-   },
-   "gridPos": {
-    "x": 18,
-    "y": 0,
-    "w": 6,
-    "h": 4
-   },
-   "targets": [
-    {
-     "refId": "A",
-     "expr": "sum(flare_active_streams)",
-     "datasource": {
-      "type": "prometheus",
-      "uid": "prometheus"
-     }
-    }
-   ],
-   "fieldConfig": {
-    "defaults": {
-     "unit": "short"
-    },
-    "overrides": []
-   }
-  },
-  {
-   "id": 5,
-   "type": "timeseries",
-   "title": "Requests per second by route",
-   "datasource": {
-    "type": "prometheus",
-    "uid": "prometheus"
-   },
-   "gridPos": {
-    "x": 0,
-    "y": 4,
-    "w": 12,
-    "h": 8
-   },
-   "targets": [
-    {
-     "refId": "A",
-     "expr": "sum by (route) (rate(flare_api_requests_total[5m]))",
-     "legendFormat": "{{route}}",
-     "datasource": {
-      "type": "prometheus",
-      "uid": "prometheus"
-     }
-    }
-   ],
-   "fieldConfig": {
-    "defaults": {
-     "unit": "reqps"
-    },
-    "overrides": []
-   },
-   "options": {
-    "legend": {
-     "displayMode": "list",
-     "placement": "bottom"
-    }
-   }
-  },
-  {
-   "id": 6,
-   "type": "timeseries",
-   "title": "Latency p50 / p95 (s)",
-   "datasource": {
-    "type": "prometheus",
-    "uid": "prometheus"
-   },
-   "gridPos": {
-    "x": 12,
-    "y": 4,
-    "w": 12,
-    "h": 8
-   },
-   "targets": [
-    {
-     "refId": "A",
-     "expr": "histogram_quantile(0.5, sum by (le) (rate(flare_api_request_seconds_bucket[5m])))",
-     "legendFormat": "p50",
-     "datasource": {
-      "type": "prometheus",
-      "uid": "prometheus"
-     }
-    },
-    {
-     "refId": "B",
-     "expr": "histogram_quantile(0.95, sum by (le) (rate(flare_api_request_seconds_bucket[5m])))",
-     "legendFormat": "p95",
-     "datasource": {
-      "type": "prometheus",
-      "uid": "prometheus"
-     }
-    }
-   ],
-   "fieldConfig": {
-    "defaults": {
-     "unit": "s"
-    },
-    "overrides": []
-   },
-   "options": {
-    "legend": {
-     "displayMode": "list",
-     "placement": "bottom"
-    }
-   }
-  },
-  {
-   "id": 7,
-   "type": "timeseries",
-   "title": "Errors per second by route",
-   "datasource": {
-    "type": "prometheus",
-    "uid": "prometheus"
-   },
-   "gridPos": {
-    "x": 0,
-    "y": 12,
-    "w": 12,
-    "h": 8
-   },
-   "targets": [
-    {
-     "refId": "A",
-     "expr": "sum by (route) (rate(flare_api_errors_total[5m]))",
-     "legendFormat": "{{route}}",
-     "datasource": {
-      "type": "prometheus",
-      "uid": "prometheus"
-     }
-    }
-   ],
-   "fieldConfig": {
-    "defaults": {
-     "unit": "short"
-    },
-    "overrides": []
-   },
-   "options": {
-    "legend": {
-     "displayMode": "list",
-     "placement": "bottom"
-    }
-   }
-  },
-  {
-   "id": 8,
-   "type": "timeseries",
-   "title": "Alerts per hour by target",
-   "datasource": {
-    "type": "prometheus",
-    "uid": "prometheus"
-   },
-   "gridPos": {
-    "x": 12,
-    "y": 12,
-    "w": 12,
-    "h": 8
-   },
-   "targets": [
-    {
-     "refId": "A",
-     "expr": "sum by (target) (increase(flare_alerts_total[1h]))",
-     "legendFormat": "{{target}}",
-     "datasource": {
-      "type": "prometheus",
-      "uid": "prometheus"
-     }
-    }
-   ],
-   "fieldConfig": {
-    "defaults": {
-     "unit": "short"
-    },
-    "overrides": []
-   },
-   "options": {
-    "legend": {
-     "displayMode": "list",
-     "placement": "bottom"
-    }
-   }
-  },
-  {
-   "id": 9,
-   "type": "timeseries",
-   "title": "Mean flare probability by target (last served batch)",
-   "datasource": {
-    "type": "prometheus",
-    "uid": "prometheus"
-   },
-   "gridPos": {
-    "x": 0,
-    "y": 20,
-    "w": 24,
-    "h": 8
-   },
-   "targets": [
-    {
-     "refId": "A",
-     "expr": "flare_probability_mean",
-     "legendFormat": "{{target}}",
-     "datasource": {
-      "type": "prometheus",
-      "uid": "prometheus"
-     }
-    }
-   ],
-   "fieldConfig": {
-    "defaults": {
-     "unit": "percentunit"
-    },
-    "overrides": []
-   },
-   "options": {
-    "legend": {
-     "displayMode": "list",
-     "placement": "bottom"
-    }
-   }
+  "annotations": {
+    "list": []
   }
- ],
- "templating": {
-  "list": []
- },
- "annotations": {
-  "list": []
- }
 }
