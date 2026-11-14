@@ -2,8 +2,9 @@
 #   .\scripts\alert_drill.ps1 -Rule down              stop the API until FlareApiDown fires (about 2.5 min), then restart
 #   .\scripts\alert_drill.ps1 -Rule errors            answer 50 % of API requests with 503 until FlareApiHighErrorRate fires
 #                                                     (about 6 min: 5-min rate window + `for: 5m` overlap), then restore
+#   add -HoldSec 120 to keep it firing for 2 minutes (screenshots) before restoring
 #   add -KeepFiring to leave the fault in place (for screenshots) and run  .\scripts\alert_drill.ps1 -Restore  afterwards
-param([ValidateSet("down", "errors")][string]$Rule = "down", [switch]$KeepFiring, [switch]$Restore, [int]$TimeoutSec = 600)
+param([ValidateSet("down", "errors")][string]$Rule = "down", [switch]$KeepFiring, [switch]$Restore, [int]$TimeoutSec = 600, [int]$HoldSec = 0)
 . "$PSScriptRoot\_common.ps1"
 $tag = Get-FlareTag
 $names = @{ down = "FlareApiDown"; errors = "FlareApiHighErrorRate" }
@@ -51,6 +52,7 @@ while ((Get-Date) -lt $deadline) {
     if ($state -eq "firing") { break }
     Start-Sleep -Seconds 15
 }
+if ($state -eq "firing" -and $HoldSec -gt 0) { Write-Host "holding the fault for $HoldSec s"; Start-Sleep -Seconds $HoldSec }
 if ($traffic -and -not $KeepFiring) { Stop-Job $traffic; Remove-Job $traffic }
 if ($state -eq "firing") {
     Write-Host "OK  $name is FIRING after $([int]((Get-Date) - $t0).TotalSeconds) s  -> http://localhost:9090/alerts"
