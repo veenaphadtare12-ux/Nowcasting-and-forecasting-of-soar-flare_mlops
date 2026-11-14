@@ -1,0 +1,12 @@
+# Production overlay for a single-node k3s server (Traefik ingress). The CD workflow sets the image tags
+# (version + git SHA) on a temporary copy; nothing secret is committed.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+  - ingress.yaml
+patches:
+  - target: { kind: ConfigMap, name: flare-config }
+    patch: |-
+      - { op: replace, path: /data/FLARE_ENVIRONMENT, value: production }
+      - { op: replace, path: /data/FLARE_CORS_ORIGINS, value: "*" }

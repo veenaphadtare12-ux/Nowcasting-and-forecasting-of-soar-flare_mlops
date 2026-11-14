@@ -1,0 +1,120 @@
+name: CD
+
+# Publishes the images to GHCR and deploys them to the k3s server over SSH, with automatic rollback.
+#   - after CI succeeds on master: images tagged <git sha> and "master"
+#   - on a version tag v*.*.*:     images tagged <git sha> and the version (e.g. v1.0.0)
+#   - manually (Actions -> CD -> Run workflow)
+# The deploy job runs only when the repository secrets DEPLOY_HOST, DEPLOY_USER and DEPLOY_SSH_KEY exist
+# (docs/RUNBOOK.md#continuous-deployment). Without them the images are still published and the job says what is missing.
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [master]
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: cd
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io/veenaphadtare12-ux
+
+jobs:
+  publish:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      sha: ${{ steps.tags.outputs.sha }}
+      version: ${{ steps.tags.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - name: Tags (git SHA + version)
+        id: tags
+        run: |
+          SHA=$(git rev-parse --short=12 HEAD)
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then VERSION=${GITHUB_REF#refs/tags/}; else VERSION=master; fi
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "images: $SHA and $VERSION"
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push
+        env:
+          SHA: ${{ steps.tags.outputs.sha }}
+          VERSION: ${{ steps.tags.outputs.version }}
+        run: |
+          FLARE_TAG=$SHA docker compose build api frontend
+          for img in flare-api flare-frontend; do
+            docker tag "$REGISTRY/$img:$SHA" "$REGISTRY/$img:$VERSION"
+            docker push "$REGISTRY/$img:$SHA"
+            docker push "$REGISTRY/$img:$VERSION"
+          done
+
+  deploy:
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    env:
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+      TAG: ${{ needs.publish.outputs.sha }}
+    steps:
+      - name: Check deploy secrets
+        id: secrets
+        run: |
+          missing=""
+          for s in DEPLOY_HOST DEPLOY_USER DEPLOY_SSH_KEY; do [ -n "${!s}" ] || missing="$missing $s"; done
+          if [ -n "$missing" ]; then
+            echo "::notice::Deploy skipped: repository secrets missing:$missing (see docs/RUNBOOK.md#continuous-deployment). Images were published."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.secrets.outputs.ok == 'true'
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - name: SSH setup
+        if: steps.secrets.outputs.ok == 'true'
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy && chmod 600 ~/.ssh/deploy
+          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+      - name: Copy manifests and scripts to the server
+        if: steps.secrets.outputs.ok == 'true'
+        run: |
+          tar czf /tmp/flare-deploy.tgz k8s scripts/k8s monitoring
+          scp -i ~/.ssh/deploy /tmp/flare-deploy.tgz "$DEPLOY_USER@$DEPLOY_HOST:/tmp/flare-deploy.tgz"
+      - name: Deploy on k3s (automatic rollback if a rollout fails)
+        if: steps.secrets.outputs.ok == 'true'
+        env:
+          GRAFANA_ADMIN_PASSWORD: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
+          GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
+        run: |
+          ssh -i ~/.ssh/deploy "$DEPLOY_USER@$DEPLOY_HOST" \
+            "GRAFANA_ADMIN_PASSWORD='$GRAFANA_ADMIN_PASSWORD' GHCR_PULL_TOKEN='$GHCR_PULL_TOKEN' GHCR_USER='${{ github.repository_owner }}' bash -s" <<EOF
+          set -euo pipefail
+          rm -rf ~/flare-deploy && mkdir -p ~/flare-deploy && tar xzf /tmp/flare-deploy.tgz -C ~/flare-deploy
+          export KUBECONFIG=\${KUBECONFIG:-\$HOME/.kube/config}
+          cd ~/flare-deploy
+          bash scripts/k8s/deploy.sh prod "$TAG"
+          EOF
+      - name: Smoke test the public URL
+        if: steps.secrets.outputs.ok == 'true'
+        run: bash scripts/k8s/smoke.sh "http://$DEPLOY_HOST"

@@ -1,0 +1,50 @@
+# Prefect worker: serves daily_ingest (02:15 UTC), check_drift (03:30 UTC) and score_replay (on demand).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  labels: { app: worker }
+spec:
+  replicas: 1
+  strategy: { type: Recreate }   # one worker only: never two schedulers at once
+  selector:
+    matchLabels: { app: worker }
+  template:
+    metadata:
+      labels: { app: worker }
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        fsGroup: 10001
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: worker
+          image: ghcr.io/veenaphadtare12-ux/flare-api
+          imagePullPolicy: IfNotPresent
+          command: ["python", "-m", "flows.serve"]
+          envFrom: [{ configMapRef: { name: flare-config } }]
+          resources:
+            requests: { cpu: 100m, memory: 512Mi }
+            limits: { cpu: "1", memory: 2Gi }
+          livenessProbe:
+            exec:
+              command: ["python", "-c", "import urllib.request; urllib.request.urlopen('http://prefect-server:4200/api/health', timeout=4)"]
+            initialDelaySeconds: 60
+            periodSeconds: 60
+            timeoutSeconds: 8
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+          volumeMounts:
+            - { name: predictions, mountPath: /data/predictions }
+            - { name: drift, mountPath: /data/drift }
+            - { name: inbox, mountPath: /data/inbox }
+            - { name: raw, mountPath: /raw/solexs, readOnly: true }
+            - { name: tmp, mountPath: /tmp }
+      volumes:
+        - { name: predictions, persistentVolumeClaim: { claimName: predictions } }
+        - { name: drift, persistentVolumeClaim: { claimName: drift } }
+        - { name: inbox, persistentVolumeClaim: { claimName: inbox } }
+        - { name: raw, emptyDir: {} }   # production: replace with the SoLEXS L1 folder (hostPath / NFS)
+        - { name: tmp, emptyDir: {} }

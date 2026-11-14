@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prefect-server
+  labels: { app: prefect-server }
+spec:
+  replicas: 1
+  strategy: { type: Recreate }   # SQLite database on a ReadWriteOnce volume
+  selector:
+    matchLabels: { app: prefect-server }
+  template:
+    metadata:
+      labels: { app: prefect-server }
+    spec:
+      containers:
+        - name: prefect-server
+          image: prefecthq/prefect:3.8.7-python3.12
+          command: ["prefect", "server", "start", "--host", "0.0.0.0", "--port", "4200"]
+          env:
+            - { name: PREFECT_UI_API_URL, value: "http://localhost:4200/api" }
+            - { name: PREFECT_SERVER_ANALYTICS_ENABLED, value: "false" }
+          ports: [{ name: http, containerPort: 4200 }]
+          resources:
+            requests: { cpu: 100m, memory: 384Mi }
+            limits: { cpu: "1", memory: 1Gi }
+          startupProbe:
+            httpGet: { path: /api/health, port: http }
+            periodSeconds: 5
+            failureThreshold: 36
+          readinessProbe:
+            httpGet: { path: /api/health, port: http }
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /api/health, port: http }
+            periodSeconds: 30
+            timeoutSeconds: 5
+          volumeMounts:
+            - { name: db, mountPath: /root/.prefect }
+      volumes:
+        - { name: db, persistentVolumeClaim: { claimName: prefect-db } }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prefect-server
+  labels: { app: prefect-server }
+spec:
+  selector: { app: prefect-server }
+  ports: [{ name: http, port: 4200, targetPort: http }]

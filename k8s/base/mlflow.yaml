@@ -1,0 +1,88 @@
+# MLflow tracking + registry (the API only reads it). The seed Job registers the bundle's champions (idempotent).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlflow
+  labels: { app: mlflow }
+spec:
+  replicas: 1
+  strategy: { type: Recreate }
+  selector:
+    matchLabels: { app: mlflow }
+  template:
+    metadata:
+      labels: { app: mlflow }
+    spec:
+      containers:
+        - name: mlflow
+          image: ghcr.io/mlflow/mlflow:v3.16.1
+          command:
+            - mlflow
+            - server
+            - --host=0.0.0.0
+            - --port=5000
+            - --backend-store-uri=sqlite:////mlflow/mlflow.db
+            - --artifacts-destination=/mlflow/artifacts
+            - --serve-artifacts
+            - --allowed-hosts=*
+          ports: [{ name: http, containerPort: 5000 }]
+          resources:
+            requests: { cpu: 100m, memory: 384Mi }
+            limits: { cpu: "1", memory: 1Gi }
+          startupProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 5
+            failureThreshold: 36
+          readinessProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 30
+          volumeMounts:
+            - { name: data, mountPath: /mlflow }
+      volumes:
+        - { name: data, persistentVolumeClaim: { claimName: mlflow } }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mlflow
+  labels: { app: mlflow }
+spec:
+  selector: { app: mlflow }
+  ports: [{ name: http, port: 5000, targetPort: http }]
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mlflow-seed
+spec:
+  backoffLimit: 6
+  ttlSecondsAfterFinished: 3600
+  template:
+    spec:
+      restartPolicy: OnFailure
+      initContainers:
+        # copy the bundle and the seed script out of the API image (single source of truth)
+        - name: bundle
+          image: ghcr.io/veenaphadtare12-ux/flare-api
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c", "cp -r /app/model_bundle /work/bundle && cp /app/scripts/seed_registry.py /work/"]
+          volumeMounts: [{ name: work, mountPath: /work }]
+        - name: wait-mlflow
+          image: ghcr.io/mlflow/mlflow:v3.16.1
+          command: ["python", "-c", "import time,urllib.request\nfor _ in range(120):\n  try:\n    urllib.request.urlopen('http://mlflow:5000/health', timeout=3); break\n  except Exception: time.sleep(3)"]
+      containers:
+        - name: seed
+          image: ghcr.io/mlflow/mlflow:v3.16.1
+          command: ["python", "/work/seed_registry.py"]
+          env:
+            - { name: MLFLOW_TRACKING_URI, value: "http://mlflow:5000" }
+            - { name: BUNDLE_DIR, value: /work/bundle }
+          resources:
+            requests: { cpu: 50m, memory: 256Mi }
+            limits: { cpu: 500m, memory: 768Mi }
+          volumeMounts: [{ name: work, mountPath: /work }]
+      volumes:
+        - { name: work, emptyDir: {} }

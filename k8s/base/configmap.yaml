@@ -1,0 +1,20 @@
+# Runtime settings (src/settings.py reads FLARE_*). No secrets here.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: flare-config
+data:
+  FLARE_ENVIRONMENT: k8s
+  FLARE_PREDICTIONS_DIR: /data/predictions
+  FLARE_DRIFT_FILE: /data/drift/latest.json
+  FLARE_INBOX_DIR: /data/inbox
+  FLARE_RAW_SOLEXS_DIR: /raw/solexs
+  FLARE_PRODUCTION_START: "2026-11-13"
+  FLARE_CORS_ORIGINS: "http://localhost:8080"
+  FLARE_LOG_LEVEL: INFO
+  FLARE_MAX_REPLAY_SPEED: "600"
+  FLARE_PREFECT_API_URL: http://prefect-server:4200/api
+  FLARE_MLFLOW_URL: http://mlflow:5000
+  FLARE_FAULT_INJECT_RATE: "0"
+  PREFECT_API_URL: http://prefect-server:4200/api
+  PREFECT_HOME: /tmp/prefect

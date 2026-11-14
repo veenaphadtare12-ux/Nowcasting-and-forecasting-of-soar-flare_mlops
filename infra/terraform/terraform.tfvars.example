@@ -1,0 +1,5 @@
+# Copy to terraform.tfvars (git-ignored) and fill in. Never commit terraform.tfvars or state files.
+region            = "ap-south-1"
+instance_type     = "t3.large"
+ssh_public_key    = "ssh-ed25519 AAAA... deploy@flare"
+ssh_allowed_cidrs = ["0.0.0.0/0"]

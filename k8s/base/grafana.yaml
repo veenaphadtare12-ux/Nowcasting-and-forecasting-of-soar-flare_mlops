@@ -1,0 +1,59 @@
+# Admin password from the Secret grafana-admin (created by the scripts / CD from a secret, never committed).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  labels: { app: grafana }
+spec:
+  replicas: 1
+  strategy: { type: Recreate }
+  selector:
+    matchLabels: { app: grafana }
+  template:
+    metadata:
+      labels: { app: grafana }
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 472
+        fsGroup: 472
+      containers:
+        - name: grafana
+          image: grafana/grafana:12.1.1
+          env:
+            - { name: GF_SECURITY_ADMIN_USER, value: admin }
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              valueFrom: { secretKeyRef: { name: grafana-admin, key: password } }
+            - { name: GF_AUTH_ANONYMOUS_ENABLED, value: "true" }
+            - { name: GF_AUTH_ANONYMOUS_ORG_ROLE, value: Viewer }
+            - { name: GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH, value: /var/lib/grafana/dashboards/flare-api.json }
+            - { name: GF_ANALYTICS_REPORTING_ENABLED, value: "false" }
+          ports: [{ name: http, containerPort: 3000 }]
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 512Mi }
+          readinessProbe:
+            httpGet: { path: /api/health, port: http }
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /api/health, port: http }
+            periodSeconds: 30
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/grafana }
+            - { name: datasources, mountPath: /etc/grafana/provisioning/datasources, readOnly: true }
+            - { name: dashboard-provider, mountPath: /etc/grafana/provisioning/dashboards, readOnly: true }
+            - { name: dashboards, mountPath: /var/lib/grafana/dashboards, readOnly: true }
+      volumes:
+        - { name: data, persistentVolumeClaim: { claimName: grafana } }
+        - { name: datasources, configMap: { name: grafana-datasources } }
+        - { name: dashboard-provider, configMap: { name: grafana-dashboard-provider } }
+        - { name: dashboards, configMap: { name: grafana-dashboards } }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  labels: { app: grafana }
+spec:
+  selector: { app: grafana }
+  ports: [{ name: http, port: 3000, targetPort: http }]

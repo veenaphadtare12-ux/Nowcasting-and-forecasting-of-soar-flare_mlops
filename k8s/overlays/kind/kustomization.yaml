@@ -1,0 +1,36 @@
+# Local kind cluster: every service on a NodePort, mapped to host ports 1xxxx by k8s/kind/cluster.yaml.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+patches:
+  - target: { kind: Service, name: frontend }
+    patch: |-
+      - { op: add, path: /spec/type, value: NodePort }
+      - { op: add, path: /spec/ports/0/nodePort, value: 30080 }
+  - target: { kind: Service, name: api }
+    patch: |-
+      - { op: add, path: /spec/type, value: NodePort }
+      - { op: add, path: /spec/ports/0/nodePort, value: 30000 }
+  - target: { kind: Service, name: grafana }
+    patch: |-
+      - { op: add, path: /spec/type, value: NodePort }
+      - { op: add, path: /spec/ports/0/nodePort, value: 30300 }
+  - target: { kind: Service, name: prometheus }
+    patch: |-
+      - { op: add, path: /spec/type, value: NodePort }
+      - { op: add, path: /spec/ports/0/nodePort, value: 30909 }
+  - target: { kind: Service, name: prefect-server }
+    patch: |-
+      - { op: add, path: /spec/type, value: NodePort }
+      - { op: add, path: /spec/ports/0/nodePort, value: 30420 }
+  - target: { kind: Service, name: mlflow }
+    patch: |-
+      - { op: add, path: /spec/type, value: NodePort }
+      - { op: add, path: /spec/ports/0/nodePort, value: 30500 }
+  - target: { kind: Deployment, name: prefect-server }
+    patch: |-
+      - { op: replace, path: /spec/template/spec/containers/0/env/0/value, value: "http://localhost:14200/api" }
+  - target: { kind: ConfigMap, name: flare-config }
+    patch: |-
+      - { op: replace, path: /data/FLARE_CORS_ORIGINS, value: "http://localhost:18080" }

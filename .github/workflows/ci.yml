@@ -33,3 +33,72 @@ jobs:
 
       - name: Pytest (no DVC data needed)
         run: pytest -q -m "not data" -p no:cacheprovider
+
+  # Phase 5: the whole product in Docker Compose, end to end (inbox -> Prefect daily_ingest -> contracts -> features ->
+  # champions -> store -> API -> frontend, plus replay, drift, Prometheus, Grafana). Same script as scripts\e2e.ps1.
+  compose-e2e:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Image tag = git SHA
+        run: echo "FLARE_TAG=$(git rev-parse --short=12 HEAD)" >> "$GITHUB_ENV"
+      - name: End-to-end test (fresh volumes)
+        env:
+          E2E_FRESH: "1"
+        run: bash scripts/e2e.sh
+      - name: Logs on failure
+        if: failure()
+        run: docker compose ps; docker compose logs --tail 200
+      - name: Stop
+        if: always()
+        run: docker compose down --volumes
+
+  # Phase 6: the Kubernetes manifests on a kind cluster: deploy with automatic rollback, smoke test, then a
+  # zero-downtime rolling update and the rollback of a bad release.
+  kind:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build images (tag = git SHA)
+        run: |
+          TAG=$(git rev-parse --short=12 HEAD)
+          echo "FLARE_TAG=$TAG" >> "$GITHUB_ENV"
+          FLARE_TAG=$TAG docker compose build api frontend
+      - name: Validate manifests
+        run: |
+          kubectl kustomize k8s/overlays/kind > /tmp/kind.yaml
+          kubectl kustomize k8s/overlays/prod > /tmp/prod.yaml
+          grep -c "^kind:" /tmp/kind.yaml /tmp/prod.yaml
+      - name: Create kind cluster
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: flare
+          config: k8s/kind/cluster.yaml
+          wait: 120s
+      - name: Deploy (automatic rollback on failure) and smoke test
+        run: bash scripts/k8s/kind_up.sh "$FLARE_TAG"
+      - name: Rolling update and rollback demo
+        run: bash scripts/k8s/rollout_demo.sh http://localhost:18000
+      - name: Cluster state on failure
+        if: failure()
+        run: |
+          kubectl -n flare get all,pvc,events --sort-by=.lastTimestamp || true
+          kubectl -n flare logs deploy/api --tail 100 || true
+
+  # Phase 7: the infrastructure code is formatted and valid (never applied by CI).
+  terraform:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: infra/terraform
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform fmt -check -recursive
+      - run: terraform init -backend=false -input=false
+      - run: terraform validate

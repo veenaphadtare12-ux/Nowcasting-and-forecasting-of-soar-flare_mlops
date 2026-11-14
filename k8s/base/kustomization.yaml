@@ -1,0 +1,27 @@
+# Base manifests for the whole product (same images as Docker Compose, tagged with the git SHA).
+# Overlays: k8s/overlays/kind (local cluster, NodePorts) and k8s/overlays/prod (k3s server, Ingress).
+# Created by the scripts, never committed: Secret grafana-admin, and the ConfigMaps prometheus-config,
+# grafana-datasources, grafana-dashboard-provider, grafana-dashboards (built from monitoring/: one source of truth).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: flare
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: flare
+    includeSelectors: false
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - pvc.yaml
+  - api.yaml
+  - worker.yaml
+  - frontend.yaml
+  - prefect.yaml
+  - mlflow.yaml
+  - prometheus.yaml
+  - grafana.yaml
+images:
+  - name: ghcr.io/veenaphadtare12-ux/flare-api
+    newTag: local
+  - name: ghcr.io/veenaphadtare12-ux/flare-frontend
+    newTag: local

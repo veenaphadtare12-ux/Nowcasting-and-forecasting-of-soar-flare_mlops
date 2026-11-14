@@ -1,0 +1,69 @@
+# FastAPI service: frozen champions from the model bundle baked into the image.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  labels: { app: api }
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: { maxSurge: 1, maxUnavailable: 0 }   # never fewer ready pods than replicas during an update
+  selector:
+    matchLabels: { app: api }
+  template:
+    metadata:
+      labels: { app: api }
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        fsGroup: 10001
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: api
+          image: ghcr.io/veenaphadtare12-ux/flare-api
+          imagePullPolicy: IfNotPresent
+          ports: [{ name: http, containerPort: 8000 }]
+          envFrom: [{ configMapRef: { name: flare-config } }]
+          resources:
+            requests: { cpu: 100m, memory: 512Mi }
+            limits: { cpu: "1", memory: 1536Mi }
+          startupProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 5
+            failureThreshold: 36   # up to 3 minutes to load the model bundle
+          readinessProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 10
+            timeoutSeconds: 4
+          livenessProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 20
+            timeoutSeconds: 4
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+          volumeMounts:
+            - { name: predictions, mountPath: /data/predictions }
+            - { name: drift, mountPath: /data/drift }
+            - { name: inbox, mountPath: /data/inbox }
+            - { name: raw, mountPath: /raw/solexs, readOnly: true }
+            - { name: tmp, mountPath: /tmp }
+      volumes:
+        - { name: predictions, persistentVolumeClaim: { claimName: predictions } }
+        - { name: drift, persistentVolumeClaim: { claimName: drift } }
+        - { name: inbox, persistentVolumeClaim: { claimName: inbox } }
+        - { name: raw, emptyDir: {} }   # production: replace with the SoLEXS L1 folder (hostPath / NFS)
+        - { name: tmp, emptyDir: {} }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+  labels: { app: api }
+spec:
+  selector: { app: api }
+  ports: [{ name: http, port: 8000, targetPort: http }]

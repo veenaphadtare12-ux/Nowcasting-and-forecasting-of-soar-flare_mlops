@@ -1,0 +1,14 @@
+# Public entry: the website (and its /api proxy) on port 80 of the server. Grafana, Prometheus, Prefect and MLflow
+# stay internal (kubectl port-forward). Add a host name and TLS (cert-manager) when the server has a domain.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: flare
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service: { name: frontend, port: { number: 8080 } }

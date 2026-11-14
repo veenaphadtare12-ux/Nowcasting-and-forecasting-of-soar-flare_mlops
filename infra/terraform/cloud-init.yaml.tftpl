@@ -1,0 +1,16 @@
+#cloud-config
+# Installs k3s (with Traefik ingress) and a "deploy" user that GitHub Actions uses over SSH with its own kubeconfig.
+users:
+  - default
+  - name: deploy
+    shell: /bin/bash
+    ssh_authorized_keys:
+      - ${ssh_public_key}
+package_update: true
+packages: [curl, ca-certificates]
+runcmd:
+  - curl -sfL https://get.k3s.io | INSTALL_K3S_CHANNEL=stable sh -s - --write-kubeconfig-mode 600
+  - mkdir -p /home/deploy/.kube
+  - cp /etc/rancher/k3s/k3s.yaml /home/deploy/.kube/config
+  - chown -R deploy:deploy /home/deploy/.kube && chmod 600 /home/deploy/.kube/config
+  - ln -sf /usr/local/bin/k3s /usr/local/bin/kubectl
