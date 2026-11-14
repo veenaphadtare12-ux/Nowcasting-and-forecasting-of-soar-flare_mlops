@@ -1,12 +1,10 @@
 # flare-api: FastAPI service + Prefect flows, models and replay data from the committed model bundle.
 FROM python:3.12.16-slim-trixie
 
-ARG GIT_SHA=dev
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    FLARE_GIT_SHA=${GIT_SHA} \
     FLARE_BUNDLE_DIR=/app/model_bundle \
     FLARE_PREDICTIONS_DIR=/data/predictions \
     FLARE_DRIFT_FILE=/data/drift/latest.json \
@@ -30,6 +28,10 @@ COPY flows/ flows/
 COPY scripts/seed_registry.py scripts/
 COPY model_bundle/ model_bundle/
 
+# The git SHA changes every commit: declare it only after the dependency layers, so a code-only rebuild reuses the
+# cached apt and pip layers (before 2026-11-14 it sat at the top and every rebuild re-downloaded ~2 GB).
+ARG GIT_SHA=dev
+ENV FLARE_GIT_SHA=${GIT_SHA}
 USER app
 EXPOSE 8000
 HEALTHCHECK --interval=15s --timeout=5s --start-period=40s --retries=5 \
