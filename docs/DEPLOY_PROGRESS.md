@@ -69,4 +69,13 @@ Frontend development without rebuilding the image: `cd frontend; npm run dev` â†
   - the Prefect server needs FastAPI 0.142, so it is pinned in `requirements-ci.txt`;
   - one HEL1OS feature (`hx_cdte_lo_d5m`) differs by float32 rounding between Windows and Linux, so that test uses `rtol=1e-5`.
 - **Python text mode on Windows writes CRLF:** the LF test caught it, and files were rewritten in binary mode.
-- **RAM:** with the Docker VM and browsers running, the full-data tests can hit `MemoryError` (about 1 GB free of 15.7 GB). Rerunning them alone passes. C: has about 11 GB free (the WSL disk lives there), so prune the build cache before large image builds.
+- **RAM:** with the Docker VM and browsers running, the full-data tests can hit `MemoryError` (about 1 GB free of 15.7 GB). Rerunning them alone passes.
+
+## Disk log
+Rule: after every image build run `docker builder prune -f`; log C: and D: free space after every phase.
+The WSL disk was moved to `D:\WSL\Ubuntu\ext4.vhdx` (17.6 GB file, about 13 GB used inside, **not sparse**, so space
+freed inside WSL is not returned to D: until the disk is compacted or made sparse).
+
+| Date | Point | C: free | D: free | Notes |
+|---|---|---|---|---|
+| 2026-11-14 | pre-flight before phase 4 | 39.0 GB | 9.69 GB | **STOP: D: below 15 GB.** Build cache 0 B, no dangling images. 4.69 GB is held by old, non-dangling image tags (`flare-api:6dbb958be90b`, `flare-api:7c9b20e183ef-dirty` and their frontends), which the prune rule does not cover. |
