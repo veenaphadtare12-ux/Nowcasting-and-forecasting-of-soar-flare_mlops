@@ -29,3 +29,7 @@ k8s/.build.*/
 # Backups and load-test results (local machine only)
 reports/loadtest/*.json
 !reports/loadtest/baseline.json
+infra/lightsail/.terraform/
+infra/lightsail/*.tfstate*
+infra/lightsail/.terraform.lock.hcl
+infra/lightsail/terraform.tfvars

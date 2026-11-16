@@ -1,6 +1,7 @@
 name: CD
 
-# Publishes the images to GHCR and deploys them to the k3s server over SSH, with automatic rollback.
+# Publishes the images to GHCR and deploys them to the Lightsail server (Docker Compose + Caddy) over SSH,
+# with automatic rollback.
 #   - after CI succeeds on master: images tagged <git sha> and "master"
 #   - on a version tag v*.*.*:     images tagged <git sha> and the version (e.g. v1.0.0)
 #   - manually (Actions -> CD -> Run workflow)
@@ -96,34 +97,46 @@ jobs:
           mkdir -p ~/.ssh && chmod 700 ~/.ssh
           printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy && chmod 600 ~/.ssh/deploy
           ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
-      - name: Copy manifests and scripts to the server
+      - name: Copy the Compose bundle to the server
         if: steps.secrets.outputs.ok == 'true'
         run: |
-          tar czf /tmp/flare-deploy.tgz k8s scripts/k8s monitoring
+          # Everything the stack needs except the images (pulled from GHCR on the server).
+          tar czf /tmp/flare-deploy.tgz docker-compose.yml docker/caddy monitoring model_bundle \
+            scripts/seed_registry.py scripts/deploy data/raw_empty
           scp -i ~/.ssh/deploy /tmp/flare-deploy.tgz "$DEPLOY_USER@$DEPLOY_HOST:/tmp/flare-deploy.tgz"
-      - name: Deploy on k3s (automatic rollback if a rollout fails)
+      - name: Deploy with Docker Compose (automatic rollback if the new release is unhealthy)
         if: steps.secrets.outputs.ok == 'true'
         env:
+          SITE_ADDRESS: ${{ secrets.SITE_ADDRESS }}
+          ACME_EMAIL: ${{ secrets.ACME_EMAIL }}
           GRAFANA_ADMIN_PASSWORD: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
-          GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
           FLARE_API_KEYS: ${{ secrets.FLARE_API_KEYS }}
           SMTP_SMARTHOST: ${{ secrets.SMTP_SMARTHOST }}
           SMTP_FROM: ${{ secrets.SMTP_FROM }}
           SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           ALERT_EMAIL_TO: ${{ secrets.ALERT_EMAIL_TO }}
-          GHCR_USER: ${{ github.repository_owner }}
         run: |
-          # Secrets travel inside the script on stdin (never as command-line arguments, which other users could see).
+          # Secrets travel on stdin into a root-only .env on the server (never as command-line arguments, never in git).
           {
             echo "set -euo pipefail"
-            for v in GRAFANA_ADMIN_PASSWORD GHCR_PULL_TOKEN GHCR_USER FLARE_API_KEYS SMTP_SMARTHOST SMTP_FROM SMTP_USERNAME SMTP_PASSWORD ALERT_EMAIL_TO TAG; do
-              printf 'export %s=%q\n' "$v" "${!v}"
+            echo "mkdir -p /opt/flare && tar xzf /tmp/flare-deploy.tgz -C /opt/flare && rm -f /tmp/flare-deploy.tgz"
+            echo "umask 077; cat > /opt/flare/.env <<'ENVEOF'"
+            for v in SITE_ADDRESS ACME_EMAIL GRAFANA_ADMIN_PASSWORD FLARE_API_KEYS SMTP_SMARTHOST SMTP_FROM SMTP_USERNAME SMTP_PASSWORD ALERT_EMAIL_TO; do
+              printf '%s=%s\n' "$v" "${!v}"
             done
-            echo 'rm -rf ~/flare-deploy && mkdir -p ~/flare-deploy && tar xzf /tmp/flare-deploy.tgz -C ~/flare-deploy'
-            echo 'export KUBECONFIG=${KUBECONFIG:-$HOME/.kube/config}'
-            echo 'cd ~/flare-deploy && bash scripts/k8s/deploy.sh prod "$TAG"'
+            echo "ENVEOF"
+            printf 'bash /opt/flare/scripts/deploy/server_deploy.sh %q\n' "$TAG"
           } | ssh -i ~/.ssh/deploy "$DEPLOY_USER@$DEPLOY_HOST" bash -s
-      - name: Smoke test the public URL
+      - name: Smoke test the public URL (roll back on failure)
         if: steps.secrets.outputs.ok == 'true'
-        run: bash scripts/k8s/smoke.sh "http://$DEPLOY_HOST"
+        env:
+          SITE_ADDRESS: ${{ secrets.SITE_ADDRESS }}
+        run: |
+          URL="http://$DEPLOY_HOST"; [ -n "$SITE_ADDRESS" ] && URL="https://$SITE_ADDRESS"
+          echo "public URL: $URL"
+          if ! bash scripts/k8s/smoke.sh "$URL"; then
+            echo "public smoke test failed: rolling back on the server"
+            ssh -i ~/.ssh/deploy "$DEPLOY_USER@$DEPLOY_HOST" "bash /opt/flare/scripts/deploy/server_deploy.sh --rollback"
+            exit 1
+          fi
