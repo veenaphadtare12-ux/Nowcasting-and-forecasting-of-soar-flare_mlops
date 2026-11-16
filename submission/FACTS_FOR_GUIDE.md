@@ -365,3 +365,21 @@ demo (keeps disk, Elastic IP and data; about USD 7/month while stopped).
 
 Before the viva: fix this PC's clock (Windows Settings → Time & language → Date & time → set the time zone to
 "(UTC+05:30) Chennai, Kolkata, Mumbai, New Delhi" and "Sync now"), so that AWS CLI checks work again.
+
+---
+
+## Update after the check: Prefect scheduler fixed (2026-11-16 UTC)
+
+- **Cause:** the official `prefecthq/prefect:3.8.7-python3.12` image ships SQLAlchemy 2.1.1; Prefect 3.8.7's scheduler
+  (`_insert_scheduled_flow_runs`) fails with it on every pass, so scheduled deployments never created runs.
+- **Fix:** `docker/prefect-server.Dockerfile` = the same Prefect 3.8.7 server with SQLAlchemy **2.0.57**, published as
+  `ghcr.io/veenaphadtare12-ux/flare-prefect-server:<git sha>` and used by Docker Compose, Kubernetes, CI and CD;
+  `tests/test_deploy_config.py` (3 tests) keeps it that way. Commit `bfe0fa8`.
+- **Proof, local:** 0 scheduler errors; 6 runs scheduled (02:15 and 03:30 UTC for 3 nights); a `check_drift` run scheduled
+  1 minute ahead was picked up by the worker and finished **Completed**.
+- **Proof, CI:** run 43948566960: test, compose-e2e, kind, terraform, security, all success.
+- **Proof, AWS:** CD run 43950207588 deployed `bfe0fa8ebe2a` over `54c55abb1927` (`DEPLOY OK`, `SMOKE OK`). On the server:
+  Prefect image `flare-prefect-server:bfe0fa8ebe2a`, **0 scheduler errors since restart**, next runs scheduled:
+  daily_ingest 2026-11-17 02:15 UTC, check_drift 2026-11-17 03:30 UTC, then every night.
+- **Still true:** no production day can be scored until a SoLEXS L1 day from 2026-11-13 or later is downloaded from
+  ISRO PRADAN and placed where the server reads raw days; until then `daily_ingest` runs and reports "nothing waiting".
