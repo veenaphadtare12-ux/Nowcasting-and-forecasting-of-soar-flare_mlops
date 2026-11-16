@@ -22,7 +22,7 @@ wait_for() {  # url, seconds
 json() { python3 -c "import json,sys; d=json.load(sys.stdin); print(eval(sys.argv[1]))" "$1"; }
 
 step "build images (tag $FLARE_TAG)"
-if [ "${E2E_SKIP_BUILD:-0}" != "1" ]; then docker compose build api frontend; fi
+if [ "${E2E_SKIP_BUILD:-0}" != "1" ]; then docker compose build api frontend prefect-server; fi
 
 step "start the stack (production start overridden to $DAY for the test)"
 if [ "${E2E_FRESH:-0}" = "1" ]; then

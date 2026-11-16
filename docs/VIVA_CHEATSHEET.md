@@ -23,7 +23,7 @@
 
 ## Demo order (10 minutes)
 Live site: **https://veena-flare.duckdns.org** (start the EC2 instance ~3 minutes before if it was stopped).
-1. `.\scripts\up.ps1 -Tag 7f03392ed044` then `.\scripts\smoke_test.ps1` (before the viva; these local images have the same contents as v1.2.0).
+1. `.\scripts\up.ps1 -Local` then `.\scripts\smoke_test.ps1` (before the viva; uses the newest images on this PC, no download).
 2. http://localhost → landing page, scroll to the X-class day.
 3. http://localhost/replay → play a day. http://localhost/performance → results with baselines.
 4. http://localhost:4200 Prefect runs → http://localhost:5000 MLflow champions.

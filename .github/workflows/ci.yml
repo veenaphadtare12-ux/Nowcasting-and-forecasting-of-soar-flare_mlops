@@ -67,7 +67,7 @@ jobs:
         run: |
           TAG=$(git rev-parse --short=12 HEAD)
           echo "FLARE_TAG=$TAG" >> "$GITHUB_ENV"
-          FLARE_TAG=$TAG docker compose build api frontend
+          FLARE_TAG=$TAG docker compose build api frontend prefect-server
       - name: Validate manifests
         run: |
           kubectl kustomize k8s/overlays/kind > /tmp/kind.yaml
@@ -134,7 +134,7 @@ jobs:
       - name: Build images
         run: |
           echo "FLARE_TAG=$(git rev-parse --short=12 HEAD)" >> "$GITHUB_ENV"
-          FLARE_TAG=$(git rev-parse --short=12 HEAD) docker compose build api frontend
+          FLARE_TAG=$(git rev-parse --short=12 HEAD) docker compose build api frontend prefect-server
       - name: Trivy (flare-api)
         uses: aquasecurity/trivy-action@v0.36.0
         with:

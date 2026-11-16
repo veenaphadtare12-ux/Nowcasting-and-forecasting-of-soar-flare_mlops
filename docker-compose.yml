@@ -132,7 +132,11 @@ services:
 
   prefect-server:
     <<: *hardening
-    image: prefecthq/prefect:3.8.7-python3.12
+    # Prefect 3.8.7 with SQLAlchemy pinned to 2.0 (the official image's SQLAlchemy 2.1 breaks the scheduler)
+    image: ghcr.io/veenaphadtare12-ux/flare-prefect-server:${FLARE_TAG:-local}
+    build:
+      context: .
+      dockerfile: docker/prefect-server.Dockerfile
     command: ["prefect", "server", "start", "--host", "0.0.0.0", "--port", "4200"]
     environment:
       PREFECT_UI_API_URL: http://localhost:4200/api

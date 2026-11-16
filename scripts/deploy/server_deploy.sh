@@ -22,7 +22,7 @@ healthy() {  # API and website answer locally (Caddy and HTTPS are checked from 
 }
 
 start() {  # start the stack on one tag
-  FLARE_TAG="$1" docker compose pull --quiet api frontend
+  FLARE_TAG="$1" docker compose pull --quiet api frontend prefect-server
   FLARE_TAG="$1" docker compose up -d --no-build --pull missing --remove-orphans
 }
 
@@ -42,7 +42,7 @@ if start "$TAG" && healthy; then
   if [ -n "$CUR" ] && [ "$CUR" != "$TAG" ]; then echo "$CUR" > .previous_tag; fi
   echo "$TAG" > .current_tag
   KEEP_PREV=$(cat .previous_tag 2>/dev/null || true)
-  for img in flare-api flare-frontend; do
+  for img in flare-api flare-frontend flare-prefect-server; do
     docker images "$REPO/$img" --format '{{.Tag}}' | { grep -vxE "$TAG|${KEEP_PREV:-none}" || true; } | while read -r t; do
       docker rmi "$REPO/$img:$t" >/dev/null 2>&1 && echo "removed old image $img:$t" || true
     done

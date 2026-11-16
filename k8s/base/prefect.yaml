@@ -14,7 +14,8 @@ spec:
     spec:
       containers:
         - name: prefect-server
-          image: prefecthq/prefect:3.8.7-python3.12
+          image: ghcr.io/veenaphadtare12-ux/flare-prefect-server   # Prefect 3.8.7 + SQLAlchemy 2.0 (docker/prefect-server.Dockerfile)
+          imagePullPolicy: IfNotPresent
           command: ["prefect", "server", "start", "--host", "0.0.0.0", "--port", "4200"]
           env:
             - { name: PREFECT_UI_API_URL, value: "http://localhost:4200/api" }

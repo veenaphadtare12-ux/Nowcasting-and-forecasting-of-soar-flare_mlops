@@ -58,8 +58,8 @@ jobs:
           SHA: ${{ steps.tags.outputs.sha }}
           VERSION: ${{ steps.tags.outputs.version }}
         run: |
-          FLARE_TAG=$SHA docker compose build api frontend
-          for img in flare-api flare-frontend; do
+          FLARE_TAG=$SHA docker compose build api frontend prefect-server
+          for img in flare-api flare-frontend flare-prefect-server; do
             docker tag "$REGISTRY/$img:$SHA" "$REGISTRY/$img:$VERSION"
             docker push "$REGISTRY/$img:$SHA"
             docker push "$REGISTRY/$img:$VERSION"

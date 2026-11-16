@@ -18,7 +18,7 @@ fi
 kubectl config use-context kind-flare >/dev/null
 
 # Our two images come from the local Docker engine; third-party images are pulled by the node.
-kind load docker-image --name flare "$REPO/flare-api:$TAG" "$REPO/flare-frontend:$TAG"
+kind load docker-image --name flare "$REPO/flare-api:$TAG" "$REPO/flare-frontend:$TAG" "$REPO/flare-prefect-server:$TAG"
 
 bash scripts/k8s/deploy.sh kind "$TAG"
 bash scripts/k8s/smoke.sh http://localhost:18080 http://localhost:18000

@@ -5,7 +5,7 @@
 set -euo pipefail
 KEEP=${1:?tag to keep}
 REPO=ghcr.io/veenaphadtare12-ux
-for img in flare-api flare-frontend; do
+for img in flare-api flare-frontend flare-prefect-server; do
   docker images "$REPO/$img" --format '{{.Tag}}' | { grep -vx "$KEEP" || true; } | while read -r t; do
     docker rmi "$REPO/$img:$t" >/dev/null && echo "removed $REPO/$img:$t"
   done

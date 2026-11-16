@@ -26,3 +26,5 @@ images:
     newTag: local
   - name: ghcr.io/veenaphadtare12-ux/flare-frontend
     newTag: local
+  - name: ghcr.io/veenaphadtare12-ux/flare-prefect-server
+    newTag: local

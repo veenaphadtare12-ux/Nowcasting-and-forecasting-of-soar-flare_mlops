@@ -59,6 +59,8 @@ images:
     newTag: "$TAG"
   - name: ghcr.io/veenaphadtare12-ux/flare-frontend
     newTag: "$TAG"
+  - name: ghcr.io/veenaphadtare12-ux/flare-prefect-server
+    newTag: "$TAG"
 EOF
 
 # Remember the current revision of every deployment (for the rollback message).

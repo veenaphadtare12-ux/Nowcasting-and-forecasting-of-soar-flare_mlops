@@ -2,14 +2,20 @@
 #   .\scripts\up.ps1                  build + start + smoke test, then delete older flare image tags
 #   .\scripts\up.ps1 -NoBuild         start the existing images for the current commit
 #   .\scripts\up.ps1 -Tag <sha>       start a specific existing image tag (no build)
+#   .\scripts\up.ps1 -Local           start the newest flare images already on this PC (no build, no download): demo day
 #   .\scripts\up.ps1 -KeepOldImages   do not delete older flare image tags
 # Disk rule: the BuildKit cache is kept (a code-only rebuild then costs almost nothing). Older flare image tags are
 # deleted only after the new stack started AND the smoke test passed, so a failed release keeps the previous image.
-param([switch]$NoBuild, [string]$Tag = "", [switch]$KeepOldImages)
+param([switch]$NoBuild, [string]$Tag = "", [switch]$KeepOldImages, [switch]$Local)
 . "$PSScriptRoot\_common.ps1"
+if ($Local) {
+    # newest local tag that exists for all three of our images
+    $Tag = (Invoke-Bash "bash scripts/newest_local_tag.sh" | Select-Object -Last 1).Trim()
+    if (-not $Tag) { throw "no complete set of local flare images: run .\scripts\up.ps1 once (it builds them)" }
+}
 $tag = if ($Tag) { $Tag } else { Get-FlareTag }
 Write-Host "FLARE_TAG = $tag  (docker: $(if ($script:Native) {'native'} else {"WSL $Distro"}))"
-if (-not $NoBuild -and -not $Tag) { Invoke-Bash "FLARE_TAG=$tag docker compose build api frontend" }
+if (-not $NoBuild -and -not $Tag) { Invoke-Bash "FLARE_TAG=$tag docker compose build api frontend prefect-server" }
 # A local API key for POST /predict lives only in the uncommitted .env (generated once, never printed).
 $envFile = Join-Path $Root ".env"
 if (-not (Test-Path $envFile) -or -not (Select-String -Path $envFile -Pattern '^FLARE_API_KEYS=.+' -Quiet)) {
