@@ -2,7 +2,7 @@
 
 Before the audience arrives (5 minutes):
 ```
-.\scripts\up.ps1 -NoBuild        # or .\scripts\up.ps1 if the code changed
+.\scripts\up.ps1 -Tag 7f03392ed044   # the local images (same contents as v1.2.0); starts in ~1 minute
 .\scripts\smoke_test.ps1         # must end with "all checks passed"
 ```
 Open these tabs in order: http://localhost (through Caddy; http://localhost:8080 also works), http://localhost:8080/replay, http://localhost:4200/runs,
