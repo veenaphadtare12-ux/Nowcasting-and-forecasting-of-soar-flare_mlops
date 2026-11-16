@@ -19,9 +19,10 @@
 7. **How do you know it is healthy?** Prometheus scrapes `/metrics`; FlareApiDown fired after 135 s and the error-rate alert at a 0.51 ratio in drills; Alertmanager received them.
 8. **How do you deploy safely?** maxUnavailable 0 + readiness probes + preStop: 67 requests, 0 failed during an update; a bad image never goes live and `rollout undo` runs automatically.
 9. **How is it secured?** API key on `/predict`, 429 rate limit, 413 size limit, CORS allow-list, only Caddy public, non-root containers, secrets only in GitHub/.env, trivy 0 CRITICAL.
-10. **What would you improve?** Public deployment (needs a server), alert e-mail, MLflow upgrade (3 accepted CVEs), automatic PRADAN download, multi-node storage, calibrated probabilities in the API.
+10. **What would you improve?** Terraform-applied infrastructure (blocked by the free plan's SCP), zero-downtime deploys on the server, MLflow upgrade (3 accepted CVEs), automatic PRADAN download, multi-node storage, calibrated probabilities in the API.
 
 ## Demo order (10 minutes)
+Live site: **https://veena-flare.duckdns.org** (start the EC2 instance ~3 minutes before if it was stopped).
 1. `.\scripts\up.ps1 -NoBuild` then `.\scripts\smoke_test.ps1` (before the viva).
 2. http://localhost → landing page, scroll to the X-class day.
 3. http://localhost/replay → play a day. http://localhost/performance → results with baselines.

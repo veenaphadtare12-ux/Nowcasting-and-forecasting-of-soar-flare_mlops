@@ -1,4 +1,4 @@
-# Production readiness (v1.1.0, checked 2026-11-14)
+# Production readiness (v1.2.0: live on AWS 2026-11-16; v1.1.0 checks 2026-11-14)
 
 Every row was run on 2026-11-14 on the development PC (Windows 11, Docker Engine in WSL Ubuntu) or in GitHub Actions,
 unless it says **NOT RUN**. Nothing is marked PASS from memory.
@@ -22,10 +22,10 @@ unless it says **NOT RUN**. Nothing is marked PASS from memory.
 | 14 | API key | **PASS** | `tests/test_api.py`: 401 without / with wrong key, 200 with key, old+new key both valid, 401 when no key configured |
 | 15 | Rate limit | **PASS** | test: 5 requests 200 then 429 with `Retry-After`; `/health`, `/metrics` never limited; k6 at 200 users: 3,055 × 429 from one key |
 | 16 | Request size limit, CORS | **PASS** | tests: 413 above the limit; evil origin gets no `Access-Control-Allow-Origin`; wildcard ignored |
-| 17 | HTTPS | **PASS (local CA) / NOT RUN (public)** | `SITE_ADDRESS=localhost`: https://localhost → HTTP/2 200, issuer "Caddy Local Authority", http → 308 to https. A Let's Encrypt certificate needs a public domain: NOT RUN |
+| 17 | HTTPS | **PASS (public)** | 2026-11-16: Caddy obtained a **Let's Encrypt** certificate for veena-flare.duckdns.org (log: `certificate obtained successfully`, issuer acme-v02.api.letsencrypt.org); https → 200, http → 308 to https; security headers present |
 | 18 | Alert rules fire | **PASS** | `alert_drill.ps1 -Rule down` → FIRING after 135–180 s; `-Rule errors` → FIRING with error ratio 0.51 (screenshots `docs/screenshots/prometheus_alert_*.jpg`) |
 | 19 | Alert delivery to Alertmanager | **PASS** | fake alert POSTed → state active, receiver `log-only`; real `FlareApiDown` reached Alertmanager ~140 s after the API stopped |
-| 20 | Alert e-mail | **NOT RUN** | no SMTP account configured; set `SMTP_*` and `ALERT_EMAIL_TO` in `.env` / GitHub secrets |
+| 20 | Alert e-mail | **PASS (sent)** | 2026-11-16 on the server: Alertmanager receiver `email` (Gmail SMTP with an App Password); test alert `FlareEmailDeliveryTest` → `alertmanager_notifications_total{integration="email"} 1`, failed 0. Arrival in the inbox is confirmed by the owner |
 | 21 | Backup | **PASS** | `.\scripts\backup.ps1` → 8 volumes, 29 MB, `D:\backups\flare\20261114T075117Z` with SHA-256 manifest |
 | 22 | Restore | **PASS** | `restore.ps1 -Prefix flare_restoretest` → checksums verified, file counts equal; MLflow DB `integrity_check` ok, same 5 models, aliases, 8 versions; predictions 68,933 rows; MLflow, predictions, drift byte-identical |
 | 23 | Load test vs SLOs | **PASS** | `.\scripts\loadtest.ps1` (50 users, 2 min): 5,950 requests, 49 req/s, 0 % errors, p50 2.2 ms, p95 8.3 ms, p99 20.5 ms (SLO p95 < 300 ms, errors < 1 %) |
@@ -36,8 +36,8 @@ unless it says **NOT RUN**. Nothing is marked PASS from memory.
 | 28 | Kubernetes deploy | **PASS (CI)** | CI `kind` job: `DEPLOY OK`, smoke 5/5 |
 | 29 | Rolling update | **PASS (CI)** | 67 requests during the update, 0 failed |
 | 30 | Rollback | **PASS (CI)** | bad image never became ready, old pods kept serving, `rollout undo` restored the good image |
-| 31 | Public deployment | **NOT RUN** | no `DEPLOY_HOST` / `DEPLOY_USER` / `DEPLOY_SSH_KEY` secrets; exact steps in `docs/DEPLOY_STEPS.md`; dry run of the CD deploy script passed locally |
-| 32 | Public rollback | **NOT RUN** | needs the deployment above; same sequence proven in CI (row 30) |
+| 31 | Public deployment | **PASS** | **https://veena-flare.duckdns.org** on AWS EC2 (m7i-flex.large, Sydney, Elastic IP 54.79.250.93). CD run 43821987129: publish → SSH deploy `65843c2962eb` over `d4a22dc870f3` → public smoke 6/6 (website, health, `/api/models`, replay days, metrics not public) |
+| 32 | Public rollback | **PASS** | broken release (tag `does-not-exist`) refused before touching the stack: 7 public requests, 0 failed, still serving `65843c2962eb`; manual `server_deploy.sh --rollback` → `ROLLBACK OK (d4a22dc870f3)`, roll forward → `DEPLOY OK (65843c2962eb)`. Compose recreates containers, so a switch costs a few seconds (9 of 27 probe requests failed); the zero-downtime rolling update is the Kubernetes path (row 29) |
 | 33 | Drift monitoring | **PASS** | `check_drift` flow Completed; `/drift/latest` drifted share 0.64, flag True (on development data: drift is real and expected) |
 | 34 | CD image publishing | **PASS** | CD runs publish `ghcr.io/veenaphadtare12-ux/flare-{api,frontend}:<sha>` + `master` / `vX.Y.Z`; packages public (anonymous pull token 200) |
 | 35 | Terraform | **PASS (validate) / NOT APPLIED** | CI `terraform fmt -check` + `validate`; applying creates billable resources, by decision |
@@ -75,7 +75,10 @@ gh secret list ; gh run list
 - **Small M-class sample:** holdout2 had 7 M flares, so M results there are underpowered and no claim is made.
 - **Research system:** NOAA SWPC issues official alerts; M alerts have many false alarms.
 - **Rate limits are per process** (one API worker per container; each Kubernetes replica counts separately).
-- **Not run:** public deployment and rollback on a server, a public Let's Encrypt certificate, alert e-mail.
+- **Cloud account:** the AWS free plan's organisation SCP denies EC2/Lightsail API calls with access keys, so the server
+  was launched in the console; Terraform describes it but cannot be applied from this account.
+- **Single server, Compose:** a release switch costs a few seconds of downtime (Kubernetes path is zero-downtime, CI).
+- **Cost:** the server uses the AWS credit (~USD 0.12/h); stop it between demos (`docs/DEPLOY_STEPS.md`).
 
 ## Release
 v1.1.0 (tag on the commit after `e6f0f3b`): CI run 43578152118 on `e6f0f3b` → test, compose-e2e, kind, terraform,

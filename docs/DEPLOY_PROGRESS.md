@@ -169,3 +169,17 @@ Full PASS / FAIL / NOT RUN table with proof: `docs/PRODUCTION_READINESS.md`. Hig
 - Docs: SECURITY, SLO, DEPLOY_STEPS, PRODUCTION_READINESS, VIVA_CHEATSHEET, RUNBOOK sections, lesson 22, current-state
   banners on dated documents.
 - Release check: CI run 43578152118 (commit e6f0f3b) 5/5 green; local image e6f0f3b7f1f3: smoke, e2e and public smoke passed.
+
+## v1.2.0: live on AWS (2026-11-16)
+- AWS free plan account ($120 credit). EC2 and Lightsail API calls with access keys are denied by the free plan's
+  organisation SCP (checked in 4 regions); the console is allowed, so the server was launched in the console:
+  EC2 m7i-flex.large, Ubuntu 24.04, 30 GB gp3, Sydney, Elastic IP 54.79.250.93, launch script installs Docker.
+- DuckDNS veena-flare.duckdns.org -> 54.79.250.93; 12 GitHub secrets set with `scripts/deploy/set_github_secrets.ps1`.
+- CD rewritten for Compose over SSH (`scripts/deploy/server_deploy.sh`, automatic rollback). First run: stack healthy but
+  public check failed because the security group lacked 80/443; after adding them and restarting Caddy, Let's Encrypt
+  issued the certificate. Second run 43821987129: deploy + public smoke 6/6 green.
+- Alert e-mail: Alertmanager `email` receiver, test alert sent (1 sent, 0 failed).
+- Rollback on the live server: broken release refused with 0 failed requests; manual rollback and roll-forward OK
+  (a few seconds of downtime per switch with Compose).
+- Screenshot: `docs/screenshots/live_https_landing.jpg`.
+
