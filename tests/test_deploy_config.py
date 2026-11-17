@@ -41,3 +41,16 @@ def test_every_deploy_path_builds_and_ships_the_prefect_image():
         ("scripts/k8s/deploy.sh", "flare-prefect-server"),
     ]:
         assert needle in (ROOT / f).read_text(encoding="utf-8"), f"{f} does not handle the Prefect server image"
+
+
+def test_nginx_re_resolves_the_api_address():
+    """nginx must look the API up again (resolver + variable), not once at start: recreating only the API container
+    (new IP) made every /api request fail with 502 until the frontend was restarted (found 2026-11-17)."""
+    tpl = (ROOT / "docker" / "nginx.conf.template").read_text(encoding="utf-8")
+    assert "resolver ${NGINX_LOCAL_RESOLVERS} valid=10s" in tpl
+    assert "set $api_upstream http://${API_HOST}:8000;" in tpl
+    assert "proxy_pass http://api" not in tpl and tpl.count("proxy_pass $api_upstream;") == 2
+    df = (ROOT / "docker" / "frontend.Dockerfile").read_text(encoding="utf-8")
+    assert "/etc/nginx/templates/default.conf.template" in df and "NGINX_ENTRYPOINT_LOCAL_RESOLVERS=1" in df
+    k8s = (ROOT / "k8s" / "base" / "frontend.yaml").read_text(encoding="utf-8")
+    assert "api.flare.svc.cluster.local" in k8s

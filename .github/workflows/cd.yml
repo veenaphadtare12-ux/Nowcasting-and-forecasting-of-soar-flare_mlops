@@ -125,6 +125,7 @@ jobs:
             for v in SITE_ADDRESS ACME_EMAIL GRAFANA_ADMIN_PASSWORD FLARE_API_KEYS SMTP_SMARTHOST SMTP_FROM SMTP_USERNAME SMTP_PASSWORD ALERT_EMAIL_TO; do
               printf '%s=%s\n' "$v" "${!v}"
             done
+            echo "FLARE_RAW_SOLEXS_HOST=./data/solexs_production"   # new SoLEXS L1 days (from 2026-11-13) for daily_ingest
             echo "ENVEOF"
             printf 'bash /opt/flare/scripts/deploy/server_deploy.sh %q\n' "$TAG"
           } | ssh -i ~/.ssh/deploy "$DEPLOY_USER@$DEPLOY_HOST" bash -s

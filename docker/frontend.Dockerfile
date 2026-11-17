@@ -14,7 +14,9 @@ ARG GIT_SHA=dev
 USER root
 RUN apk upgrade --no-cache
 USER 101
-COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
+# Config template: the image's entrypoint fills it at start (API host, DNS resolver from /etc/resolv.conf).
+COPY docker/nginx.conf.template /etc/nginx/templates/default.conf.template
+ENV NGINX_ENTRYPOINT_LOCAL_RESOLVERS=1 API_HOST=api
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 8080
 HEALTHCHECK --interval=15s --timeout=4s --start-period=10s --retries=5 CMD wget -qO- http://127.0.0.1:8080/healthz || exit 1

@@ -7,7 +7,7 @@
 set -euo pipefail
 cd /opt/flare
 REPO=ghcr.io/veenaphadtare12-ux
-mkdir -p data/raw_empty
+mkdir -p data/raw_empty data/solexs_production   # copy new SoLEXS L1 day folders into data/solexs_production
 CUR=$(cat .current_tag 2>/dev/null || true)
 PREV=$(cat .previous_tag 2>/dev/null || true)
 

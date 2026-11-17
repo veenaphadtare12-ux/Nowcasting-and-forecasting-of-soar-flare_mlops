@@ -27,6 +27,9 @@ spec:
           image: ghcr.io/veenaphadtare12-ux/flare-frontend
           imagePullPolicy: IfNotPresent
           ports: [{ name: http, containerPort: 8080 }]
+          env:
+            # nginx's resolver does not use search domains: give the Service's full name
+            - { name: API_HOST, value: api.flare.svc.cluster.local }
           lifecycle:
             preStop:
               exec: { command: ["sleep", "5"] }
