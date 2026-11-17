@@ -26,7 +26,7 @@ Live site: **https://veena-flare.duckdns.org** (start the EC2 instance ~3 minute
 1. `.\scripts\up.ps1 -Local` then `.\scripts\smoke_test.ps1` (before the viva; uses the newest images on this PC, no download).
 2. http://localhost → landing page, scroll to the X-class day.
 3. http://localhost/replay → play a day. http://localhost/performance → results with baselines.
-4. http://localhost:4200 Prefect runs → http://localhost:5000 MLflow champions.
+4. http://localhost:4200 Prefect runs → MLflow: `.\scripts\mlflow_ui.ps1` → http://127.0.0.1:5001, switch to **Model training** (top left; GenAI mode shows nothing), experiment `flare-final` → runs, then **Model registry** → 5 champions with lineage tags.
 5. http://localhost:3000 Grafana → http://localhost:9090/alerts → http://localhost:9093 Alertmanager.
 6. GitHub Actions: 5 green jobs. `docs/PRODUCTION_READINESS.md`: PASS / FAIL / NOT RUN with proof.
 Fallback: `docs/screenshots/`.
