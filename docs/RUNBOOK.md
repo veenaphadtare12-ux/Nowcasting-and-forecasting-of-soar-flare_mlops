@@ -103,6 +103,18 @@ Never put a key in git, a URL or a log line.
   without asking).
 - Suggested schedule: before every release and weekly; keep the last 4 (delete older folders only after checking them).
 
+## Add a new production day (manual download)
+SoLEXS L1 days need a personal ISRO PRADAN login, so they are downloaded by hand:
+1. PRADAN → Aditya-L1 → SoLEXS → Level-1 → download the days (2026-11-13 or later only).
+2. Unpack each day into `D:\MLOPS_CP\Data\SoLEXS_production\AL1_SLX_L1_<YYYYMMDD>_v<x>\SDD2\...` (never into the
+   development folder: the first production day must not take warm-up from holdout2).
+3. Local: `.env` has `FLARE_RAW_SOLEXS_HOST=/mnt/d/MLOPS_CP/Data/SoLEXS_production`; `.\scripts\up.ps1 -Local`.
+4. AWS: copy the day folders to `/opt/flare/data/solexs_production/`
+   (`scp -r -i ~/.ssh/flare_deploy <folder> ubuntu@54.79.250.93:/opt/flare/data/solexs_production/`).
+5. Wait for the nightly `daily_ingest` (02:15 UTC) or run it now, on the server:
+   `cd /opt/flare && FLARE_TAG=$(cat .current_tag) docker compose --profile tools run --rm -T tools prefect deployment run daily_ingest/daily --watch < /dev/null`
+6. Check `/production/latest` or the website's Latest page.
+
 ## Roll back a release
 - **Compose:** `.\scripts\up.ps1 -Tag <previous sha>` (the previous image is kept until a new release passes its smoke
   test; otherwise `docker pull ghcr.io/veenaphadtare12-ux/flare-api:<sha>` and the frontend image first).

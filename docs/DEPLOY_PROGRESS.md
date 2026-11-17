@@ -183,3 +183,20 @@ Full PASS / FAIL / NOT RUN table with proof: `docs/PRODUCTION_READINESS.md`. Hig
   (a few seconds of downtime per switch with Compose).
 - Screenshot: `docs/screenshots/live_https_landing.jpg`.
 
+## First real production days (2026-11-17)
+- **Data:** SoLEXS L1 days **2026-11-13** and **2026-11-14** downloaded from ISRO PRADAN by the owner
+  (`solexs_2026Nov17T015642222.zip`, CRC OK; SDD2 light curve + GTI present), unpacked into a separate folder
+  `D:\MLOPS_CP\Data\SoLEXS_production` (never next to holdout2 data, so the warm-up of 2026-11-13 cannot read 2026-11-12).
+- **Local:** `FLARE_RAW_SOLEXS_HOST` in the git-ignored `.env` → Prefect deployment `daily_ingest/daily` run `upbeat-coua`
+  Completed: 2026-11-13 8,617 rows, 2026-11-14 8,640 rows, NOAA GOES list ok.
+- **AWS:** day folders copied to `/opt/flare/data/solexs_production` (CD now writes `FLARE_RAW_SOLEXS_HOST` into the
+  server `.env`); `daily_ingest/daily` through the server's Prefect → both days scored; second run `banana-hog`
+  Completed (nothing pending). Public https://veena-flare.duckdns.org/latest shows 2026-11-14: coverage 100 %
+  (8,640 rows), 6 GOES flares (C1.4 … C4.4 … C2.8), alerts ≥C 60 min 780.2 min, ≥M 60 min 165.7 min, nowcast
+  212.8 min; c_30m / m_30m "not scored in production" (need inputs production does not build yet).
+  Screenshot `submission/slides_shots/09_live_latest_production_day.png`.
+- **Not used:** the HEL1OS download for 13–15 Nov (`hel1os_2026Nov17T015735951.zip`, 6 sessions, CRC OK) is kept in
+  Downloads; the production pipeline does not read HEL1OS yet (documented in `docs/ARCHITECTURE.md` §8).
+- **Bug found and fixed on the way:** nginx resolved the API address once at start, so recreating only the API container
+  made every `/api` call fail with 502; now a template with a 10 s resolver (`docker/nginx.conf.template`), proven with
+  a forced new API address; `tests/test_deploy_config.py::test_nginx_re_resolves_the_api_address`.
