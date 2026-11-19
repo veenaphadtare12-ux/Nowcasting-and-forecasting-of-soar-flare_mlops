@@ -17,10 +17,10 @@ Legend: **CHECKED NOW** = command run or page opened during this check · *file*
 | Commits after the tag | 2 documentation-only commits: `416cbc2` (demo start command), `54c55ab` (alert e-mail received) | `git log v1.2.0..HEAD` |
 | Total commits on `master` | **84** | `git rev-list --count HEAD` |
 | Working tree | clean (only the untracked tool folder `.claude/`; this report and the screenshots are new, not committed) | `git status` |
-| Repository | https://github.com/veenaphadtare12-ux/Nowcasting-and-forecasting-of-soar-flare_mlops, **public**, default branch `master` | `gh repo view` |
+| Repository | https://github.com/veenaphadtare12-ux/aditya-l1-solar-flare-nowcasting-forecasting, **public**, default branch `master` | `gh repo view` |
 
 **CI on tag v1.2.0**: run 43823967906, overall **success**
-https://github.com/veenaphadtare12-ux/Nowcasting-and-forecasting-of-soar-flare_mlops/actions/runs/43823967906
+https://github.com/veenaphadtare12-ux/aditya-l1-solar-flare-nowcasting-forecasting/actions/runs/43823967906
 
 | Job | Result |
 |---|---|
@@ -31,7 +31,7 @@ https://github.com/veenaphadtare12-ux/Nowcasting-and-forecasting-of-soar-flare_m
 | security (pip-audit, npm audit, trivy) | PASS |
 
 **CD on tag v1.2.0**: run 43823967895, overall **success**
-https://github.com/veenaphadtare12-ux/Nowcasting-and-forecasting-of-soar-flare_mlops/actions/runs/43823967895
+https://github.com/veenaphadtare12-ux/aditya-l1-solar-flare-nowcasting-forecasting/actions/runs/43823967895
 
 | Job | Result |
 |---|---|
@@ -361,7 +361,7 @@ demo (keeps disk, Elastic IP and data; about USD 7/month while stopped).
 **The 3 links to open first**
 1. https://veena-flare.duckdns.org (live on AWS, HTTPS)
 2. http://localhost/replay (local console after `up.ps1`; replay the X-class day)
-3. https://github.com/veenaphadtare12-ux/Nowcasting-and-forecasting-of-soar-flare_mlops/actions (CI 5 jobs + CD to AWS)
+3. https://github.com/veenaphadtare12-ux/aditya-l1-solar-flare-nowcasting-forecasting/actions (CI 5 jobs + CD to AWS)
 
 Before the viva: fix this PC's clock (Windows Settings → Time & language → Date & time → set the time zone to
 "(UTC+05:30) Chennai, Kolkata, Mumbai, New Delhi" and "Sync now"), so that AWS CLI checks work again.

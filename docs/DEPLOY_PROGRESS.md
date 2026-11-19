@@ -1,7 +1,7 @@
 # Deployment progress (resume here)
 
 Contract: `docs/ARCHITECTURE.md`. ML phase frozen. Repo:
-https://github.com/veenaphadtare12-ux/Nowcasting-and-forecasting-of-soar-flare_mlops
+https://github.com/veenaphadtare12-ux/aditya-l1-solar-flare-nowcasting-forecasting
 
 | Phase | Status |
 |---|---|

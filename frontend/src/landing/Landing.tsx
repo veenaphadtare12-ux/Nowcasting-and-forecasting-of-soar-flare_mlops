@@ -805,7 +805,7 @@ function Finale() {
         <div className="meta">
           <span>Research and teaching system, not an operational alert service.</span>
           <span>Data · ISRO Aditya-L1 (SoLEXS, HEL1OS) · NOAA SWPC GOES flare list</span>
-          <a href="https://github.com/veenaphadtare12-ux/Nowcasting-and-forecasting-of-soar-flare_mlops" target="_blank" rel="noreferrer">
+          <a href="https://github.com/veenaphadtare12-ux/aditya-l1-solar-flare-nowcasting-forecasting" target="_blank" rel="noreferrer">
             Source on GitHub ↗
           </a>
         </div>

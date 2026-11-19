@@ -7,7 +7,7 @@ param(
     [string]$Domain = "veena-flare.duckdns.org",
     [string]$DeployUser = "ubuntu",
     [string]$KeyPath = "\\wsl.localhost\Ubuntu\home\veena\.ssh\flare_deploy",
-    [string]$Repo = "veenaphadtare12-ux/Nowcasting-and-forecasting-of-soar-flare_mlops"
+    [string]$Repo = "veenaphadtare12-ux/aditya-l1-solar-flare-nowcasting-forecasting"
 )
 $ErrorActionPreference = "Stop"
 

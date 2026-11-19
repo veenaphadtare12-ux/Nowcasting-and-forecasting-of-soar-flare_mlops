@@ -36,7 +36,7 @@ USER app
 EXPOSE 8000
 HEALTHCHECK --interval=15s --timeout=5s --start-period=40s --retries=5 \
   CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4).status == 200 else 1)"
-LABEL org.opencontainers.image.source="https://github.com/veenaphadtare12-ux/Nowcasting-and-forecasting-of-soar-flare_mlops" \
+LABEL org.opencontainers.image.source="https://github.com/veenaphadtare12-ux/aditya-l1-solar-flare-nowcasting-forecasting" \
       org.opencontainers.image.revision="${GIT_SHA}" \
       org.opencontainers.image.title="flare-api"
 CMD ["uvicorn", "src.serving.api:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers"]

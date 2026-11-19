@@ -20,6 +20,6 @@ ENV NGINX_ENTRYPOINT_LOCAL_RESOLVERS=1 API_HOST=api
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 8080
 HEALTHCHECK --interval=15s --timeout=4s --start-period=10s --retries=5 CMD wget -qO- http://127.0.0.1:8080/healthz || exit 1
-LABEL org.opencontainers.image.source="https://github.com/veenaphadtare12-ux/Nowcasting-and-forecasting-of-soar-flare_mlops" \
+LABEL org.opencontainers.image.source="https://github.com/veenaphadtare12-ux/aditya-l1-solar-flare-nowcasting-forecasting" \
       org.opencontainers.image.revision="${GIT_SHA}" \
       org.opencontainers.image.title="flare-frontend"
